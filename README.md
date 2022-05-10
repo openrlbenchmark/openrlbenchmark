@@ -10,3 +10,7 @@ Check out this [google doc](https://docs.google.com/document/d/1cDI_AMr2QVmkC53d
 Check out the [Open RL Benchmark reports](https://wandb.ai/openrlbenchmark/openrlbenchmark/reportlist): featuring W&B reports with tracked Atari, MuJoCo experiments from SB3, CleanRL, and others.
 
 You can "fork" these reports and use them in your own workspace. See the following video for a demo
+
+
+https://user-images.githubusercontent.com/5555347/167722421-7f6a138e-6374-491a-8d6e-3b0604e73884.mp4
+
