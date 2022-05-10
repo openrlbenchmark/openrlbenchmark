@@ -14,3 +14,7 @@ You can "fork" these reports and use them in your own workspace. See the followi
 
 https://user-images.githubusercontent.com/5555347/167722421-7f6a138e-6374-491a-8d6e-3b0604e73884.mp4
 
+
+## What's going on right now?
+
+This is a project we are slowly working on. We have already added all benchmark experiments from CleanRL and @araffin is working on adding SB3 benchmark experiments. We don't have a defined timeline yet, but if you want to get involved. Feel free to reach out to me or open an issue.
