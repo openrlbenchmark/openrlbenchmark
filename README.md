@@ -5,9 +5,12 @@ Open RL Benchmark is a comprehensive collection of tracked experiments for RL. I
 Check out this [google doc](https://docs.google.com/document/d/1cDI_AMr2QVmkC53dCHFMYwGJtLC8V4p6KdL2wnYPaiI/edit?usp=sharing) for more info and comment.
 
 
+
 ## Get started
 
 Check out the [Open RL Benchmark reports](https://wandb.ai/openrlbenchmark/openrlbenchmark/reportlist): featuring W&B reports with tracked Atari, MuJoCo experiments from SB3, CleanRL, and others.
+
+![DEMO](https://user-images.githubusercontent.com/5555347/167724483-3c038a3b-3dce-4aa9-8cf0-6cedae52d321.gif)
 
 You can "fork" these reports and use them in your own workspace. See the following video for a demo, where I used a _newly-created_ W&B account to clone a report from [Open RL Benchmark reports](https://wandb.ai/openrlbenchmark/openrlbenchmark/reportlist) and compared my metrics with the report's metrics.
 
