@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "openrlbenchmark"
+version = "0.1.0"
+description = ""
+authors = ["Costa Huang <costa.huang@outlook.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+wandb = "^0.12.21"
+pip = "^22.1.2"
+expt = {git = "https://github.com/wookayin/expt.git"}
+multiprocess = "^0.70.13"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
