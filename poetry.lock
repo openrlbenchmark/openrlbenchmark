@@ -98,8 +98,8 @@ test = ["mock (>=2.0.0)", "pytest (>=5.0)", "pytest-cov", "pytest-asyncio", "ten
 [package.source]
 type = "git"
 url = "https://github.com/wookayin/expt.git"
-reference = "master"
-resolved_reference = "1e8675845878c0fa4b7fa96380bcaa3e22266200"
+reference = "representative"
+resolved_reference = "1d4a28625711d7859a3de1c3a3ae87e7e39d3885"
 
 [[package]]
 name = "fonttools"
@@ -511,7 +511,7 @@ sweeps = ["sweeps (>=0.1.0)"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "3105b04b10ad5080b58b5f576863579232cf8bbeca6de4186e6b4b472c63fb28"
+content-hash = "842a73c3ed1d767097a39ad42ea538d307dfca32597483243fc340d123b26907"
 
 [metadata.files]
 certifi = []

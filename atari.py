@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import wandb
 import wandb.apis.reports as wb  # noqa
 from expt.plot import GridPlot
+from atari_data import atari_human_normalized_scores
 
 def create_hypothesis(name, wandb_runs):
     runs = []
@@ -18,7 +19,7 @@ def create_hypothesis(name, wandb_runs):
         runs += [Run(f"seed{idx}", wandb_run)]
     return Hypothesis(name, runs)
 
-env_ids = ["Ant-v4", "HalfCheetah-v4", "Hopper-v4", "Humanoid-v4", "InvertedDoublePendulum-v4", "InvertedPendulum-v4", "Pusher-v4", "Reacher-v4", "Swimmer-v4", "Walker2d-v4",]
+env_ids = atari_human_normalized_scores.keys()
 # env_ids = ["Ant-v4", "HalfCheetah-v4"]
 
 g = GridPlot(y_names=env_ids)
@@ -26,22 +27,15 @@ g = GridPlot(y_names=env_ids)
 for env_id in env_ids:
     api = wandb.Api()
     wandb_runs = api.runs(
-        path="openrlbenchmark/envpool-cleanrl",
-        filters={'$and': [{'config.env_id.value': env_id}, {'config.exp_name.value': 'ppo_continuous_action_envpool'}]}
-    )
-    wandb_runs2 = api.runs(
-        path="openrlbenchmark/baselines",
-        filters={'$and': [{'config.env.value': env_id.replace("v4", "v2")}, {'config.exp_name.value': 'baselines-ppo2-mlp'}]}
+        path="costa-huang/envpool-atari",
+        filters={'$and': [{'config.env_id.value': env_id}, {'config.exp_name.value': 'ppo_atari_envpool_xla_jax'}]}
     )
     ex = expt.Experiment("Comparison of PPO")
     h = create_hypothesis("CleanRL's PPO + Envpool", wandb_runs)
     ex.add_hypothesis(h)
-    h2 = create_hypothesis("openai/baselines' PPO", wandb_runs2)
-    ex.add_hypothesis(h2)
-    # ex.plot(ax=g[env_id], title=env_id, y=, x="_runtime", n_samples=300, rolling=50, err_style="fill", tight_layout=False, legend=False)
 
     ex.plot(ax=g[env_id], title=env_id,
-            x='_runtime', y="charts/episodic_return",
+            x='_runtime', y="charts/avg_episodic_return",
             err_style='band', std_alpha=0.1,
             rolling=50, n_samples=400, legend=False,
            )
