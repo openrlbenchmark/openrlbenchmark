@@ -22,7 +22,7 @@ def create_expt_runs(wandb_runs):
 api = wandb.Api()
 
 env_ids = atari_human_normalized_scores.keys()
-
+hms = []
 NUM_FRAME_STACK = 4
 g = GridPlot(y_names=env_ids)
 
@@ -53,6 +53,7 @@ for env_id in env_ids:
     ax = g[env_id]
     ax2 = ax.twinx()
     ax2.set_ylim([0, ex.summary()["human normalized score"][0]])
+    hms += [ex.summary()["human normalized score"][0]]
 
 g.add_legend(ax=g.axes[-1, -1], loc="upper left", bbox_to_anchor=(0, 1))
 for ax in g.axes_active:
@@ -61,3 +62,18 @@ for ax in g.axes_active:
 
 plt.tight_layout(w_pad=1)
 plt.savefig("test.png")
+
+
+plt.clf()
+plt.rcdefaults()
+sorted_tuple = sorted(zip(hms, env_ids))
+hms = [x for x, _ in sorted_tuple]
+env_ids = [x for _, x in sorted_tuple]
+
+fig, ax = plt.subplots(figsize=(7, 10))
+y_pos = np.arange(len(env_ids))
+bars = ax.barh(y_pos, hms)
+ax.bar_label(bars, fmt='%.2f')
+ax.set_yticks(y_pos, labels=env_ids)
+plt.tight_layout()
+plt.savefig("hms_bar.png")
