@@ -1,6 +1,6 @@
 # Open RL Benchmark: Comprehensive Tracked Experiments for Reinforcement Learning
 
-Open RL Benchmark is a comprehensive collection of tracked experiments for RL. It aims to make it easier for RL practioners to pull and compare all kinds of metrics from reputable RL libraries like Stable-baselines3, Tianshou, CleanRL, and others.
+Open RL Benchmark is a comprehensive collection of tracked experiments for RL. It aims to make it easier for RL practitioners to pull and compare all kinds of metrics from reputable RL libraries like Stable-baselines3, Tianshou, CleanRL, and others.
 
 Check out this [google doc](https://docs.google.com/document/d/1cDI_AMr2QVmkC53dCHFMYwGJtLC8V4p6KdL2wnYPaiI/edit?usp=sharing) for more info and comment.
 

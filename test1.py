@@ -1,10 +1,11 @@
-from expt import Run, Hypothesis
 import matplotlib.pyplot as plt
 import wandb
+from expt import Hypothesis, Run
+
 api = wandb.Api()
 wandb_runs = api.runs(
     path="openrlbenchmark/cleanrl",
-    filters={'$and': [{'config.env_id.value': 'Walker2d-v2'}, {'config.exp_name.value': 'ddpg_continuous_action'}]}
+    filters={"$and": [{"config.env_id.value": "Walker2d-v2"}, {"config.exp_name.value": "ddpg_continuous_action"}]},
 )
 
 runs = []
