@@ -1,3 +1,4 @@
+from itertools import groupby
 import expt
 import matplotlib.pyplot as plt
 import wandb
@@ -37,7 +38,7 @@ class Runset:
             entity=self.entity,
             project=self.project,
             filters={"$or": [self.filters]},
-            groupby=[self.groupby],
+            groupby=[self.groupby] if len(self.groupby) > 0 else None,
         )
 
 
@@ -69,7 +70,7 @@ if __name__ == "__main__":
             },
             entity="openrlbenchmark",
             project="cleanrl",
-            # groupby="exp_name",
+            groupby="exp_name",
         )
 
         blocks += [
