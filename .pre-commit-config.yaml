@@ -1,0 +1,71 @@
+repos:
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v2.31.1
+    hooks:
+      - id: pyupgrade
+        args: 
+          - --py37-plus
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.10.1
+    hooks:
+      - id: isort
+        args:
+          - --profile=black
+          - --skip-glob=wandb/**/*
+          - --thirdparty=wandb
+  - repo: https://github.com/myint/autoflake
+    rev: v1.4
+    hooks:
+      - id: autoflake
+        args:
+          - -r
+          - --exclude=wandb
+          - --in-place
+          - --remove-unused-variables
+          - --remove-all-unused-imports
+  - repo: https://github.com/python/black
+    rev: 22.3.0
+    hooks:
+      - id: black
+        args:
+          - --line-length=127
+          - --exclude=wandb
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.1.0
+    hooks:
+      - id: codespell
+        args:
+          - --ignore-words-list=nd,reacher,thist,ths,magent
+          - --skip=docs/css/termynal.css,docs/js/termynal.js
+  - repo: https://github.com/python-poetry/poetry
+    rev: 1.2.0b1
+    hooks:
+      - id: poetry-export
+        name: poetry-export requirements.txt
+        args: ["-f", "requirements.txt", "--without-hashes", "-o", "requirements/requirements.txt"]
+        stages: [manual]
+      - id: poetry-export
+        name: poetry-export requirements-atari.txt
+        args: ["-f", "requirements.txt", "--without-hashes", "-o", "requirements/requirements-atari.txt", "-E", "atari"]
+        stages: [manual]
+      - id: poetry-export
+        name: poetry-export requirements-pybullet.txt
+        args: ["-f", "requirements.txt", "--without-hashes", "-o", "requirements/requirements-pybullet.txt", "-E", "pybullet"]
+        stages: [manual]
+      - id: poetry-export
+        name: poetry-export requirements-mujoco.txt
+        args: ["-f", "requirements.txt", "--without-hashes", "-o", "requirements/requirements-mujoco.txt", "-E", "mujoco"]
+        stages: [manual]
+      - id: poetry-export
+        name: poetry-export requirements-procgen.txt
+        args: ["-f", "requirements.txt", "--without-hashes", "-o", "requirements/requirements-procgen.txt", "-E", "procgen"]
+        stages: [manual]
+      - id: poetry-export
+        name: poetry-export requirements-envpool.txt
+        args: ["-f", "requirements.txt", "--without-hashes", "-o", "requirements/requirements-envpool.txt", "-E", "envpool"]
+        stages: [manual]
+      - id: poetry-export
+        name: poetry-export requirements-pettingzoo.txt
+        args: ["-f", "requirements.txt", "--without-hashes", "-o", "requirements/requirements-pettingzoo.txt", "-E", "pettingzoo"]
+        stages: [manual]
+        
