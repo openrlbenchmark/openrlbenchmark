@@ -1,6 +1,7 @@
 import expt
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import wandb
 import wandb.apis.reports as wb  # noqa
 from expt import Run
@@ -23,9 +24,11 @@ api = wandb.Api()
 
 env_ids = atari_human_normalized_scores.keys()
 hms = []
+raw_scores = []
 NUM_FRAME_STACK = 4
-g = GridPlot(y_names=env_ids)
-
+NUM_COLS = 4
+g = GridPlot(y_names=env_ids, layout=(int(np.ceil(len(env_ids) / NUM_COLS)), NUM_COLS))
+# g = GridPlot(y_names=env_ids)
 
 for env_id in env_ids:
     api = wandb.Api()
@@ -58,6 +61,7 @@ for env_id in env_ids:
     ax = g[env_id]
     ax2 = ax.twinx()
     ax2.set_ylim([0, ex.summary()["human normalized score"][0]])
+    raw_scores += [ex.summary()["charts/avg_episodic_return"][0]]
     hms += [ex.summary()["human normalized score"][0]]
 
 g.add_legend(ax=g.axes[-1, -1], loc="upper left", bbox_to_anchor=(0, 1))
@@ -66,19 +70,19 @@ for ax in g.axes_active:
     ax.yaxis.set_label_text("")
 
 plt.tight_layout(w_pad=1)
-plt.savefig("test.png")
+plt.savefig("hms_each_game.png")
 
-
+pd.DataFrame(sorted(zip(env_ids, raw_scores, hms))).to_markdown("atari_hns.md")
 plt.clf()
 plt.rcdefaults()
 sorted_tuple = sorted(zip(hms, env_ids))
-hms = [x for x, _ in sorted_tuple]
-env_ids = [x for _, x in sorted_tuple]
+sorted_hms = [x for x, _ in sorted_tuple]
+sorted_env_ids = [x for _, x in sorted_tuple]
 
 fig, ax = plt.subplots(figsize=(7, 10))
-y_pos = np.arange(len(env_ids))
-bars = ax.barh(y_pos, hms)
+y_pos = np.arange(len(sorted_env_ids))
+bars = ax.barh(y_pos, sorted_hms)
 ax.bar_label(bars, fmt="%.2f")
-ax.set_yticks(y_pos, labels=env_ids)
+ax.set_yticks(y_pos, labels=sorted_env_ids)
 plt.tight_layout()
 plt.savefig("hms_bar.png")
