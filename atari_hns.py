@@ -33,7 +33,7 @@ g = GridPlot(y_names=env_ids, layout=(int(np.ceil(len(env_ids) / NUM_COLS)), NUM
 for env_id in env_ids:
     api = wandb.Api()
     wandb_runs = api.runs(
-        path="costa-huang/envpool-atari",
+        path="openrlbenchmark/envpool-atari",
         filters={"$and": [{"config.env_id.value": env_id}, {"config.exp_name.value": "ppo_atari_envpool_xla_jax"}]},
     )
     ex = expt.Experiment("Comparison of PPO")
