@@ -51,7 +51,7 @@ atari_human_normalized_scores = {
     "MontezumaRevenge-v5": (0.0, 4753.3),
     "MsPacman-v5": (307.3, 6951.6),
     "NameThisGame-v5": (2292.3, 8049.0),
-    "Phoenix-v5": (761.4, 7242.6),   ## TODO: where is Phoenix in the original DQN paper?
+    "Phoenix-v5": (761.4, 7242.6),  ## TODO: where is Phoenix in the original DQN paper?
     "Pitfall-v5": (-229.4, 6463.7),  ## TODO: where is Pitfall in the original DQN paper?
     "Pong-v5": (-20.7, 14.6),
     "PrivateEye-v5": (24.9, 69571.3),
@@ -60,11 +60,14 @@ atari_human_normalized_scores = {
     "RoadRunner-v5": (11.5, 7845.0),
     "Robotank-v5": (2.2, 11.9),
     "Seaquest-v5": (68.4, 42054.7),
-    "Skiing-v5": (-17098.1, -4336.9),  # note our Envpool + PPO only gets -28500 as the base return ## TODO: where is Skiing in the original DQN paper?
-    "Solaris-v5": (1236.3, 12326.7), ## TODO: where is Solaris in the original DQN paper?
+    "Skiing-v5": (
+        -17098.1,
+        -4336.9,
+    ),  # note our Envpool + PPO only gets -28500 as the base return ## TODO: where is Skiing in the original DQN paper?
+    "Solaris-v5": (1236.3, 12326.7),  ## TODO: where is Solaris in the original DQN paper?
     "SpaceInvaders-v5": (148.0, 1668.7),
     "StarGunner-v5": (664.0, 10250.0),
-    "Surround-v5": (-10.0, 6.5), ## TODO: where is Surround in the original DQN paper?
+    "Surround-v5": (-10.0, 6.5),  ## TODO: where is Surround in the original DQN paper?
     "Tennis-v5": (-23.8, -8.3),
     "TimePilot-v5": (3568.0, 5229.2),
     "Tutankham-v5": (11.4, 167.6),
@@ -72,6 +75,6 @@ atari_human_normalized_scores = {
     "Venture-v5": (0.0, 1187.5),
     "VideoPinball-v5": (16256.9, 17667.9),
     "WizardOfWor-v5": (563.5, 4756.5),  # note our Envpool + PPO only gets 0 as the base return
-    "YarsRevenge-v5": (3092.9, 54576.9), ## TODO: where is YarsRevenge in the original DQN paper?
+    "YarsRevenge-v5": (3092.9, 54576.9),  ## TODO: where is YarsRevenge in the original DQN paper?
     "Zaxxon-v5": (32.5, 9173.3),
 }
