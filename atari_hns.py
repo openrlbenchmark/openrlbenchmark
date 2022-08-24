@@ -26,7 +26,7 @@ env_ids = atari_human_normalized_scores.keys()
 hms = []
 raw_scores = []
 NUM_FRAME_STACK = 4
-NUM_COLS = 4
+NUM_COLS = 5
 g = GridPlot(y_names=env_ids, layout=(int(np.ceil(len(env_ids) / NUM_COLS)), NUM_COLS))
 # g = GridPlot(y_names=env_ids)
 
@@ -70,9 +70,12 @@ for ax in g.axes_active:
     ax.yaxis.set_label_text("")
 
 plt.tight_layout(w_pad=1)
-plt.savefig("hms_each_game.png")
+plt.savefig("static/hms_each_game.png")
+plt.savefig("static/hms_each_game.svg")
 
-pd.DataFrame(sorted(zip(env_ids, raw_scores, hms))).to_markdown("atari_hns.md")
+pd.DataFrame(sorted(zip(env_ids, raw_scores, hms)), columns=["Environment", "Return", "Human Normalized Score"]).to_markdown(
+    "static/atari_hns.md"
+)
 plt.clf()
 plt.rcdefaults()
 sorted_tuple = sorted(zip(hms, env_ids))
@@ -85,4 +88,5 @@ bars = ax.barh(y_pos, sorted_hms)
 ax.bar_label(bars, fmt="%.2f")
 ax.set_yticks(y_pos, labels=sorted_env_ids)
 plt.tight_layout()
-plt.savefig("hms_bar.png")
+plt.savefig("static/hms_bar.png")
+plt.savefig("static/hms_bar.svg")

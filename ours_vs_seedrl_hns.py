@@ -1,13 +1,16 @@
+import os
+import urllib.request
 from typing import cast
 
 import expt
+import matplotlib
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 import pandas as pd
 import wandb
 import wandb.apis.reports as wb  # noqa
 from expt import Hypothesis, Run
 from expt.plot import GridPlot
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes, mark_inset
 
 from atari_data import atari_human_normalized_scores
 
@@ -27,6 +30,11 @@ def create_expt_runs(wandb_runs):
         runs += [Run(f"seed{idx}", wandb_run)]
     return runs
 
+
+if not os.path.exists("seed_r2d2_atari_graphs.csv"):
+    urllib.request.urlretrieve(
+        "https://github.com/google-research/seed_rl/blob/master/docs/seed_r2d2_atari_graphs.csv", "seed_r2d2_atari_graphs.csv"
+    )
 
 api = wandb.Api()
 
@@ -59,9 +67,9 @@ for seed in range(1, NUM_SEEDS + 1):
                 expt_run.df["charts/avg_episodic_return"] - atari_human_normalized_scores[env_id][0]
             ) / (atari_human_normalized_scores[env_id][1] - atari_human_normalized_scores[env_id][0])
             expt_run.df["global_step"] *= NUM_FRAME_STACK
-            expt_run.df["_runtime"] = expt_run.df["global_step"] * (
-                0.75 / max(expt_run.df["global_step"])
-            ) * 60  # normalize it 0.75 hours * 60 minutes per hour
+            expt_run.df["_runtime"] = (
+                expt_run.df["global_step"] * (0.75 / max(expt_run.df["global_step"])) * 60
+            )  # normalize it 0.75 hours * 60 minutes per hour
         runss.extend(expt_runs)
 
     ex = expt.Experiment("Comparison of PPO")
@@ -119,9 +127,8 @@ for seed in range(1, NUM_SEEDS + 1):
     )
 
 
-
 df = pd.read_csv("seed_r2d2_atari_graphs.csv")
-df = df.set_index(['game', 'seed'])
+df = df.set_index(["game", "seed"])
 seedrl_median_runss = []
 seedrl_mean_runss = []
 for seed in range(1, NUM_SEEDS + 1):
@@ -135,12 +142,12 @@ for seed in range(1, NUM_SEEDS + 1):
 
         # normalize scores and adjust x-axis from steps to frames
         for expt_run in expt_runs:
-            expt_run.df["return"] = (
-                expt_run.df["return"] - atari_human_normalized_scores[env_id][0]
-            ) / (atari_human_normalized_scores[env_id][1] - atari_human_normalized_scores[env_id][0])
-            expt_run.df["_runtime"] = expt_run.df["training_step"] * (
-                40 / max(expt_run.df["training_step"])
-            ) * 60  # normalize it 40 hours * 60 minutes per hour
+            expt_run.df["return"] = (expt_run.df["return"] - atari_human_normalized_scores[env_id][0]) / (
+                atari_human_normalized_scores[env_id][1] - atari_human_normalized_scores[env_id][0]
+            )
+            expt_run.df["_runtime"] = (
+                expt_run.df["training_step"] * (40 / max(expt_run.df["training_step"])) * 60
+            )  # normalize it 40 hours * 60 minutes per hour
         runss.extend(expt_runs)
 
     ex = expt.Experiment("Comparison of PPO")
@@ -197,9 +204,6 @@ for seed in range(1, NUM_SEEDS + 1):
         ]
     )
 
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-from mpl_toolkits.axes_grid1.inset_locator import mark_inset
-import matplotlib
 
 g = GridPlot(y_names=y_names)
 ex = expt.Experiment("Median human normalized scores")
@@ -233,8 +237,7 @@ axins.set_ylabel("")
 axins.set_xlabel("")
 axins.set_xlim(0, 60, auto=True)
 axins.set_ylim(0, 1.5, auto=True)
-axins.get_xaxis().set_major_formatter(
-    matplotlib.ticker.FuncFormatter(lambda x, p: format(int(x), ',')))
+axins.get_xaxis().set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, p: format(int(x), ",")))
 mark_inset(ax, axins, loc1=2, loc2=4, fc="none", ec="0.5")
 
 
@@ -269,8 +272,7 @@ axins.set_ylabel("")
 axins.set_xlabel("")
 axins.set_xlim(0, 60, auto=True)
 axins.set_ylim(0, 8, auto=True)
-axins.get_xaxis().set_major_formatter(
-    matplotlib.ticker.FuncFormatter(lambda x, p: format(int(x), ',')))
+axins.get_xaxis().set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, p: format(int(x), ",")))
 mark_inset(ax, axins, loc1=2, loc2=4, fc="none", ec="0.5")
 
 
@@ -278,4 +280,5 @@ for ax in g:
     ax.yaxis.set_label_text("")
     ax.xaxis.set_label_text("Minutes")
 
-plt.savefig("hns_ppo_vs_r2d2.png", bbox_inches="tight")
+plt.savefig("static/hns_ppo_vs_r2d2.png", bbox_inches="tight")
+plt.savefig("static/hns_ppo_vs_r2d2.svg", bbox_inches="tight")
