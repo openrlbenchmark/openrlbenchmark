@@ -33,7 +33,7 @@ def create_expt_runs(wandb_runs):
 
 if not os.path.exists("seed_r2d2_atari_graphs.csv"):
     urllib.request.urlretrieve(
-        "https://github.com/google-research/seed_rl/blob/master/docs/seed_r2d2_atari_graphs.csv", "seed_r2d2_atari_graphs.csv"
+        "https://github.com/google-research/seed_rl/raw/66e8890261f09d0355e8bf5f1c5e41968ca9f02b/docs/seed_r2d2_atari_graphs.csv", "seed_r2d2_atari_graphs.csv"
     )
 
 api = wandb.Api()
@@ -279,6 +279,7 @@ mark_inset(ax, axins, loc1=2, loc2=4, fc="none", ec="0.5")
 for ax in g:
     ax.yaxis.set_label_text("")
     ax.xaxis.set_label_text("Minutes")
-
+handles, labels = ax.get_legend_handles_labels()
+plt.figlegend(handles, labels, loc='lower center', bbox_to_anchor=[0.5, -0.15])
 plt.savefig("static/hns_ppo_vs_r2d2.png", bbox_inches="tight")
 plt.savefig("static/hns_ppo_vs_r2d2.svg", bbox_inches="tight")

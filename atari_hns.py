@@ -46,7 +46,7 @@ for env_id in env_ids:
         ) / (atari_human_normalized_scores[env_id][1] - atari_human_normalized_scores[env_id][0])
         expt_run.df["global_step"] *= NUM_FRAME_STACK
 
-    ex.add_runs("CleanRL's PPO", expt_runs)
+    ex.add_runs("CleanRL's PPO + JAX + EnvPool's XLA", expt_runs)
     ex.plot(
         ax=g[env_id],
         title=env_id,
