@@ -8,8 +8,9 @@ authors = ["Costa Huang <costa.huang@outlook.com>"]
 python = "^3.9"
 wandb = "^0.12.21"
 pip = "^22.1.2"
-expt = {git = "https://github.com/wookayin/expt.git", branch = "representative"}
+expt = {git = "https://github.com/wookayin/expt.git"}
 multiprocess = "^0.70.13"
+tueplots = "^0.0.4"
 
 [tool.poetry.dev-dependencies]
 pre-commit = "^2.20.0"
