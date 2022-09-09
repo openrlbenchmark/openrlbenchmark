@@ -10,6 +10,29 @@ from expt.plot import GridPlot
 from atari_data import atari_human_normalized_scores
 
 
+class Runset:
+    def __init__(self, name: str, filters: dict, entity: str, project: str, groupby: str = ""):
+        self.name = name
+        self.filters = filters
+        self.entity = entity
+        self.project = project
+        self.groupby = groupby
+
+    @property
+    def runs(self):
+        return wandb.Api().runs(path=f"{self.entity}/{self.project}", filters=self.filters)
+
+    @property
+    def report_runset(self):
+        return wb.RunSet(
+            name=self.name,
+            entity=self.entity,
+            project=self.project,
+            filters={"$or": [self.filters]},
+            groupby=[self.groupby] if len(self.groupby) > 0 else None,
+        )
+
+
 def create_expt_runs(wandb_runs):
     runs = []
     for idx, run in enumerate(wandb_runs):
@@ -21,6 +44,7 @@ def create_expt_runs(wandb_runs):
 
 
 api = wandb.Api()
+wandb.require("report-editing")
 
 env_ids = atari_human_normalized_scores.keys()
 hms = []
@@ -28,10 +52,49 @@ raw_scores = []
 NUM_FRAME_STACK = 4
 NUM_COLS = 5
 g = GridPlot(y_names=env_ids, layout=(int(np.ceil(len(env_ids) / NUM_COLS)), NUM_COLS))
-# g = GridPlot(y_names=env_ids)
+blocks = []
 
 for env_id in env_ids:
-    api = wandb.Api()
+
+    runset1 = Runset(
+        name="CleanRL ppo_atari_envpool_xla_jax.py",
+        filters={"$and": [{"config.env_id.value": env_id}, {"config.exp_name.value": "ppo_atari_envpool_xla_jax"}]},
+        entity="openrlbenchmark",
+        project="envpool-atari",
+        groupby="exp_name",
+    )
+    blocks += [
+        wb.PanelGrid(
+            runsets=[
+                runset1.report_runset,
+            ],
+            panels=[
+                wb.LinePlot(
+                    x="global_step",
+                    y=["charts/avg_episodic_return"],
+                    title=env_id,
+                    title_x="Steps",
+                    title_y="Episodic Return",
+                    max_runs_to_show=100,
+                    smoothing_factor=0.8,
+                    groupby_rangefunc="stderr",
+                    legend_template="${runsetName}",
+                ),
+                wb.LinePlot(
+                    x="_runtime",
+                    y=["charts/avg_episodic_return"],
+                    title=env_id,
+                    title_y="Episodic Return",
+                    max_runs_to_show=100,
+                    smoothing_factor=0.8,
+                    groupby_rangefunc="stderr",
+                    legend_template="${runsetName}",
+                ),
+            ],
+        ),
+    ]
+
+
     wandb_runs = api.runs(
         path="openrlbenchmark/envpool-atari",
         filters={"$and": [{"config.env_id.value": env_id}, {"config.exp_name.value": "ppo_atari_envpool_xla_jax"}]},
@@ -90,3 +153,20 @@ ax.set_yticks(y_pos, labels=sorted_env_ids)
 plt.tight_layout()
 plt.savefig("static/hms_bar.png")
 plt.savefig("static/hms_bar.svg")
+
+report = wb.Report(
+    project="openrlbenchmark",
+    entity="openrlbenchmark",
+    title="Atari: CleanRL PPO + JAX + EnvPool's XLA (part 1)",
+    blocks=blocks[:29],
+)
+report.save()
+print(f"view the generated report at {report.url}")
+report = wb.Report(
+    project="openrlbenchmark",
+    entity="openrlbenchmark",
+    title="Atari: CleanRL PPO + JAX + EnvPool's XLA (part 2)",
+    blocks=blocks[29:],
+)
+report.save()
+print(f"view the generated report at {report.url}")
