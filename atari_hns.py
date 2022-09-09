@@ -94,7 +94,6 @@ for env_id in env_ids:
         ),
     ]
 
-
     wandb_runs = api.runs(
         path="openrlbenchmark/envpool-atari",
         filters={"$and": [{"config.env_id.value": env_id}, {"config.exp_name.value": "ppo_atari_envpool_xla_jax"}]},
