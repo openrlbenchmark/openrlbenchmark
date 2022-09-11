@@ -12,7 +12,7 @@ from openrlbenchmark.atari_data import atari_human_normalized_scores
 from openrlbenchmark import Runset, create_expt_runs
 wandb.require("report-editing")
 
-def plot_atari(runsets: List[Runset], wandb_entity= None, wandb_project=None):
+def plot_atari(runsets: List[Runset], return_wandb_report_blocks=False):
     env_ids = atari_human_normalized_scores.keys()
     hms = []
     raw_scores = []
@@ -21,33 +21,40 @@ def plot_atari(runsets: List[Runset], wandb_entity= None, wandb_project=None):
     g = GridPlot(y_names=env_ids, layout=(int(np.ceil(len(env_ids) / NUM_COLS)), NUM_COLS))
     blocks = []
 
+
+
+
     for env_id in env_ids:
-        if wandb_project:
+        if return_wandb_report_blocks:
+            l1 = wb.LinePlot(
+                x="global_step",
+                y=[runset.y_axis for runset in runsets],
+                title=env_id,
+                title_x="Steps",
+                title_y="Episodic Return",
+                max_runs_to_show=100,
+                smoothing_factor=0.8,
+                groupby_rangefunc="stderr",
+                legend_template="${runsetName}",
+            )
+            l2 = wb.LinePlot(
+                x="_runtime",
+                y=[runset.y_axis for runset in runsets],
+                title=env_id,
+                title_y="Episodic Return",
+                max_runs_to_show=100,
+                smoothing_factor=0.8,
+                groupby_rangefunc="stderr",
+                legend_template="${runsetName}",
+            )
+            l1.config["aggregateMetrics"] = True
+            l2.config["aggregateMetrics"] = True
             blocks += [
                 wb.PanelGrid(
                     runsets=[runset.report_runset(env_id=env_id) for runset in runsets],
                     panels=[
-                        wb.LinePlot(
-                            x="global_step",
-                            y=[runset.y_axis for runset in runsets],
-                            title=env_id,
-                            title_x="Steps",
-                            title_y="Episodic Return",
-                            max_runs_to_show=100,
-                            smoothing_factor=0.8,
-                            groupby_rangefunc="stderr",
-                            legend_template="${runsetName}",
-                        ),
-                        wb.LinePlot(
-                            x="_runtime",
-                            y=[runset.y_axis for runset in runsets],
-                            title=env_id,
-                            title_y="Episodic Return",
-                            max_runs_to_show=100,
-                            smoothing_factor=0.8,
-                            groupby_rangefunc="stderr",
-                            legend_template="${runsetName}",
-                        ),
+                        l1,
+                        l2,
                     ],
                 ),
             ]
@@ -116,7 +123,8 @@ def plot_atari(runsets: List[Runset], wandb_entity= None, wandb_project=None):
         plt.savefig(f"static/runset_{i}_hms_bar.png")
         plt.savefig(f"static/runset_{i}_hms_bar.svg")
 
-    if wandb_project:
+    return blocks
+    if return_wandb_report_blocks:
         report = wb.Report(
             project="openrlbenchmark",
             entity="openrlbenchmark",

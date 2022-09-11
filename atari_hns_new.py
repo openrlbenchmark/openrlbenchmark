@@ -1,7 +1,7 @@
 from openrlbenchmark import plot_atari, Runset
-# from openrlbenchmark.atari_data import atari_human_normalized_scores
+import wandb.apis.reports as wb  # noqa
 
-plot_atari.plot_atari([
+blocks = plot_atari.plot_atari([
     Runset(
         name="CleanRL ppo_atari_envpool_xla_jax.py",
         filters=[{"config.exp_name.value": "ppo_atari_envpool_xla_jax"}],
@@ -23,4 +23,20 @@ plot_atari.plot_atari([
         y_axis="charts/episodic_return",
         env_id_fn=lambda env_id: env_id.replace("-v5", "NoFrameskip-v4"),
     ),
-])
+], return_wandb_report_blocks=True)
+report = wb.Report(
+    project="cleanrl",
+    # entity="openrlbenchmark",
+    title="Atari: CleanRL PPO + JAX + EnvPool's XLA vs openai/baselins' PPO (part 1)",
+    blocks=blocks[:29],
+)
+report.save()
+print(f"view the generated report at {report.url}")
+report = wb.Report(
+    project="cleanrl",
+    # entity="openrlbenchmark",
+    title="Atari: CleanRL PPO + JAX + EnvPool's XLA vs openai/baselins' PPO (part 2)",
+    blocks=blocks[29:],
+)
+report.save()
+print(f"view the generated report at {report.url}")
