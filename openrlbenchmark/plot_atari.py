@@ -21,9 +21,6 @@ def plot_atari(runsets: List[Runset], return_wandb_report_blocks=False):
     g = GridPlot(y_names=env_ids, layout=(int(np.ceil(len(env_ids) / NUM_COLS)), NUM_COLS))
     blocks = []
 
-
-
-
     for env_id in env_ids:
         if return_wandb_report_blocks:
             l1 = wb.LinePlot(
@@ -72,6 +69,7 @@ def plot_atari(runsets: List[Runset], return_wandb_report_blocks=False):
                 ) / (atari_human_normalized_scores[env_id][1] - atari_human_normalized_scores[env_id][0])
                 expt_run.df["global_step"] *= NUM_FRAME_STACK
                 expt_run.df[dummy_y_axis] = expt_run.df[runset.y_axis]
+                expt_run.df["_runtime"] /= 60 # convert to minutes
 
             if len(wandb_runs) > 0:
                 ex.add_runs(runset.name, expt_runs)
@@ -96,6 +94,9 @@ def plot_atari(runsets: List[Runset], return_wandb_report_blocks=False):
     for ax in g.axes_active:
         ax.xaxis.set_label_text("")
         ax.yaxis.set_label_text("")
+
+    for ax in g:
+        ax.xaxis.set_label_text("Minutes")
 
     plt.tight_layout(w_pad=1)
     plt.savefig("static/hms_each_game.png")
@@ -124,20 +125,3 @@ def plot_atari(runsets: List[Runset], return_wandb_report_blocks=False):
         plt.savefig(f"static/runset_{i}_hms_bar.svg")
 
     return blocks
-    if return_wandb_report_blocks:
-        report = wb.Report(
-            project="openrlbenchmark",
-            entity="openrlbenchmark",
-            title="Atari: CleanRL PPO + JAX + EnvPool's XLA (part 1)",
-            blocks=blocks[:29],
-        )
-        report.save()
-        print(f"view the generated report at {report.url}")
-        report = wb.Report(
-            project="openrlbenchmark",
-            entity="openrlbenchmark",
-            title="Atari: CleanRL PPO + JAX + EnvPool's XLA (part 2)",
-            blocks=blocks[29:],
-        )
-        report.save()
-        print(f"view the generated report at {report.url}")
