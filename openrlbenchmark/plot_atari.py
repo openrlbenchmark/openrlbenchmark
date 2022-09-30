@@ -1,16 +1,18 @@
 from typing import List
+
 import expt
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import wandb
 import wandb.apis.reports as wb  # noqa
-from expt import Run
 from expt.plot import GridPlot
 
-from openrlbenchmark.atari_data import atari_human_normalized_scores
 from openrlbenchmark import Runset, create_expt_runs
+from openrlbenchmark.atari_data import atari_human_normalized_scores
+
 wandb.require("report-editing")
+
 
 def plot_atari(runsets: List[Runset], output_folder: str = "static", return_wandb_report_blocks: bool = False):
     env_ids = atari_human_normalized_scores.keys()
@@ -69,7 +71,7 @@ def plot_atari(runsets: List[Runset], output_folder: str = "static", return_wand
                 ) / (atari_human_normalized_scores[env_id][1] - atari_human_normalized_scores[env_id][0])
                 expt_run.df["global_step"] *= NUM_FRAME_STACK
                 expt_run.df[dummy_y_axis] = expt_run.df[runset.y_axis]
-                expt_run.df["_runtime"] /= 60 # convert to minutes
+                expt_run.df["_runtime"] /= 60  # convert to minutes
 
             if len(wandb_runs) > 0:
                 ex.add_runs(runset.name, expt_runs)
@@ -102,16 +104,22 @@ def plot_atari(runsets: List[Runset], output_folder: str = "static", return_wand
     plt.savefig(f"{output_folder}/hms_each_game.png")
     plt.savefig(f"{output_folder}/hms_each_game.svg")
 
-    pd.DataFrame(sorted(zip(env_ids, *[np.array(raw_scores)[:,i] for i in range(len(raw_scores[0]))])), columns=["Environment"] + [runset.name for runset in runsets]).set_index("Environment").to_markdown(
+    pd.DataFrame(
+        sorted(zip(env_ids, *[np.array(raw_scores)[:, i] for i in range(len(raw_scores[0]))])),
+        columns=["Environment"] + [runset.name for runset in runsets],
+    ).set_index("Environment").to_markdown(
         f"{output_folder}/atari_returns.md",
     )
-    pd.DataFrame(sorted(zip(env_ids, *[np.array(hms)[:,i] for i in range(len(hms[0]))])), columns=["Environment"] + [runset.name for runset in runsets]).set_index("Environment").to_markdown(
+    pd.DataFrame(
+        sorted(zip(env_ids, *[np.array(hms)[:, i] for i in range(len(hms[0]))])),
+        columns=["Environment"] + [runset.name for runset in runsets],
+    ).set_index("Environment").to_markdown(
         f"{output_folder}/atari_hns.md",
     )
     plt.clf()
     plt.rcdefaults()
     for i in range(len(hms[0])):
-        sorted_tuple = sorted(zip(np.array(hms)[:,i], env_ids))
+        sorted_tuple = sorted(zip(np.array(hms)[:, i], env_ids))
         sorted_hms = [x for x, _ in sorted_tuple]
         sorted_env_ids = [x for _, x in sorted_tuple]
         fig, ax = plt.subplots(figsize=(7, 10))

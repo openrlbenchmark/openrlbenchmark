@@ -1,5 +1,3 @@
-import expt
-import matplotlib.pyplot as plt
 import wandb
 import wandb.apis.reports as wb  # noqa
 from expt import Hypothesis, Run
@@ -71,9 +69,7 @@ if __name__ == "__main__":
         )
         runset2 = Runset(
             name="jaxrl's SAC",
-            filters={
-                "$and": [{"config.env_name.value": env_id.replace("v4", "v2")}, {"config.algo.value": "sac"}]
-            },
+            filters={"$and": [{"config.env_name.value": env_id.replace("v4", "v2")}, {"config.algo.value": "sac"}]},
             entity="openrlbenchmark",
             project="jaxrl",
             groupby="env_name",

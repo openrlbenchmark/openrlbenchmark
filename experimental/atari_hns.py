@@ -1,4 +1,3 @@
-from random import sample
 import expt
 import matplotlib.pyplot as plt
 import numpy as np
@@ -8,8 +7,8 @@ import wandb.apis.reports as wb  # noqa
 from expt import Run
 from expt.plot import GridPlot
 
-from openrlbenchmark.atari_data import atari_human_normalized_scores
 from openrlbenchmark import Runset
+from openrlbenchmark.atari_data import atari_human_normalized_scores
 
 
 def create_expt_runs(wandb_runs):

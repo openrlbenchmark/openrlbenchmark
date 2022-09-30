@@ -1,7 +1,9 @@
 from typing import Callable, Dict, List
+
 import wandb
-from expt import Run
 import wandb.apis.reports as wb  # noqa
+from expt import Run
+
 
 class Runset:
     def __init__(
@@ -29,7 +31,7 @@ class Runset:
     def runs(self, env_id: str):
         return wandb.Api().runs(
             path=f"{self.entity}/{self.project}",
-            filters={"$and": [{self.key_for_env_id: self.env_id_fn(env_id)}] + self.filters}
+            filters={"$and": [{self.key_for_env_id: self.env_id_fn(env_id)}] + self.filters},
         )
 
     def report_runset(self, env_id: str):

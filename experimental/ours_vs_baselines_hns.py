@@ -3,14 +3,12 @@ import urllib.request
 from typing import cast
 
 import expt
-import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
 import wandb
 import wandb.apis.reports as wb  # noqa
 from expt import Hypothesis, Run
 from expt.plot import GridPlot
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes, mark_inset
 
 from openrlbenchmark.atari_data import atari_human_normalized_scores
 
@@ -56,7 +54,7 @@ for seed in range(1, NUM_SEEDS + 1):
                 "$and": [
                     {"config.env_id.value": env_id},
                     {"config.exp_name.value": "ppo_atari_envpool_xla_vclip_jax"},
-                    {"config.seed.value": seed+1},
+                    {"config.seed.value": seed + 1},
                 ]
             },
         )

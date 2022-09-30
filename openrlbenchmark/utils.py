@@ -1,5 +1,6 @@
 from expt import Run
 
+
 def create_expt_runs(wandb_runs):
     runs = []
     for idx, run in enumerate(wandb_runs):

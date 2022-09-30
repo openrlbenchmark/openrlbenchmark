@@ -1,5 +1,6 @@
-from openrlbenchmark import plot_atari, Runset
 import wandb.apis.reports as wb  # noqa
+
+from openrlbenchmark import Runset, plot_atari
 
 blocks = plot_atari.plot_atari(
     [
