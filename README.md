@@ -53,7 +53,7 @@ To give it a run, please execute the following commands:
 
 ```bash
 poetry install
-poetry run pythonbaselines_atari_hns.py
+poetry run python baselines_atari_hns.py
 ```
 
 which will generate images in the `static` folder, such as 
