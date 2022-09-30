@@ -18,11 +18,7 @@ https://user-images.githubusercontent.com/5555347/167722421-7f6a138e-6374-491a-8
 ## Pre-alpha API
 
 
-[`baselines_atari_hns.py`](https://github.com/openrlbenchmark/openrlbenchmark/blob/main/baselines_atari_hns.py) contains a pre-alpha API that demonstrates the matplotlib front end of the project.
-
-> Note this API is not stable and may change in the future. Feel free to leave comments, suggestions, and make PRs.
-
-[`baselines_atari_hns.py`](https://github.com/openrlbenchmark/openrlbenchmark/blob/main/baselines_atari_hns.py) has the following contents:
+[`baselines_atari_hns.py`](https://github.com/openrlbenchmark/openrlbenchmark/blob/main/baselines_atari_hns.py) contains a pre-alpha API that demonstrates the matplotlib front end of the project, which has the following contents:
 
 ```python
 import wandb.apis.reports as wb
@@ -60,6 +56,8 @@ report.save()
 print(f"view the generated report at {report.url}")
 ```
 
+
+> Note this API is not stable and may change in the future. Feel free to leave comments, suggestions, and make PRs.
 
 To give it a run, please execute the following commands:
 
