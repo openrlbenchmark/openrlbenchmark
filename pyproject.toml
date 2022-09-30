@@ -6,7 +6,7 @@ authors = ["Costa Huang <costa.huang@outlook.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-wandb = "^0.12.21"
+wandb = "^0.13.3"
 pip = "^22.1.2"
 expt = {git = "https://github.com/wookayin/expt.git"}
 multiprocess = "^0.70.13"

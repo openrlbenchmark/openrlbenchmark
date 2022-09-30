@@ -597,7 +597,7 @@ testing = ["coverage (>=6.2)", "coverage-enable-subprocess (>=1)", "flaky (>=3.7
 
 [[package]]
 name = "wandb"
-version = "0.12.21"
+version = "0.13.3"
 description = "A CLI and library for interacting with the Weights and Biases API."
 category = "main"
 optional = false
@@ -624,15 +624,15 @@ azure = ["azure-storage-blob"]
 gcp = ["google-cloud-storage"]
 grpc = ["grpcio (>=1.27.2)"]
 kubeflow = ["kubernetes", "minio", "google-cloud-storage", "sh"]
-launch = ["nbconvert", "nbformat", "chardet", "iso8601", "typing-extensions", "boto3", "google-cloud-storage", "kubernetes"]
+launch = ["nbconvert", "nbformat", "chardet", "iso8601", "typing-extensions", "boto3", "botocore", "google-cloud-storage", "kubernetes"]
 media = ["numpy", "moviepy", "pillow", "bokeh", "soundfile", "plotly", "rdkit-pypi"]
 models = ["cloudpickle"]
-sweeps = ["sweeps (>=0.1.0)"]
+sweeps = ["sweeps (>=0.2.0)"]
 
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "39e56c17dcccada86d50bb165e47d2f504cfdc13f5ef5ecc0b131ff3340523ac"
+content-hash = "189b83bb9e7ed1601f52de09d21c59c1e41189fd05ac84d81c476afe114b6a4a"
 
 [metadata.files]
 certifi = []

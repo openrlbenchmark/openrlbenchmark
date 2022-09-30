@@ -16,6 +16,7 @@
 # Costa: Note the data is not the same as Mnih et al., 2015
 # Note the random agent score on Video Pinball is sometimes greater than the
 # human score under other evaluation methods.
+
 atari_human_normalized_scores = {
     "Alien-v5": (227.8, 7127.7),
     "Amidar-v5": (5.8, 1719.5),
