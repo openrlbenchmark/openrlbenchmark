@@ -53,10 +53,15 @@ To give it a run, please execute the following commands:
 
 ```bash
 poetry install
-poetry run baselines_atari_hns.py
+poetry run pythonbaselines_atari_hns.py
 ```
 
-which will generate images in the `static` folder and the following reports:
+which will generate images in the `static` folder, such as 
+
+![](static/hms_each_game.svg)
+
+
+and the following reports:
 
 * [Atari: openai/baselins' PPO (part 1)](https://wandb.ai/openrlbenchmark/openrlbenchmark/reports/Atari-openai-baselins-PPO-part-1---VmlldzoyNzIyNzg2)
 * [Atari: openai/baselins' PPO (part 2)](https://wandb.ai/openrlbenchmark/openrlbenchmark/reports/Atari-openai-baselins-PPO-part-2---VmlldzoyNzIyNzg3)
