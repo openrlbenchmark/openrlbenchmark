@@ -12,7 +12,7 @@ from openrlbenchmark.atari_data import atari_human_normalized_scores
 from openrlbenchmark import Runset, create_expt_runs
 wandb.require("report-editing")
 
-def plot_atari(runsets: List[Runset], return_wandb_report_blocks=False):
+def plot_atari(runsets: List[Runset], output_folder: str = "static", return_wandb_report_blocks: bool = False):
     env_ids = atari_human_normalized_scores.keys()
     hms = []
     raw_scores = []
@@ -99,14 +99,14 @@ def plot_atari(runsets: List[Runset], return_wandb_report_blocks=False):
         ax.xaxis.set_label_text("Minutes")
 
     plt.tight_layout(w_pad=1)
-    plt.savefig("static/hms_each_game.png")
-    plt.savefig("static/hms_each_game.svg")
+    plt.savefig(f"{output_folder}/hms_each_game.png")
+    plt.savefig(f"{output_folder}/hms_each_game.svg")
 
     pd.DataFrame(sorted(zip(env_ids, *[np.array(raw_scores)[:,i] for i in range(len(raw_scores[0]))])), columns=["Environment"] + [runset.name for runset in runsets]).set_index("Environment").to_markdown(
-        "static/atari_returns.md",
+        f"{output_folder}/atari_returns.md",
     )
     pd.DataFrame(sorted(zip(env_ids, *[np.array(hms)[:,i] for i in range(len(hms[0]))])), columns=["Environment"] + [runset.name for runset in runsets]).set_index("Environment").to_markdown(
-        "static/atari_hns.md",
+        f"{output_folder}/atari_hns.md",
     )
     plt.clf()
     plt.rcdefaults()
@@ -121,7 +121,7 @@ def plot_atari(runsets: List[Runset], return_wandb_report_blocks=False):
         ax.set_yticks(y_pos, labels=sorted_env_ids)
         plt.title(f"{runsets[i].name} Human Normalized Scores")
         plt.tight_layout()
-        plt.savefig(f"static/runset_{i}_hms_bar.png")
-        plt.savefig(f"static/runset_{i}_hms_bar.svg")
+        plt.savefig(f"{output_folder}/runset_{i}_hms_bar.png")
+        plt.savefig(f"{output_folder}/runset_{i}_hms_bar.svg")
 
     return blocks

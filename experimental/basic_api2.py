@@ -1,4 +1,3 @@
-from itertools import groupby
 import expt
 import matplotlib.pyplot as plt
 import wandb
@@ -66,7 +65,10 @@ if __name__ == "__main__":
         runset2 = Runset(
             name="CleanRL's ppo_atari_envpool.py",
             filters={
-                "$and": [{"config.env_id.value": env_id.replace("NoFrameskip-v4", "-v5")}, {"config.exp_name.value": "ppo_atari_envpool"}]
+                "$and": [
+                    {"config.env_id.value": env_id.replace("NoFrameskip-v4", "-v5")},
+                    {"config.exp_name.value": "ppo_atari_envpool"},
+                ]
             },
             entity="openrlbenchmark",
             project="cleanrl",

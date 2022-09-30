@@ -1,59 +1,59 @@
-| Environment         |   CleanRL ppo_atari_envpool_xla_jax.py |   openai/baselines' PPO |
-|:--------------------|---------------------------------------:|------------------------:|
-| Alien-v5            |                         1744.76        |          1549.42        |
-| Amidar-v5           |                          617.137       |           546.406       |
-| Assault-v5          |                         5734.04        |          4050.78        |
-| Asterix-v5          |                         3341.9         |          3459.9         |
-| Asteroids-v5        |                         1669.3         |          1467.19        |
-| Atlantis-v5         |                            3.92929e+06 |             3.09748e+06 |
-| BankHeist-v5        |                         1192.68        |          1195.34        |
-| BattleZone-v5       |                        24937.9         |         20314.3         |
-| BeamRider-v5        |                         2447.84        |          2740.02        |
-| Berzerk-v5          |                         1082.72        |           887.019       |
-| Bowling-v5          |                           44.0681      |            62.2634      |
-| Boxing-v5           |                           92.0554      |            93.3596      |
-| Breakout-v5         |                          431.795       |           388.891       |
-| Centipede-v5        |                         2910.69        |          3688.16        |
-| ChopperCommand-v5   |                         5555.84        |           933.333       |
-| CrazyClimber-v5     |                       116114           |        111675           |
-| Defender-v5         |                        51439.2         |         50045.1         |
-| DemonAttack-v5      |                        22824.8         |         12173.9         |
-| DoubleDunk-v5       |                           -8.56781     |            -9           |
-| Enduro-v5           |                         1262.79        |          1061.12        |
-| FishingDerby-v5     |                           21.6222      |            23.8876      |
-| Freeway-v5          |                           33.1075      |            32.9167      |
-| Frostbite-v5        |                          904.346       |           924.5         |
-| Gopher-v5           |                        11369.6         |          2899.57        |
-| Gravitar-v5         |                         1141.95        |           870.755       |
-| Hero-v5             |                        24628.3         |         25984.5         |
-| IceHockey-v5        |                           -4.91917     |            -4.71505     |
-| Jamesbond-v5        |                          504.105       |           516.489       |
-| Kangaroo-v5         |                         7281.59        |          3791.5         |
-| Krull-v5            |                         9384.7         |          8672.95        |
-| KungFuMaster-v5     |                        26594.5         |         29116.1         |
-| MontezumaRevenge-v5 |                            0.240385    |             0           |
-| MsPacman-v5         |                         2461.62        |          2113.44        |
-| NameThisGame-v5     |                         5442.67        |          5713.89        |
-| Phoenix-v5          |                        14008.5         |          8693.21        |
-| Pitfall-v5          |                           -0.0801282   |            -1.47059     |
-| Pong-v5             |                           20.309       |            20.4043      |
-| PrivateEye-v5       |                           99.5283      |            21.2121      |
-| Qbert-v5            |                        16430.7         |         14283.4         |
-| Riverraid-v5        |                         8297.21        |          9267.48        |
-| RoadRunner-v5       |                        19342.2         |         40325           |
-| Robotank-v5         |                           15.45        |            16           |
-| Seaquest-v5         |                         1230.02        |          1754.44        |
-| Skiing-v5           |                       -14684.3         |        -13901.7         |
-| Solaris-v5          |                         2353.62        |          2088.12        |
-| SpaceInvaders-v5    |                         1162.16        |          1017.65        |
-| StarGunner-v5       |                        53535.9         |         40906           |
-| Surround-v5         |                           -2.94558     |            -6.08095     |
-| Tennis-v5           |                          -15.0446      |            -9.71429     |
-| TimePilot-v5        |                         6224.87        |          5775.53        |
-| Tutankham-v5        |                          238.419       |           197.929       |
-| UpNDown-v5          |                       430177           |        129459           |
-| Venture-v5          |                            0           |           115.278       |
-| VideoPinball-v5     |                        42975.3         |         32777.4         |
-| WizardOfWor-v5      |                         6247.83        |          5024.03        |
-| YarsRevenge-v5      |                        56696.7         |          8238.44        |
-| Zaxxon-v5           |                         6015.8         |          6379.79        |
+| Environment         |   openai/baselines' PPO |
+|:--------------------|------------------------:|
+| Alien-v5            |          1703.79        |
+| Amidar-v5           |           531.021       |
+| Assault-v5          |          3736.11        |
+| Asterix-v5          |          3607.84        |
+| Asteroids-v5        |          1488.6         |
+| Atlantis-v5         |             2.97388e+06 |
+| BankHeist-v5        |          1200.42        |
+| BattleZone-v5       |         18588           |
+| BeamRider-v5        |          2780           |
+| Berzerk-v5          |           917.917       |
+| Bowling-v5          |            58.1476      |
+| Boxing-v5           |            92.8376      |
+| Breakout-v5         |           389.691       |
+| Centipede-v5        |          3888.65        |
+| ChopperCommand-v5   |           900           |
+| CrazyClimber-v5     |        119207           |
+| Defender-v5         |         42873.4         |
+| DemonAttack-v5      |         13558.7         |
+| DoubleDunk-v5       |            -6           |
+| Enduro-v5           |          1009.83        |
+| FishingDerby-v5     |            23.7971      |
+| Freeway-v5          |            32.7917      |
+| Frostbite-v5        |           300.49        |
+| Gopher-v5           |          2414.06        |
+| Gravitar-v5         |           910.784       |
+| Hero-v5             |         21976.2         |
+| IceHockey-v5        |            -4.25        |
+| Jamesbond-v5        |           535.37        |
+| Kangaroo-v5         |          3486.33        |
+| Krull-v5            |          8897.8         |
+| KungFuMaster-v5     |         29540.6         |
+| MontezumaRevenge-v5 |             0.980392    |
+| MsPacman-v5         |          1992.34        |
+| NameThisGame-v5     |          6366.48        |
+| Phoenix-v5          |          8305.62        |
+| Pitfall-v5          |            -4.11111     |
+| Pong-v5             |            20.5699      |
+| PrivateEye-v5       |            50           |
+| Qbert-v5            |         14962.6         |
+| Riverraid-v5        |          9021.42        |
+| RoadRunner-v5       |         34389.9         |
+| Robotank-v5         |            16.3167      |
+| Seaquest-v5         |          1272.63        |
+| Skiing-v5           |        -13141.6         |
+| Solaris-v5          |          2496.32        |
+| SpaceInvaders-v5    |          1006.63        |
+| StarGunner-v5       |         42957           |
+| Surround-v5         |            -5.03535     |
+| Tennis-v5           |           -11.6         |
+| TimePilot-v5        |          5765.56        |
+| Tutankham-v5        |           193.75        |
+| UpNDown-v5          |        144824           |
+| Venture-v5          |           140.541       |
+| VideoPinball-v5     |         52613.6         |
+| WizardOfWor-v5      |          5982.94        |
+| YarsRevenge-v5      |          7428.97        |
+| Zaxxon-v5           |          4901.63        |

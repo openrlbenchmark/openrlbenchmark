@@ -4,6 +4,10 @@ import wandb
 import wandb.apis.reports as wb  # noqa
 from expt import Hypothesis, Run
 from expt.plot import GridPlot
+from tueplots import bundles, figsizes
+
+plt.rcParams.update(bundles.neurips2022())
+plt.rcParams.update(figsizes.neurips2022(nrows=4, ncols=3, height_to_width_ratio=0.7))
 
 
 def create_hypothesis(name, wandb_runs):
@@ -30,7 +34,7 @@ env_ids = [
 ]
 # env_ids = ["Ant-v4", "HalfCheetah-v4"]
 
-g = GridPlot(y_names=env_ids)
+g = GridPlot(y_names=env_ids, layout=(4, 3))
 
 for env_id in env_ids:
     api = wandb.Api()
@@ -59,11 +63,13 @@ for env_id in env_ids:
         rolling=50,
         n_samples=400,
         legend=False,
+        tight_layout=False,
+        suptitle=False,
     )
 
-g.add_legend(ax=g.axes[-1, -1], loc="upper left", bbox_to_anchor=(0, 1))
+# g.add_legend(ax=g.axes[-1, -1], loc="upper left", bbox_to_anchor=(0, 1))
 
-# Some post-processing with matplotlib API so that the plot looks nicer
+# # Some post-processing with matplotlib API so that the plot looks nicer
 for ax in g.axes_active:
     ax.xaxis.set_label_text("")
     ax.yaxis.set_label_text("")

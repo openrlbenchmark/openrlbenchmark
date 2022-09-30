@@ -1,3 +1,4 @@
+from random import sample
 import expt
 import matplotlib.pyplot as plt
 import numpy as np
@@ -7,36 +8,14 @@ import wandb.apis.reports as wb  # noqa
 from expt import Run
 from expt.plot import GridPlot
 
-from atari_data import atari_human_normalized_scores
-
-
-class Runset:
-    def __init__(self, name: str, filters: dict, entity: str, project: str, groupby: str = ""):
-        self.name = name
-        self.filters = filters
-        self.entity = entity
-        self.project = project
-        self.groupby = groupby
-
-    @property
-    def runs(self):
-        return wandb.Api().runs(path=f"{self.entity}/{self.project}", filters=self.filters)
-
-    @property
-    def report_runset(self):
-        return wb.RunSet(
-            name=self.name,
-            entity=self.entity,
-            project=self.project,
-            filters={"$or": [self.filters]},
-            groupby=[self.groupby] if len(self.groupby) > 0 else None,
-        )
+from openrlbenchmark.atari_data import atari_human_normalized_scores
+from openrlbenchmark import Runset
 
 
 def create_expt_runs(wandb_runs):
     runs = []
     for idx, run in enumerate(wandb_runs):
-        wandb_run = run.history()
+        wandb_run = run.history(samples=1000)
         if "videos" in wandb_run:
             wandb_run = wandb_run.drop(columns=["videos"], axis=1)
         runs += [Run(f"seed{idx}", wandb_run)]
@@ -94,10 +73,7 @@ for env_id in env_ids:
         ),
     ]
 
-    wandb_runs = api.runs(
-        path="openrlbenchmark/envpool-atari",
-        filters={"$and": [{"config.env_id.value": env_id}, {"config.exp_name.value": "ppo_atari_envpool_xla_jax"}]},
-    )
+    wandb_runs = runset1.runs
     ex = expt.Experiment("Comparison of PPO")
     expt_runs = create_expt_runs(wandb_runs)
 

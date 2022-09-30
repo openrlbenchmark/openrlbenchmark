@@ -45,7 +45,7 @@ if __name__ == "__main__":
     wandb.require("report-editing")
 
     env_ids = [
-        "Ant-v4",
+        # "Ant-v4",
         "HalfCheetah-v4",
         "Hopper-v4",
         "Humanoid-v4",
@@ -70,14 +70,38 @@ if __name__ == "__main__":
             groupby="exp_name",
         )
         runset2 = Runset(
-            name="openai/baselines PPO",
+            name="jaxrl's SAC",
             filters={
-                "$and": [{"config.env.value": env_id.replace("v4", "v2")}, {"config.exp_name.value": "baselines-ppo2-mlp"}]
+                "$and": [{"config.env_name.value": env_id.replace("v4", "v2")}, {"config.algo.value": "sac"}]
             },
             entity="openrlbenchmark",
-            project="baselines",
-            groupby="env",
+            project="jaxrl",
+            groupby="env_name",
         )
+
+        l1 = wb.LinePlot(
+            x="global_step",
+            y=["charts/episodic_return", "training/return"],
+            title=env_id,
+            title_x="Steps",
+            title_y="Episodic Return",
+            max_runs_to_show=100,
+            smoothing_factor=0.8,
+            groupby_rangefunc="stderr",
+            legend_template="${runsetName}",
+        )
+        l1.config["aggregateMetrics"] = True
+        l2 = wb.LinePlot(
+            x="_runtime",
+            y=["charts/episodic_return", "training/return"],
+            title=env_id,
+            title_y="Episodic Return",
+            max_runs_to_show=100,
+            smoothing_factor=0.8,
+            groupby_rangefunc="stderr",
+            legend_template="${runsetName}",
+        )
+        l2.config["aggregateMetrics"] = True
 
         blocks += [
             wb.PanelGrid(
@@ -86,27 +110,8 @@ if __name__ == "__main__":
                     runset2.report_runset,
                 ],
                 panels=[
-                    wb.LinePlot(
-                        x="global_step",
-                        y=["charts/episodic_return"],
-                        title=env_id,
-                        title_x="Steps",
-                        title_y="Episodic Return",
-                        max_runs_to_show=100,
-                        smoothing_factor=0.8,
-                        groupby_rangefunc="stderr",
-                        legend_template="${runsetName}",
-                    ),
-                    wb.LinePlot(
-                        x="_runtime",
-                        y=["charts/episodic_return"],
-                        title=env_id,
-                        title_y="Episodic Return",
-                        max_runs_to_show=100,
-                        smoothing_factor=0.8,
-                        groupby_rangefunc="stderr",
-                        legend_template="${runsetName}",
-                    ),
+                    l1,
+                    l2,
                     # wb.MediaBrowser(
                     #     num_columns=2,
                     #     media_keys="videos",
@@ -114,33 +119,33 @@ if __name__ == "__main__":
                 ],
             ),
         ]
-        ex = expt.Experiment("Comparison of PPO")
-        h = create_hypothesis(runset1.name, runset1.runs)
-        ex.add_hypothesis(h)
-        h2 = create_hypothesis(runset2.name, runset2.runs)
-        ex.add_hypothesis(h2)
-        ex.plot(
-            ax=g[env_id],
-            title=env_id,
-            x="_runtime",
-            y="charts/episodic_return",
-            err_style="band",
-            std_alpha=0.1,
-            rolling=50,
-            n_samples=400,
-            legend=False,
-        )
+        # ex = expt.Experiment("Comparison of PPO")
+        # h = create_hypothesis(runset1.name, runset1.runs)
+        # ex.add_hypothesis(h)
+        # h2 = create_hypothesis(runset2.name, runset2.runs)
+        # ex.add_hypothesis(h2)
+        # ex.plot(
+        #     ax=g[env_id],
+        #     title=env_id,
+        #     x="_runtime",
+        #     y="charts/episodic_return",
+        #     err_style="band",
+        #     std_alpha=0.1,
+        #     rolling=50,
+        #     n_samples=400,
+        #     legend=False,
+        # )
 
-    g.add_legend(ax=g.axes[-1, -1], loc="upper left", bbox_to_anchor=(0, 1))
-    # Some post-processing with matplotlib API so that the plot looks nicer
-    for ax in g.axes_active:
-        ax.xaxis.set_label_text("")
-        ax.yaxis.set_label_text("")
-        # ax.set_xlim(0, 200e6)
-    # g.fig.tight_layout(h_pad=1.3, w_pad=1.0)
-    print("saving figure to test.png")
-    plt.savefig("test.png")
-    print("saving report")
+    # g.add_legend(ax=g.axes[-1, -1], loc="upper left", bbox_to_anchor=(0, 1))
+    # # Some post-processing with matplotlib API so that the plot looks nicer
+    # for ax in g.axes_active:
+    #     ax.xaxis.set_label_text("")
+    #     ax.yaxis.set_label_text("")
+    #     # ax.set_xlim(0, 200e6)
+    # # g.fig.tight_layout(h_pad=1.3, w_pad=1.0)
+    # print("saving figure to test.png")
+    # plt.savefig("test.png")
+    # print("saving report")
     report = wb.Report(
         project="cleanrl",
         title="MuJoCo CleanRL PPO vs OpenAI/Baselines PPO",
