@@ -4,16 +4,6 @@ Open RL Benchmark is a comprehensive collection of tracked experiments for RL. I
 
 Check out this [google doc](https://docs.google.com/document/d/1cDI_AMr2QVmkC53dCHFMYwGJtLC8V4p6KdL2wnYPaiI/edit?usp=sharing) for more info and comment.
 
-## Get started
-
-Check out the [Open RL Benchmark reports](https://wandb.ai/openrlbenchmark/openrlbenchmark/reportlist): featuring W&B reports with tracked Atari, MuJoCo experiments from SB3, CleanRL, and others.
-
-![DEMO](https://user-images.githubusercontent.com/5555347/167724483-3c038a3b-3dce-4aa9-8cf0-6cedae52d321.gif)
-
-You can "fork" these reports and use them in your own workspace. See the following video for a demo, where I used a _newly-created_ W&B account to clone a report from [Open RL Benchmark reports](https://wandb.ai/openrlbenchmark/openrlbenchmark/reportlist) and compared my metrics with the report's metrics.
-
-
-https://user-images.githubusercontent.com/5555347/167722421-7f6a138e-6374-491a-8d6e-3b0604e73884.mp4
 
 ## Pre-alpha API
 
@@ -71,6 +61,17 @@ which will generate images in the `static` folder and the following reports:
 * [Atari: openai/baselins' PPO (part 1)](https://wandb.ai/openrlbenchmark/openrlbenchmark/reports/Atari-openai-baselins-PPO-part-1---VmlldzoyNzIyNzg2)
 * [Atari: openai/baselins' PPO (part 2)](https://wandb.ai/openrlbenchmark/openrlbenchmark/reports/Atari-openai-baselins-PPO-part-2---VmlldzoyNzIyNzg3)
 
+
+## Get started
+
+Check out the [Open RL Benchmark reports](https://wandb.ai/openrlbenchmark/openrlbenchmark/reportlist): featuring W&B reports with tracked Atari, MuJoCo experiments from SB3, CleanRL, and others.
+
+![DEMO](https://user-images.githubusercontent.com/5555347/167724483-3c038a3b-3dce-4aa9-8cf0-6cedae52d321.gif)
+
+You can "fork" these reports and use them in your own workspace. See the following video for a demo, where I used a _newly-created_ W&B account to clone a report from [Open RL Benchmark reports](https://wandb.ai/openrlbenchmark/openrlbenchmark/reportlist) and compared my metrics with the report's metrics.
+
+
+https://user-images.githubusercontent.com/5555347/167722421-7f6a138e-6374-491a-8d6e-3b0604e73884.mp4
 
 ## What's going on right now?
 
