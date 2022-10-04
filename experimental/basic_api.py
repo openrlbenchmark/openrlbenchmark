@@ -2,17 +2,22 @@ import wandb
 import wandb.apis.reports as wb  # noqa
 from expt import Hypothesis, Run
 from expt.plot import GridPlot
+import matplotlib.pyplot as plt
+import expt
 
 api = wandb.Api()
 
 
-def create_hypothesis(name, wandb_runs):
+def create_hypothesis(name, wandb_runs, source_metric_name=None, target_metric_name=None):
     runs = []
     for idx, run in enumerate(wandb_runs):
         wandb_run = run.history()
         if "videos" in wandb_run:
             wandb_run = wandb_run.drop(columns=["videos"], axis=1)
+        if source_metric_name:
+            wandb_run[target_metric_name] = wandb_run[source_metric_name]
         runs += [Run(f"seed{idx}", wandb_run)]
+        
     return Hypothesis(name, runs)
 
 
@@ -115,33 +120,32 @@ if __name__ == "__main__":
                 ],
             ),
         ]
-        # ex = expt.Experiment("Comparison of PPO")
-        # h = create_hypothesis(runset1.name, runset1.runs)
-        # ex.add_hypothesis(h)
-        # h2 = create_hypothesis(runset2.name, runset2.runs)
-        # ex.add_hypothesis(h2)
-        # ex.plot(
-        #     ax=g[env_id],
-        #     title=env_id,
-        #     x="_runtime",
-        #     y="charts/episodic_return",
-        #     err_style="band",
-        #     std_alpha=0.1,
-        #     rolling=50,
-        #     n_samples=400,
-        #     legend=False,
-        # )
+        ex = expt.Experiment("Comparison of PPO")
+        h = create_hypothesis(runset1.name, runset1.runs)
+        ex.add_hypothesis(h)
+        h2 = create_hypothesis(runset2.name, runset2.runs, "training/return", "charts/episodic_return")
+        ex.add_hypothesis(h2)
+        ex.plot(
+            ax=g[env_id],
+            title=env_id,
+            x="_runtime",
+            y="charts/episodic_return",
+            err_style="band",
+            std_alpha=0.1,
+            rolling=50,
+            n_samples=400,
+            legend=False,
+        )
 
-    # g.add_legend(ax=g.axes[-1, -1], loc="upper left", bbox_to_anchor=(0, 1))
-    # # Some post-processing with matplotlib API so that the plot looks nicer
-    # for ax in g.axes_active:
-    #     ax.xaxis.set_label_text("")
-    #     ax.yaxis.set_label_text("")
-    #     # ax.set_xlim(0, 200e6)
-    # # g.fig.tight_layout(h_pad=1.3, w_pad=1.0)
-    # print("saving figure to test.png")
-    # plt.savefig("test.png")
-    # print("saving report")
+    g.add_legend(ax=g.axes[-1, -1], loc="upper left", bbox_to_anchor=(0, 1))
+    # Some post-processing with matplotlib API so that the plot looks nicer
+    for ax in g.axes_active:
+        ax.xaxis.set_label_text("")
+        ax.yaxis.set_label_text("")
+
+    print("saving figure to static/basic_api.png")
+    plt.savefig("static/basic_api.png")
+    print("saving report")
     report = wb.Report(
         project="cleanrl",
         title="MuJoCo CleanRL PPO vs OpenAI/Baselines PPO",
