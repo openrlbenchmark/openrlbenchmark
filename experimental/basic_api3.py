@@ -115,7 +115,8 @@ def compare(
 
     h, l = ax.get_legend_handles_labels()
     fig.legend(h, l, loc="lower center", ncol=2)
-    fig.subplots_adjust(down=0.8)
+    num_labels = len(l)
+    fig.subplots_adjust(bottom=num_labels * 0.1)
     # remove the empty axes
     for ax in axes.flatten()[len(env_ids) :]:
         ax.remove()
