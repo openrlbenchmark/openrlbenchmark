@@ -4,6 +4,37 @@ Open RL Benchmark is a comprehensive collection of tracked experiments for RL. I
 
 Check out this [google doc](https://docs.google.com/document/d/1cDI_AMr2QVmkC53dCHFMYwGJtLC8V4p6KdL2wnYPaiI/edit?usp=sharing) for more info and comment.
 
+```
+python rlops.py --wandb-project-name sb3 \
+    --wandb-entity openrlbenchmark \
+    --filters '?we=openrrlbenchmark&wpn=sb3&ceik=env&cen=algo&metric=rollout/ep_rew_mean' \
+        'a2c' \
+        'ddpg' \
+        'ppo_lstm' \
+        'sac' \
+        'td3' \
+        'ppo' \
+        'trpo' \
+    --filters '?we=openrlbenchmark&wpn=cleanrl&ceik=env_id&cen=exp_name&metric=charts/episodic_return' \
+        'sac_continuous_action?tag=rlops-pilot' \
+    --env-ids HalfCheetahBulletEnv-v0 \
+    --ncols 1 \
+    --ncols-legend 2 \
+    --output-filename compare.png
+
+python -m openrlbenchmark.rlops --wandb-project-name sb3 \
+    --wandb-entity openrlbenchmark \
+    --filters '?we=openrlbenchmark&wpn=sb3&ceik=env&cen=algo&metric=rollout/ep_rew_mean' \
+        'a2c' \
+        'ddpg' \
+    --filters '?we=openrlbenchmark&wpn=cleanrl&ceik=env_id&cen=exp_name&metric=charts/episodic_return' \
+        'sac_continuous_action?tag=rlops-pilot' \
+    --env-ids HalfCheetahBulletEnv-v0 \
+    --ncols 1 \
+    --ncols-legend 2 \
+    --output-filename compare.png
+```
+
 
 ## Pre-alpha API
 
