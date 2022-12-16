@@ -47,7 +47,9 @@ def parse_args():
     return parser.parse_args()
 
 
-def create_hypothesis(name: str, wandb_runs: List[wandb.apis.public.Run], scan_history: bool = False, metric: str = "") -> Hypothesis:
+def create_hypothesis(
+    name: str, wandb_runs: List[wandb.apis.public.Run], scan_history: bool = False, metric: str = ""
+) -> Hypothesis:
     runs = []
     for idx, run in enumerate(wandb_runs):
         print(run, run.url)
@@ -64,7 +66,17 @@ def create_hypothesis(name: str, wandb_runs: List[wandb.apis.public.Run], scan_h
 
 
 class Runset:
-    def __init__(self, name: str, filters: dict, entity: str, project: str, groupby: str = "", exp_name: str = "exp_name", metric: str = "charts/episodic_return", color: str = "#000000"):
+    def __init__(
+        self,
+        name: str,
+        filters: dict,
+        entity: str,
+        project: str,
+        groupby: str = "",
+        exp_name: str = "exp_name",
+        metric: str = "charts/episodic_return",
+        color: str = "#000000",
+    ):
         self.name = name
         self.filters = filters
         self.entity = entity
@@ -103,7 +115,7 @@ def compare(
     for idx, env_id in enumerate(env_ids):
         metric_over_step = wb.LinePlot(
             x="global_step",
-            y=list(set([runsets[idx].metric for runsets in runsetss])),
+            y=list({runsets[idx].metric for runsets in runsetss}),
             title=env_id,
             title_x="Steps",
             title_y="Episodic Return",
@@ -115,7 +127,7 @@ def compare(
         metric_over_step.config["aggregateMetrics"] = True
         metric_over_time = wb.LinePlot(
             x="_runtime",
-            y=list(set([runsets[idx].metric for runsets in runsetss])),
+            y=list({runsets[idx].metric for runsets in runsetss}),
             title=env_id,
             title_y="Episodic Return",
             max_runs_to_show=100,
@@ -215,7 +227,7 @@ if __name__ == "__main__":
     blocks = []
     runsetss = []
 
-    colors = sns.color_palette(n_colors=sum([len(filters) - 1 for filters in args.filters])).as_hex()
+    colors = sns.color_palette(n_colors=sum(len(filters) - 1 for filters in args.filters)).as_hex()
     for filters in args.filters:
         parse_result = urlparse(filters[0])
         query = parse_qs(parse_result.query)
@@ -224,13 +236,16 @@ if __name__ == "__main__":
         wandb_entity = query["we"][0] if "we" in query else args.wandb_entity
         custom_env_id_key = query["ceik"][0] if "ceik" in query else "env_id"
         custom_exp_name = query["cen"][0] if "cen" in query else "exp_name"
-        pprint({
-            "wandb_project_name": wandb_project_name,
-            "wandb_entity": wandb_entity,
-            "custom_env_id_key": custom_env_id_key,
-            "custom_exp_name": custom_exp_name,
-            "metric": metric,
-        }, expand_all=True)
+        pprint(
+            {
+                "wandb_project_name": wandb_project_name,
+                "wandb_entity": wandb_entity,
+                "custom_env_id_key": custom_env_id_key,
+                "custom_exp_name": custom_exp_name,
+                "metric": metric,
+            },
+            expand_all=True,
+        )
         # raise
 
         for filter_str, color in zip(filters[1:], colors):
