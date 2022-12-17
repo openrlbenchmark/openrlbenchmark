@@ -149,9 +149,10 @@ python -m openrlbenchmark.rlops \
     --env-ids BreakoutNoFrameskip-v4 SpaceInvadersNoFrameskip-v4 SeaquestNoFrameskip-v4 MsPacmanNoFrameskip-v4 EnduroNoFrameskip-v4 PongNoFrameskip-v4 QbertNoFrameskip-v4 \
     --check-empty-runs False \
     --ncols 4 \
-    --ncols-legend 4
+    --ncols-legend 4 \
+    --output-filename static/baselines_vs_tianshou --scan-history
 ```
-![](static/baselines_vs_cleanrl_vs_jaxrl.png)
+![](static/baselines_vs_tianshou.png)
 
 
 Compare CleanRL's PPG and PPO with `openai/phasic-policy-gradient`'s PPG on procgen:
@@ -194,6 +195,7 @@ This is a project we are slowly working on. There is no specific timeline or roa
 * Add experiments from other libraries
 * Run more experiments from currently supported libraries
 * Documentation and designing standards
+* Download the tensorboard metrics from the tracked experiments and load them locally to save time
 
 
 ## Dev Setup

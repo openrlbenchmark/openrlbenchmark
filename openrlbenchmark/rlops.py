@@ -54,7 +54,7 @@ def create_hypothesis(
         if scan_history:
             wandb_run = pd.DataFrame([row for row in run.scan_history()])
         else:
-            wandb_run = run.history()
+            wandb_run = run.history(samples=1500)
         if "videos" in wandb_run:
             wandb_run = wandb_run.drop(columns=["videos"], axis=1)
         if len(metric) > 0:
