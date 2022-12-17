@@ -21,10 +21,6 @@ api = wandb.Api()
 def parse_args():
     # fmt: off
     parser = argparse.ArgumentParser()
-    parser.add_argument("--wandb-project-name", type=str, default="cleanrl",
-        help="the wandb's project name")
-    parser.add_argument("--wandb-entity", type=str, default="openrlbenchmark",
-        help="the entity (team) of wandb's project")
     parser.add_argument("--filters", nargs="+", action="append", default=[],
         help="the filters of the experiments; see docs")
     parser.add_argument("--env-ids", nargs="+", default=["Hopper-v2", "Walker2d-v2", "HalfCheetah-v2"],
@@ -110,50 +106,52 @@ def compare(
     metric_last_n_average_window: int,
     scan_history: bool = False,
     output_filename: str = "compare.png",
+    report: bool = False,
 ):
     blocks = []
-    for idx, env_id in enumerate(env_ids):
-        metric_over_step = wb.LinePlot(
-            x="global_step",
-            y=list({runsets[idx].metric for runsets in runsetss}),
-            title=env_id,
-            title_x="Steps",
-            title_y="Episodic Return",
-            max_runs_to_show=100,
-            smoothing_factor=0.8,
-            groupby_rangefunc="stderr",
-            legend_template="${runsetName}",
-        )
-        metric_over_step.config["aggregateMetrics"] = True
-        metric_over_time = wb.LinePlot(
-            x="_runtime",
-            y=list({runsets[idx].metric for runsets in runsetss}),
-            title=env_id,
-            title_y="Episodic Return",
-            max_runs_to_show=100,
-            smoothing_factor=0.8,
-            groupby_rangefunc="stderr",
-            legend_template="${runsetName}",
-        )
-        metric_over_time.config["aggregateMetrics"] = True
-        pg = wb.PanelGrid(
-            runsets=[runsets[idx].report_runset for runsets in runsetss],
-            panels=[
-                metric_over_step,
-                metric_over_time,
-                # wb.MediaBrowser(
-                #     num_columns=2,
-                #     media_keys="videos",
-                # ),
-            ],
-        )
-        custom_run_colors = {}
-        for runsets in runsetss:
-            custom_run_colors.update(
-                {(runsets[idx].report_runset.name, runsets[idx].runs[0].config[runsets[idx].exp_name]): runsets[idx].color}
+    if report:
+        for idx, env_id in enumerate(env_ids):
+            metric_over_step = wb.LinePlot(
+                x="global_step",
+                y=list({runsets[idx].metric for runsets in runsetss}),
+                title=env_id,
+                title_x="Steps",
+                title_y="Episodic Return",
+                max_runs_to_show=100,
+                smoothing_factor=0.8,
+                groupby_rangefunc="stderr",
+                legend_template="${runsetName}",
             )
-        pg.custom_run_colors = custom_run_colors  # IMPORTANT: custom_run_colors is implemented as a custom `setter` that needs to be overwritten unlike regular dictionaries
-        blocks += [pg]
+            metric_over_step.config["aggregateMetrics"] = True
+            metric_over_time = wb.LinePlot(
+                x="_runtime",
+                y=list({runsets[idx].metric for runsets in runsetss}),
+                title=env_id,
+                title_y="Episodic Return",
+                max_runs_to_show=100,
+                smoothing_factor=0.8,
+                groupby_rangefunc="stderr",
+                legend_template="${runsetName}",
+            )
+            metric_over_time.config["aggregateMetrics"] = True
+            pg = wb.PanelGrid(
+                runsets=[runsets[idx].report_runset for runsets in runsetss],
+                panels=[
+                    metric_over_step,
+                    metric_over_time,
+                    # wb.MediaBrowser(
+                    #     num_columns=2,
+                    #     media_keys="videos",
+                    # ),
+                ],
+            )
+            custom_run_colors = {}
+            for runsets in runsetss:
+                custom_run_colors.update(
+                    {(runsets[idx].report_runset.name, runsets[idx].runs[0].config[runsets[idx].exp_name]): runsets[idx].color}
+                )
+            pg.custom_run_colors = custom_run_colors  # IMPORTANT: custom_run_colors is implemented as a custom `setter` that needs to be overwritten unlike regular dictionaries
+            blocks += [pg]
 
     nrows = np.ceil(len(env_ids) / ncols).astype(int)
     figsize = (ncols * 4, nrows * 3)
@@ -299,6 +297,7 @@ if __name__ == "__main__":
         rolling=args.rolling,
         metric_last_n_average_window=args.metric_last_n_average_window,
         scan_history=args.scan_history,
+        report=args.report,
     )
     if args.report:
         print("saving report")

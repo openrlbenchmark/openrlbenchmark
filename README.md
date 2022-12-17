@@ -2,12 +2,22 @@
 
 Open RL Benchmark is a comprehensive collection of tracked experiments for RL. It aims to make it easier for RL practitioners to pull and compare all kinds of metrics from reputable RL libraries like Stable-baselines3, Tianshou, CleanRL, and others.
 
-Check out this [google doc](https://docs.google.com/document/d/1cDI_AMr2QVmkC53dCHFMYwGJtLC8V4p6KdL2wnYPaiI/edit?usp=sharing) for more info and comment.
+* 📜 [Design docs](https://docs.google.com/document/d/1cDI_AMr2QVmkC53dCHFMYwGJtLC8V4p6KdL2wnYPaiI/edit?usp=sharing): check out our motivation and vision.
+* 🔗 [Open RL Benchmark reports](https://wandb.ai/openrlbenchmark/openrlbenchmark/reportlist): featuring W&B reports with tracked Atari, MuJoCo experiments from SB3, CleanRL, and others.
+
+> ⚠️ There has been a major refactoring. If you are looking for older version, check out [43fc8e2](https://github.com/openrlbenchmark/openrlbenchmark/tree/43fc8e2066ac6371913ac53b629928ac15a65e13)
+
+## Get started
+
+Prerequisites:
+* Python >=3.7.1,<3.10 (not yet 3.10)
+* [Poetry 1.2.1+](https://python-poetry.org)
+
+Open RL Benchmark provides an RLops API to pull and compare metrics from Weights and Biases. The following example shows how to compare the performance of SB3's ppo, a2c, ddpg, ppo_lstm, sac, td3, ppo, trpo, CleanRL's sac on HalfCheetahBulletEnv-v0.
 
 ```
-python rlops.py --wandb-project-name sb3 \
-    --wandb-entity openrlbenchmark \
-    --filters '?we=openrrlbenchmark&wpn=sb3&ceik=env&cen=algo&metric=rollout/ep_rew_mean' \
+poetry run python -m openrlbenchmark.rlops \
+    --filters '?we=openrlbenchmark&wpn=sb3&ceik=env&cen=algo&metric=rollout/ep_rew_mean' \
         'a2c' \
         'ddpg' \
         'ppo_lstm' \
@@ -20,22 +30,28 @@ python rlops.py --wandb-project-name sb3 \
     --env-ids HalfCheetahBulletEnv-v0 \
     --ncols 1 \
     --ncols-legend 2 \
-    --output-filename compare.png
-
-python -m openrlbenchmark.rlops --wandb-project-name sb3 \
-    --wandb-entity openrlbenchmark \
-    --filters '?we=openrlbenchmark&wpn=sb3&ceik=env&cen=algo&metric=rollout/ep_rew_mean' \
-        'a2c' \
-        'ddpg' \
-    --filters '?we=openrlbenchmark&wpn=cleanrl&ceik=env_id&cen=exp_name&metric=charts/episodic_return' \
-        'sac_continuous_action?tag=rlops-pilot' \
-    --env-ids HalfCheetahBulletEnv-v0 \
-    --ncols 1 \
-    --ncols-legend 2 \
-    --output-filename compare.png
+    --output-filename compare.png \
+    --report
 ```
 
+Here, we use create multiple filters. The first string in the first filter is `'?we=openrlbenchmark&wpn=sb3&ceik=env&cen=algo&metric=rollout/ep_rew_mean'`, which is a query string that specifies the following:
 
+* `we`: the W&B entity name
+* `wpn`: the W&B project name
+* `ceik`: the custom key for the environment id
+* `cen`: the custom key for the experiment name
+
+So we are fetching metrics from [https://wandb.ai/openrlbenchmark/sb3](https://wandb.ai/openrlbenchmark/sb3). The environment id is stored in the `env` key, and the experiment name is stored in the `algo` key. The metric we are interested in is `rollout/ep_rew_mean`.
+
+Similary, we are fetching metrics from [https://wandb.ai/openrlbenchmark/cleanrl](https://wandb.ai/openrlbenchmark/cleanrl). The environment id is stored in the `env_id` key, and the experiment name is stored in the `exp_name` key. The metric we are interested in is `charts/episodic_return`.
+
+The command above generates the following plot:
+
+![](static/cleanrl_vs_sb3.png)
+
+The `--report` tag also generates a [wandb report](https://wandb.ai/costa-huang/cleanrl/reports/Regression-Report-sac_continuous_action--VmlldzozMTY4NDQ3)
+
+<!-- 
 ## Pre-alpha API
 
 
@@ -96,7 +112,7 @@ and the following reports:
 
 * [Atari: openai/baselins' PPO (part 1)](https://wandb.ai/openrlbenchmark/openrlbenchmark/reports/Atari-openai-baselins-PPO-part-1---VmlldzoyNzIyNzg2)
 * [Atari: openai/baselins' PPO (part 2)](https://wandb.ai/openrlbenchmark/openrlbenchmark/reports/Atari-openai-baselins-PPO-part-2---VmlldzoyNzIyNzg3)
-
+ -->
 
 ## Get started
 

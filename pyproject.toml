@@ -8,7 +8,7 @@ authors = ["Costa Huang <costa.huang@outlook.com>"]
 python = "^3.9"
 wandb = "^0.13.7"
 pip = "^22.1.2"
-expt = {git = "https://github.com/wookayin/expt.git", rev = "0cd947f8c5fc66598e578ce8a394c5f522f060bd"}
+expt = "^0.4.1"
 multiprocess = "^0.70.13"
 tueplots = "^0.0.4"
 seaborn = "^0.12.1"
