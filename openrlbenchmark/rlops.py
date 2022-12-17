@@ -25,8 +25,8 @@ def parse_args():
         help="the filters of the experiments; see docs")
     parser.add_argument("--env-ids", nargs="+", default=["Hopper-v2", "Walker2d-v2", "HalfCheetah-v2"],
         help="the ids of the environment to compare")
-    parser.add_argument("--output-filename", type=str, default="rlops_static/compare.png",
-        help="the output filename of the plot")
+    parser.add_argument("--output-filename", type=str, default="compare",
+        help="the output filename of the plot, without extension")
     parser.add_argument("--rolling", type=int, default=100,
         help="the rolling window for smoothing the curves")
     parser.add_argument("--metric-last-n-average-window", type=int, default=100,
@@ -37,6 +37,8 @@ def parse_args():
         help="the number of legend columns in the chart")
     parser.add_argument("--scan-history", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
         help="if toggled, we will pull the complete metrics from wandb instead of sampling 500 data points (recommended for generating tables)")
+    parser.add_argument("--check-empty-runs", type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,
+        help="if toggled, we will check for empty wandb runs")
     parser.add_argument("--report", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
         help="if toggled, a wandb report will be created")
     # fmt: on
@@ -105,7 +107,7 @@ def compare(
     rolling: int,
     metric_last_n_average_window: int,
     scan_history: bool = False,
-    output_filename: str = "compare.png",
+    output_filename: str = "compare",
     report: bool = False,
 ):
     blocks = []
@@ -199,8 +201,8 @@ def compare(
         )
 
     print(result_table)
-    result_table.to_markdown(open("result_table.md", "w"))
-    result_table.to_csv(open("result_table.csv", "w"))
+    result_table.to_markdown(open(f"{output_filename}.md", "w"))
+    result_table.to_csv(open(f"{output_filename}.csv", "w"))
 
     # add legend
     h, l = axes_flatten[0].get_legend_handles_labels()
@@ -213,8 +215,8 @@ def compare(
     print(f"saving figure to {output_filename}")
     if os.path.dirname(output_filename) != "":
         os.makedirs(os.path.dirname(output_filename), exist_ok=True)
-    plt.savefig(f"{output_filename}", bbox_inches="tight")
-    plt.savefig(f"{output_filename.replace('.png', '.pdf')}", bbox_inches="tight")
+    plt.savefig(f"{output_filename}.png", bbox_inches="tight")
+    plt.savefig(f"{output_filename}.pdf", bbox_inches="tight")
     return blocks
 
 
@@ -225,8 +227,13 @@ if __name__ == "__main__":
     blocks = []
     runsetss = []
 
-    colors = sns.color_palette(n_colors=sum(len(filters) - 1 for filters in args.filters)).as_hex()
+    colors_flatten = sns.color_palette(n_colors=sum(len(filters) - 1 for filters in args.filters)).as_hex()
+    colors = []
     for filters in args.filters:
+        colors += [colors_flatten[: len(filters) - 1]]
+        colors_flatten = colors_flatten[len(filters) - 1 :]
+
+    for filters_idx, filters in enumerate(args.filters):
         parse_result = urlparse(filters[0])
         query = parse_qs(parse_result.query)
         metric = query["metric"][0] if "metric" in query else "charts/episodic_return"
@@ -246,7 +253,7 @@ if __name__ == "__main__":
         )
         # raise
 
-        for filter_str, color in zip(filters[1:], colors):
+        for filter_str, color in zip(filters[1:], colors[filters_idx]):
             print("=========", filter_str)
             # parse filter string
             parse_result = urlparse(filter_str)
@@ -282,10 +289,11 @@ if __name__ == "__main__":
                         color=color,
                     )
                 ]
-                console.print(f"{exp_name} [green]({query})[/] in [purple]{env_id}[/] has {len(runsets[-1].runs)} runs")
-                for run in runsets[-1].runs:
-                    console.print(f"┣━━ [link={run.url}]{run.name}[/link] with tags = {run.tags}")
-                assert len(runsets[0].runs) > 0, f"{exp_name} ({query}) in {env_id} has no runs"
+                if args.check_empty_runs:
+                    console.print(f"{exp_name} [green]({query})[/] in [purple]{env_id}[/] has {len(runsets[-1].runs)} runs")
+                    for run in runsets[-1].runs:
+                        console.print(f"┣━━ [link={run.url}]{run.name}[/link] with tags = {run.tags}")
+                    assert len(runsets[0].runs) > 0, f"{exp_name} ({query}) in {env_id} has no runs"
             runsetss += [runsets]
 
     blocks = compare(

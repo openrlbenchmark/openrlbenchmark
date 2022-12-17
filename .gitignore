@@ -1,7 +1,7 @@
-compare.pdf
+*.pdf
+*.csv
 compare.png
-result_table.csv
-result_table.md
+compare.md
 .vscode
 seed_r2d2_atari_graphs.csv
 data
