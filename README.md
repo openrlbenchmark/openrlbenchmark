@@ -139,10 +139,9 @@ python -m openrlbenchmark.rlops \
 ![](static/baselines_vs_cleanrl_vs_jaxrl.png)
 
 
-Compare Tianshou's PPO and IQN with `openai/baselines`'s PPO2 on Atari:
+Compare Tianshou's algorithms with `openai/baselines`'s PPO2 on Atari:
 
 ```
-
 python -m openrlbenchmark.rlops \
     --filters '?we=tianshou&wpn=atari.benchmark&ceik=task&cen=algo_name&metric=test/reward' 'iqn' 'ppo' 'rainbow' 'fqf' 'c51' 'dqn' 'qrdqn' \
     --filters '?we=openrlbenchmark&wpn=baselines&ceik=env&cen=exp_name&metric=charts/episodic_return' 'baselines-ppo2-cnn' \
