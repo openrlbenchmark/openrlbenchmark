@@ -1,5 +1,6 @@
 *.pdf
-*.csv
+# *.csv
+compare.csv
 compare.png
 compare.md
 .vscode

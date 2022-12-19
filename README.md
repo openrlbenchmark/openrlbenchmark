@@ -106,7 +106,7 @@ The following libraries have some recorded experiments:
 
 ## More examples
 
-Compare CleanRL's PPO with `openai/baselines`'s PPO2 on Atari games:
+### Compare CleanRL's PPO with `openai/baselines`'s PPO2 on Atari games:
 
 ```
 python -m openrlbenchmark.rlops \
@@ -122,7 +122,7 @@ python -m openrlbenchmark.rlops \
 
 ![](static/cleanrl_vs_baselines.png)
 
-Compare CleanRL's PPO with `openai/baselines`'s PPO2 and `jaxrl`'s SAC on Mujoco:
+### Compare CleanRL's PPO with `openai/baselines`'s PPO2 and `jaxrl`'s SAC on Mujoco:
 
 ```
 python -m openrlbenchmark.rlops \
@@ -139,7 +139,7 @@ python -m openrlbenchmark.rlops \
 ![](static/baselines_vs_cleanrl_vs_jaxrl.png)
 
 
-Compare Tianshou's algorithms with `openai/baselines`'s PPO2 on Atari:
+### Compare Tianshou's algorithms with `openai/baselines`'s PPO2 on Atari:
 
 ```
 python -m openrlbenchmark.rlops \
@@ -154,7 +154,7 @@ python -m openrlbenchmark.rlops \
 ![](static/baselines_vs_tianshou.png)
 
 
-Compare CleanRL's PPG and PPO with `openai/phasic-policy-gradient`'s PPG on procgen:
+### Compare CleanRL's PPG and PPO with `openai/phasic-policy-gradient`'s PPG on procgen:
 
 ```
 python -m openrlbenchmark.rlops \
@@ -171,7 +171,7 @@ python -m openrlbenchmark.rlops \
 ![](static/ppg_vs_cleanrl.png)
 
 
-Compare CleanRL's TD3 with `sfujim/TD3`'s TD3 on Mujoco:
+### Compare CleanRL's TD3 with `sfujim/TD3`'s TD3 on Mujoco:
 
 ```
 python -m openrlbenchmark.rlops \
@@ -186,6 +186,56 @@ python -m openrlbenchmark.rlops \
 ```
 ![](static/td3_vs_cleanrl.png)
 
+
+### Compare CleanRL's PPO + JAX + EnvPool's XLA with `openai/baselines`'s Atari wrappers vs [Machado's recommendetation for Atari](https://arxiv.org/abs/1709.06009) (e.g., sticky action with probability 0.25). The machado's experiments ran for 10M steps, which corresponds to 200M frames.
+
+```
+python -m openrlbenchmark.rlops \
+    --filters '?we=openrlbenchmark&wpn=envpool-atari&ceik=env_id&cen=exp_name&metric=charts/avg_episodic_return' 'ppo_atari_envpool_xla_jax_truncation_machado_10M' 'ppo_atari_envpool_xla_jax_truncation'  \
+    --env-ids Alien-v5 Amidar-v5 Assault-v5 Asterix-v5 Asteroids-v5 Atlantis-v5 BankHeist-v5 BattleZone-v5 BeamRider-v5 Berzerk-v5 Bowling-v5 Boxing-v5 Breakout-v5 Centipede-v5 ChopperCommand-v5 CrazyClimber-v5 Defender-v5 DemonAttack-v5 DoubleDunk-v5 Enduro-v5 FishingDerby-v5 Freeway-v5 Frostbite-v5 Gopher-v5 Gravitar-v5 Hero-v5 IceHockey-v5 PrivateEye-v5 Qbert-v5 Riverraid-v5 RoadRunner-v5 Robotank-v5 Seaquest-v5 Skiing-v5 Solaris-v5 SpaceInvaders-v5 StarGunner-v5 Surround-v5 Tennis-v5 TimePilot-v5 Tutankham-v5 UpNDown-v5 Venture-v5 VideoPinball-v5 WizardOfWor-v5 YarsRevenge-v5 Zaxxon-v5 Jamesbond-v5 Kangaroo-v5 Krull-v5 KungFuMaster-v5 MontezumaRevenge-v5 MsPacman-v5 NameThisGame-v5 Phoenix-v5 Pitfall-v5 Pong-v5 \
+    --check-empty-runs False \
+    --ncols 5 \
+    --ncols-legend 2 \
+    --output-filename static/machado_10M \
+    --scan-history
+```
+
+
+### Compare CleanRL's PPO + JAX + EnvPool's XLA with `openai/baselines`'s Atari wrappers vs [Machado's recommendetation for Atari](https://arxiv.org/abs/1709.06009) (e.g., sticky action with probability 0.25). The machado's experiments ran for 50M steps, which corresponds to 200M frames.
+```
+python -m openrlbenchmark.rlops \
+    --filters '?we=openrlbenchmark&wpn=envpool-atari&ceik=env_id&cen=exp_name&metric=charts/avg_episodic_return' 'ppo_atari_envpool_xla_jax_truncation_machado' 'ppo_atari_envpool_xla_jax_truncation'  \
+    --env-ids Alien-v5 Amidar-v5 Assault-v5 Asterix-v5 Asteroids-v5 Atlantis-v5 BankHeist-v5 BattleZone-v5 BeamRider-v5 Berzerk-v5 Bowling-v5 Boxing-v5 Breakout-v5 Centipede-v5 ChopperCommand-v5 CrazyClimber-v5 Defender-v5 DemonAttack-v5 DoubleDunk-v5 Enduro-v5 FishingDerby-v5 Freeway-v5 Frostbite-v5 Gopher-v5 Gravitar-v5 Hero-v5 IceHockey-v5 PrivateEye-v5 Qbert-v5 Riverraid-v5 RoadRunner-v5 Robotank-v5 Seaquest-v5 Skiing-v5 Solaris-v5 SpaceInvaders-v5 StarGunner-v5 Surround-v5 Tennis-v5 TimePilot-v5 Tutankham-v5 UpNDown-v5 Venture-v5 VideoPinball-v5 WizardOfWor-v5 YarsRevenge-v5 Zaxxon-v5 Jamesbond-v5 Kangaroo-v5 Krull-v5 KungFuMaster-v5 MontezumaRevenge-v5 MsPacman-v5 NameThisGame-v5 Phoenix-v5 Pitfall-v5 Pong-v5 \
+    --check-empty-runs False \
+    --ncols 5 \
+    --ncols-legend 2 \
+    --output-filename static/machado_50M \
+    --scan-history
+```
+
+
+### Calculate human normalized scores
+
+```
+python -m openrlbenchmark.hns --files static/cleanrl_vs_baselines.csv static/machado_10M.csv static/machado_50M.csv 
+```
+```
+baselines-ppo2-cnn ({})
+┣━━ median hns: 0.7959851540635047
+┣━━ mean hns: 4.54588939893709
+ppo_atari_envpool_xla_jax_truncation ({})
+┣━━ median hns: 0.9783505154639175
+┣━━ mean hns: 6.841083973256849
+ppo_atari_envpool_xla_jax_truncation_machado_10M ({})
+┣━━ median hns: 0.7347972972972973
+┣━━ mean hns: 2.919095857954249
+ppo_atari_envpool_xla_jax_truncation ({'metric': ['charts/avg_episodic_return']})
+┣━━ median hns: 0.9783505154639175
+┣━━ mean hns: 6.841083973256849
+ppo_atari_envpool_xla_jax_truncation_machado ({'metric': ['charts/avg_episodic_return']})
+┣━━ median hns: 1.5679929625118418
+┣━━ mean hns: 8.352308370550299
+```
 
 ## What's going on right now?
 
