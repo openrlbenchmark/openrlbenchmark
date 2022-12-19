@@ -199,6 +199,7 @@ python -m openrlbenchmark.rlops \
     --output-filename static/machado_10M \
     --scan-history
 ```
+![](static/machado_10M.png)
 
 
 ### Compare CleanRL's PPO + JAX + EnvPool's XLA with `openai/baselines`'s Atari wrappers vs [Machado's recommendetation for Atari](https://arxiv.org/abs/1709.06009) (e.g., sticky action with probability 0.25). The machado's experiments ran for 50M steps, which corresponds to 200M frames.
@@ -212,7 +213,7 @@ python -m openrlbenchmark.rlops \
     --output-filename static/machado_50M \
     --scan-history
 ```
-
+![](static/machado_50M.png)
 
 ### Calculate human normalized scores
 
