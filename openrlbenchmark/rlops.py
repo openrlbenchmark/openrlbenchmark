@@ -14,6 +14,8 @@ import wandb.apis.reports as wb  # noqa
 from expt import Hypothesis, Run
 from rich.console import Console
 from rich.pretty import pprint
+import openrlbenchmark
+import openrlbenchmark.cache
 
 api = wandb.Api()
 
@@ -52,14 +54,16 @@ def create_hypothesis(
     for idx, run in enumerate(wandb_runs):
         print(run, run.url)
         if scan_history:
-            wandb_run = pd.DataFrame([row for row in run.scan_history()])
+            # equivalent to `run_df = pd.DataFrame([row for row in run.scan_history()])`
+            run = openrlbenchmark.cache.CachedRun(run, cache_dir=os.path.join(openrlbenchmark.__path__[0], "dataset"))
+            run_df = run.run_df
         else:
-            wandb_run = run.history(samples=1500)
-        if "videos" in wandb_run:
-            wandb_run = wandb_run.drop(columns=["videos"], axis=1)
+            run_df = run.history(samples=1500)
+        if "videos" in run_df:
+            run_df = run_df.drop(columns=["videos"], axis=1)
         if len(metric) > 0:
-            wandb_run["charts/episodic_return"] = wandb_run[metric]
-        runs += [Run(f"seed{idx}", wandb_run)]
+            run_df["charts/episodic_return"] = run_df[metric]
+        runs += [Run(f"seed{idx}", run_df)]
     return Hypothesis(name, runs)
 
 
