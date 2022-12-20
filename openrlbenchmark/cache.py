@@ -1,7 +1,9 @@
-import os
-import wandb
 import json
+import os
+
 import pandas as pd
+import wandb
+
 
 class CachedRun:
     def __init__(self, run: wandb.apis.public.Run, cache_dir: str = None):
@@ -27,8 +29,6 @@ class CachedRun:
                 with open(self.run_path, "w") as f:
                     json.dump(self.run.__dict__, f)
             else:
-                with open(self.run_path, "r") as f:
+                with open(self.run_path) as f:
                     self.run = json.load(f)
                 self.run_df = pd.read_csv(self.run_df_path)
-        
-

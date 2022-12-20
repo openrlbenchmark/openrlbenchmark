@@ -19,9 +19,10 @@
 
 
 import argparse
-from rich import print
-import pandas as pd
+
 import numpy as np
+import pandas as pd
+from rich import print
 
 
 def parse_args():
@@ -31,7 +32,6 @@ def parse_args():
         help="the csv files to calculate the median human normalized scores")
     # fmt: on
     return parser.parse_args()
-
 
 
 atari_human_normalized_scores = {
@@ -109,7 +109,9 @@ if __name__ == "__main__":
             hnss = []
             for env_id in env_ids:
                 episodic_return = float(df.loc[env_id, runset_name].split(" ± ")[0])
-                hns = (episodic_return - atari_human_normalized_scores[env_id][0]) / (atari_human_normalized_scores[env_id][1] - atari_human_normalized_scores[env_id][0])
+                hns = (episodic_return - atari_human_normalized_scores[env_id][0]) / (
+                    atari_human_normalized_scores[env_id][1] - atari_human_normalized_scores[env_id][0]
+                )
                 hnss += [hns]
             print(f"{runset_name}")
             print(f"┣━━ median hns: {np.median(hnss)}")

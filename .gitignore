@@ -1,6 +1,8 @@
+dataset
 *.pdf
 # *.csv
 compare.csv
+compare-time.png
 compare.png
 compare.md
 .vscode

@@ -14,6 +14,7 @@ import wandb.apis.reports as wb  # noqa
 from expt import Hypothesis, Run
 from rich.console import Console
 from rich.pretty import pprint
+
 import openrlbenchmark
 import openrlbenchmark.cache
 
@@ -168,9 +169,18 @@ def compare(
         # sharex=True,
         # sharey=True,
     )
+    fig_time, axes_time = plt.subplots(
+        nrows=nrows,
+        ncols=ncols,
+        figsize=figsize,
+        # sharex=True,
+        # sharey=True,
+    )
     if len(env_ids) == 1:
         axes = np.array([axes])
+        axes_time = np.array([axes_time])
     axes_flatten = axes.flatten()
+    axes_time_flatten = axes_time.flatten()
 
     result_table = pd.DataFrame(index=env_ids, columns=[runsets[0].name for runsets in runsetss])
     for idx, env_id in enumerate(env_ids):
@@ -203,6 +213,19 @@ def compare(
             # n_samples=500,
             legend=False,
         )
+        ax_time = axes_time_flatten[idx]
+        ex.plot(
+            ax=ax_time,
+            title=env_id,
+            x="_runtime",
+            y="charts/episodic_return",
+            err_style="band",
+            std_alpha=0.1,
+            rolling=rolling,
+            colors=[runsets[idx].color for runsets in runsetss],
+            # n_samples=500,
+            legend=False,
+        )
 
     print(result_table)
     result_table.to_markdown(open(f"{output_filename}.md", "w"))
@@ -211,16 +234,24 @@ def compare(
     # add legend
     h, l = axes_flatten[0].get_legend_handles_labels()
     fig.legend(h, l, loc="lower center", ncol=ncols_legend, bbox_to_anchor=(0.5, 1.0), bbox_transform=fig.transFigure)
+    h, l = axes_time_flatten[0].get_legend_handles_labels()
+    fig_time.legend(
+        h, l, loc="lower center", ncol=ncols_legend, bbox_to_anchor=(0.5, 1.0), bbox_transform=fig_time.transFigure
+    )
 
     # remove the empty axes
     for ax in axes_flatten[len(env_ids) :]:
+        ax.remove()
+    for ax in axes_time_flatten[len(env_ids) :]:
         ax.remove()
 
     print(f"saving figure to {output_filename}")
     if os.path.dirname(output_filename) != "":
         os.makedirs(os.path.dirname(output_filename), exist_ok=True)
-    plt.savefig(f"{output_filename}.png", bbox_inches="tight")
-    plt.savefig(f"{output_filename}.pdf", bbox_inches="tight")
+    fig.savefig(f"{output_filename}.png", bbox_inches="tight")
+    fig.savefig(f"{output_filename}.pdf", bbox_inches="tight")
+    fig_time.savefig(f"{output_filename}-time.png", bbox_inches="tight")
+    fig_time.savefig(f"{output_filename}-time.pdf", bbox_inches="tight")
     return blocks
 
 
