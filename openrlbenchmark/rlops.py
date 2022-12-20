@@ -42,6 +42,8 @@ def parse_args():
         help="if toggled, we will pull the complete metrics from wandb instead of sampling 500 data points (recommended for generating tables)")
     parser.add_argument("--check-empty-runs", type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,
         help="if toggled, we will check for empty wandb runs")
+    parser.add_argument("--time-unit", type=str, default="m", choices=["s", "m", "h"],
+        help="the unit of time in the x-axis of the chart (e.g., `s` for seconds, `m` for minutes, `h` for hours); default: `m`")
     parser.add_argument("--report", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
         help="if toggled, a wandb report will be created")
     # fmt: on
@@ -114,6 +116,7 @@ def compare(
     scan_history: bool = False,
     output_filename: str = "compare",
     report: bool = False,
+    time_unit: str = "m",
 ):
     blocks = []
     if report:
@@ -193,11 +196,19 @@ def compare(
         # then take the average and std of r_i as the results.
         result = []
         for hypothesis in ex.hypotheses:
-            raw_result = []
+            metric_result = []
+            runtimes = []
             for run in hypothesis.runs:
-                raw_result += [run.df["charts/episodic_return"].dropna()[-metric_last_n_average_window:].mean()]
-            raw_result = np.array(raw_result)
-            result += [f"{raw_result.mean():.2f} ± {raw_result.std():.2f}"]
+                metric_result += [run.df["charts/episodic_return"].dropna()[-metric_last_n_average_window:].mean()]
+                runtimes += [run.df["_runtime"].iloc[-1]]
+
+                # convert time unit in place
+                if time_unit == "m":
+                    run.df["_runtime"] /= 60
+                elif time_unit == "h":
+                    run.df["_runtime"] /= 3600
+            metric_result = np.array(metric_result)
+            result += [f"{metric_result.mean():.2f} ± {metric_result.std():.2f}"] # , {np.mean(runtimes):.2f} ± {np.std(runtimes):.2f}
         result_table.loc[env_id] = result
 
         ax = axes_flatten[idx]
@@ -226,6 +237,7 @@ def compare(
             # n_samples=500,
             legend=False,
         )
+        ax_time.set_xlabel(f"Time ({time_unit})")
 
     print(result_table)
     result_table.to_markdown(open(f"{output_filename}.md", "w"))
@@ -341,6 +353,7 @@ if __name__ == "__main__":
         metric_last_n_average_window=args.metric_last_n_average_window,
         scan_history=args.scan_history,
         report=args.report,
+        time_unit=args.time_unit,
     )
     if args.report:
         print("saving report")
