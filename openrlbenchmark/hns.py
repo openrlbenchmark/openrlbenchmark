@@ -17,6 +17,23 @@
 # Note the random agent score on Video Pinball is sometimes greater than the
 # human score under other evaluation methods.
 
+
+import argparse
+
+import numpy as np
+import pandas as pd
+from rich import print
+
+
+def parse_args():
+    # fmt: off
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--files", nargs="+", default=[],
+        help="the csv files to calculate the median human normalized scores")
+    # fmt: on
+    return parser.parse_args()
+
+
 atari_human_normalized_scores = {
     "Alien-v5": (227.8, 7127.7),
     "Amidar-v5": (5.8, 1719.5),
@@ -79,3 +96,23 @@ atari_human_normalized_scores = {
     "YarsRevenge-v5": (3092.9, 54576.9),  ## TODO: where is YarsRevenge in the original DQN paper?
     "Zaxxon-v5": (32.5, 9173.3),
 }
+if __name__ == "__main__":
+    args = parse_args()
+    runset_names = set()
+    for file in args.files:
+        df = pd.read_csv(file, index_col=0)
+        env_ids = atari_human_normalized_scores.keys()
+        for runset_name in df.columns:
+            if runset_name in runset_names:
+                continue
+            runset_names.add(runset_name)
+            hnss = []
+            for env_id in env_ids:
+                episodic_return = float(df.loc[env_id, runset_name].split(" ± ")[0])
+                hns = (episodic_return - atari_human_normalized_scores[env_id][0]) / (
+                    atari_human_normalized_scores[env_id][1] - atari_human_normalized_scores[env_id][0]
+                )
+                hnss += [hns]
+            print(f"{runset_name}")
+            print(f"┣━━ median hns: {np.median(hnss)}")
+            print(f"┣━━ mean hns: {np.mean(hnss)}")

@@ -1,3 +1,10 @@
+dataset
+*.pdf
+# *.csv
+compare.csv
+compare-time.png
+compare.png
+compare.md
 .vscode
 seed_r2d2_atari_graphs.csv
 data
