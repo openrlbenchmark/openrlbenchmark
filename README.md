@@ -1,21 +1,46 @@
 # Open RL Benchmark: Comprehensive Tracked Experiments for Reinforcement Learning
 
+
+[<img src="https://img.shields.io/badge/license-MIT-blue">](https://github.com/vwxyzjn/cleanrl)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Imports: isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336)](https://pycqa.github.io/isort/)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/openrlbenchmark/openrlbenchmark/blob/master/README.ipynb)
+
+
+
 Open RL Benchmark is a comprehensive collection of tracked experiments for RL. It aims to make it easier for RL practitioners to pull and compare all kinds of metrics from reputable RL libraries like Stable-baselines3, Tianshou, CleanRL, and others.
 
-* 📜 [Design docs](https://docs.google.com/document/d/1cDI_AMr2QVmkC53dCHFMYwGJtLC8V4p6KdL2wnYPaiI/edit?usp=sharing): check out our motivation and vision.
-* 🔗 [Open RL Benchmark reports](https://wandb.ai/openrlbenchmark/openrlbenchmark/reportlist): featuring W&B reports with tracked Atari, MuJoCo experiments from SB3, CleanRL, and others.
+* 💾 [GitHub Repo](https://github.com/openrlbenchmark/openrlbenchmark): source code and more docs.
+* 📜 [Design docs](https://docs.google.com/document/d/1cDI_AMr2QVmkC53dCHFMYwGJtLC8V4p6KdL2wnYPaiI/edit?usp=sharing): our motivation and vision.
+* 🔗 [Open RL Benchmark reports](https://wandb.ai/openrlbenchmark/openrlbenchmark/reportlist):  W&B reports with tracked Atari, MuJoCo experiments from SB3, CleanRL, and others.
 
-> ⚠️ This is the `0.1.1a0` alpha release. There has been a major refactoring. If you are looking for Pre-Alpha API, check out [43fc8e2](https://github.com/openrlbenchmark/openrlbenchmark/tree/43fc8e2066ac6371913ac53b629928ac15a65e13). Expect breaking changes in the future.
+> ⚠️ This is the `0.1.1a4` alpha release. There has been a major refactoring. If you are looking for Pre-Alpha API, check out [43fc8e2](https://github.com/openrlbenchmark/openrlbenchmark/tree/43fc8e2066ac6371913ac53b629928ac15a65e13). Expect breaking changes in the future.
+
+
+
+## Installation
+You can install it via pip or the dev setup.
+
+### Pip install
+`pip install openrlbenchmark`
+
+### Dev Setup
+
+Prerequisites:
+* Python >=3.7.1,<3.10 (not yet 3.10)
+* [Poetry 1.2.1+](https://python-poetry.org)
+
+```
+git clone https://github.com/openrlbenchmark/openrlbenchmark.git
+cd openrlbenchmark
+poetry install
+```
+
 
 ## Get started
 
-Open RL Benchmark provides an RLops CLI to pull and compare metrics from Weights and Biases. The following example shows how to compare the performance of SB3's ppo, a2c, ddpg, ppo_lstm, sac, td3, ppo, trpo, CleanRL's sac on HalfCheetahBulletEnv-v0.
+Open RL Benchmark provides an RLops CLI to pull and compare metrics from Weights and Biases. The following example shows how to compare the performance of SB3's ppo, a2c, ddpg, ppo_lstm, sac, td3, ppo, trpo, CleanRL's sac on `HalfCheetahBulletEnv-v0`.
 
-You can install it via `pip` or follow the [dev setup](#dev-setup) in the end of the document.
-
-```
-pip install openrlbenchmark
-```
 ```
 python -m openrlbenchmark.rlops \
     --filters '?we=openrlbenchmark&wpn=sb3&ceik=env&cen=algo&metric=rollout/ep_rew_mean' \
@@ -262,21 +287,19 @@ This is a project we are slowly working on. There is no specific timeline or roa
 * Download the tensorboard metrics from the tracked experiments and load them locally to save time
 
 
-## Dev Setup
 
-Prerequisites:
-* Python >=3.7.1,<3.10 (not yet 3.10)
-* [Poetry 1.2.1+](https://python-poetry.org)
 
 ```
-poetry install
-poetry run python -m openrlbenchmark.rlops \
-    --filters '?we=openrlbenchmark&wpn=baselines&ceik=env&cen=exp_name&metric=charts/episodic_return' 'baselines-ppo2-mlp' \
-    --filters '?we=openrlbenchmark&wpn=cleanrl&ceik=env_id&cen=exp_name&metric=charts/episodic_return' 'ppo_continuous_action?tag=v1.0.0-27-gde3f410' \
-    --filters '?we=openrlbenchmark&wpn=jaxrl&ceik=env_name&cen=algo&metric=training/return' 'sac' \
-    --env-ids HalfCheetah-v2 Walker2d-v2 Hopper-v2 InvertedPendulum-v2 Humanoid-v2 Pusher-v2 \
-    --check-empty-runs False \
+pip install --upgrade openrlbenchmark
+python -m openrlbenchmark.rlops \
+    --filters '?we=openrlbenchmark&wpn=cleanrl&ceik=env_id&cen=exp_name&metric=charts/episodic_return' 'dqn_atari?tag=latest' 'c51_atari?tag=latest' \
+    --filters '?we=openrlbenchmark&wpn=baselines&ceik=env&cen=exp_name&metric=charts/episodic_return' 'baselines-ppo2-cnn' \
+    --filters '?we=openrlbenchmark&wpn=envpool-atari&ceik=env_id&cen=exp_name&metric=charts/avg_episodic_return' 'ppo_atari_envpool_xla_jax_truncation?user=costa-huang' \
+    --env-ids BeamRider-v5 Breakout-v5 Pong-v5 \
     --ncols 3 \
-    --ncols-legend 3 \
-    --output-filename static/baselines_vs_cleanrl_vs_jaxrl
+    --ncols-legend 2 \
+    --output-filename compare \
+    --scan-history \
+    --report \
+    --check-empty-runs False 
 ```
