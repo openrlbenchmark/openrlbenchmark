@@ -312,7 +312,7 @@ if __name__ == "__main__":
             runsets = []
             for env_id in args.env_ids:
                 # HACK
-                if exp_name not in "envpool":
+                if "envpool" not in exp_name:
                     env_id = env_id.replace("-v5", "NoFrameskip-v4")
                 if exp_name == "ppo_continuous_action" and "rlops-pilot" in query["tag"]:
                     env_id = env_id.replace("-v4", "-v2")
