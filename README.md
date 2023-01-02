@@ -60,7 +60,7 @@ python -m openrlbenchmark.rlops \
     --report
 ```
 
-Here, we use create multiple filters. The first string in the first filter is `'?we=openrlbenchmark&wpn=sb3&ceik=env&cen=algo&metric=rollout/ep_rew_mean'`, which is a query string that specifies the following:
+Here, we created multiple filters. The first string in the first filter is `'?we=openrlbenchmark&wpn=sb3&ceik=env&cen=algo&metric=rollout/ep_rew_mean'`, which is a query string that specifies the following:
 
 * `we`: the W&B entity name
 * `wpn`: the W&B project name

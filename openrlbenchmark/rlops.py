@@ -319,7 +319,7 @@ if __name__ == "__main__":
 
                 runsets += [
                     Runset(
-                        name=f"{exp_name} ({query})",
+                        name=f"{wandb_entity}/{wandb_project_name}/{exp_name} ({query})",
                         filters={
                             "$and": [
                                 {f"config.{custom_env_id_key}.value": env_id},
