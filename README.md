@@ -14,7 +14,8 @@ Open RL Benchmark is a comprehensive collection of tracked experiments for RL. I
 * 📜 [Design docs](https://docs.google.com/document/d/1cDI_AMr2QVmkC53dCHFMYwGJtLC8V4p6KdL2wnYPaiI/edit?usp=sharing): our motivation and vision.
 * 🔗 [Open RL Benchmark reports](https://wandb.ai/openrlbenchmark/openrlbenchmark/reportlist):  W&B reports with tracked Atari, MuJoCo experiments from SB3, CleanRL, and others.
 
-> ⚠️ This is the `0.1.1a5` alpha release. There has been a major refactoring. If you are looking for Pre-Alpha API, check out [43fc8e2](https://github.com/openrlbenchmark/openrlbenchmark/tree/43fc8e2066ac6371913ac53b629928ac15a65e13). Expect breaking changes in the future.
+> **Warning**
+> This is the `0.1.1a5` alpha release. There has been a major refactoring. If you are looking for Pre-Alpha API, check out [43fc8e2](https://github.com/openrlbenchmark/openrlbenchmark/tree/43fc8e2066ac6371913ac53b629928ac15a65e13). Expect breaking changes in the future.
 
 
 
@@ -22,7 +23,10 @@ Open RL Benchmark is a comprehensive collection of tracked experiments for RL. I
 You can install it via pip or the dev setup.
 
 ### Pip install
-`pip install openrlbenchmark`
+
+```shell
+pip install openrlbenchmark
+```
 
 ### Dev Setup
 
@@ -30,7 +34,7 @@ Prerequisites:
 * Python >=3.7.1,<3.10 (not yet 3.10)
 * [Poetry 1.2.1+](https://python-poetry.org)
 
-```
+```shell
 git clone https://github.com/openrlbenchmark/openrlbenchmark.git
 cd openrlbenchmark
 poetry install
@@ -41,7 +45,7 @@ poetry install
 
 Open RL Benchmark provides an RLops CLI to pull and compare metrics from Weights and Biases. The following example shows how to compare the performance of SB3's ppo, a2c, ddpg, ppo_lstm, sac, td3, ppo, trpo, CleanRL's sac on `HalfCheetahBulletEnv-v0`.
 
-```
+```shell
 python -m openrlbenchmark.rlops \
     --filters '?we=openrlbenchmark&wpn=sb3&ceik=env&cen=algo&metric=rollout/ep_rew_mean' \
         'a2c' \
@@ -86,7 +90,8 @@ The command also generates a `compare.png`, a `compare.md`, and a `compare.csv` 
 **Result table:** the `compare.md` and `compare.csv` shows the average episodic return of the last 100 episodes. For each random seed $i$ (we have 3 random seeds for each set of experiments), we calculate the average episodic return of the last 100 training episodes as $a_i$. We then average the $a_i$'s over all random seeds to get the final average episodic return and report its standard deviation. This type of evaluation is known as an implicit evaluation method ([Machado et al., 2017](https://arxiv.org/pdf/1709.06009.pdf)) which aligns better with the general goal of RL which is continual learning. This method also detects issues with catastrophic forgetting compared to the evaluation method that evaluates the best model.
 
 
-> ⚠️ You may get slightly different curves every time you run the commands. This is because we sample 500 data points from the track experiments to save bandwidth. You can, however, get all of the data points by running the command with `--scan-history` which will always give you the same curves but will take longer to run. For generating an accurate `compare.md`, you should always use `--scan-history`.
+> **Warning**
+> You may get slightly different curves every time you run the commands. This is because we sample 500 data points from the track experiments to save bandwidth. You can, however, get all of the data points by running the command with `--scan-history` which will always give you the same curves but will take longer to run. For generating an accurate `compare.md`, you should always use `--scan-history`.
 
 
 
@@ -133,7 +138,7 @@ The following libraries have some recorded experiments:
 
 ### Compare CleanRL's PPO with `openai/baselines`'s PPO2 on Atari games:
 
-```
+```shell
 python -m openrlbenchmark.rlops \
     --filters '?we=openrlbenchmark&wpn=baselines&ceik=env&cen=exp_name&metric=charts/episodic_return' 'baselines-ppo2-cnn' \
     --filters '?we=openrlbenchmark&wpn=envpool-atari&ceik=env_id&cen=exp_name&metric=charts/avg_episodic_return' 'ppo_atari_envpool_xla_jax_truncation' \
@@ -149,7 +154,7 @@ python -m openrlbenchmark.rlops \
 
 ### Compare CleanRL's PPO with `openai/baselines`'s PPO2 and `jaxrl`'s SAC on Mujoco:
 
-```
+```shell
 python -m openrlbenchmark.rlops \
     --filters '?we=openrlbenchmark&wpn=baselines&ceik=env&cen=exp_name&metric=charts/episodic_return' 'baselines-ppo2-mlp' \
     --filters '?we=openrlbenchmark&wpn=cleanrl&ceik=env_id&cen=exp_name&metric=charts/episodic_return' 'ppo_continuous_action?tag=v1.0.0-27-gde3f410' \
@@ -164,7 +169,7 @@ python -m openrlbenchmark.rlops \
 ![](static/baselines_vs_cleanrl_vs_jaxrl.png)
 
 
-```
+```shell
 python -m openrlbenchmark.rlops \
     --filters '?we=openrlbenchmark&wpn=baselines&ceik=env&cen=exp_name&metric=charts/episodic_return' 'baselines-ppo2-cnn' \
     --filters '?we=openrlbenchmark&wpn=envpool-atari&ceik=env_id&cen=exp_name&metric=charts/avg_episodic_return' 'ppo_atari_envpool_xla_jax_truncation' \
@@ -180,7 +185,7 @@ python -m openrlbenchmark.rlops \
 
 ### Compare Tianshou's algorithms with `openai/baselines`'s PPO2 on Atari:
 
-```
+```shell
 python -m openrlbenchmark.rlops \
     --filters '?we=tianshou&wpn=atari.benchmark&ceik=task&cen=algo_name&metric=test/reward' 'iqn' 'ppo' 'rainbow' 'fqf' 'c51' 'dqn' 'qrdqn' \
     --filters '?we=openrlbenchmark&wpn=baselines&ceik=env&cen=exp_name&metric=charts/episodic_return' 'baselines-ppo2-cnn' \
@@ -195,7 +200,7 @@ python -m openrlbenchmark.rlops \
 
 ### Compare CleanRL's PPG and PPO with `openai/phasic-policy-gradient`'s PPG on procgen:
 
-```
+```shell
 python -m openrlbenchmark.rlops \
     --filters '?we=openrlbenchmark&wpn=phasic-policy-gradient&ceik=env_name&cen=arch&metric=charts/episodic_return' 'shared' \
     --filters '?we=openrlbenchmark&wpn=cleanrl&ceik=env_id&cen=exp_name&metric=charts/episodic_return' 'ppo_procgen?tag=v1.0.0b1-4-g4ea73d9' 'ppg_procgen?tag=v1.0.0b1-4-g4ea73d9' \
@@ -212,7 +217,7 @@ python -m openrlbenchmark.rlops \
 
 ### Compare CleanRL's TD3 with `sfujim/TD3`'s TD3 on Mujoco:
 
-```
+```shell
 python -m openrlbenchmark.rlops \
     --filters '?we=openrlbenchmark&wpn=sfujim-TD3&ceik=env&cen=policy&metric=charts/episodic_return' 'TD3' \
     --filters '?we=openrlbenchmark&wpn=cleanrl&ceik=env_id&cen=exp_name&metric=charts/episodic_return' 'td3_continuous_action_jax?tag=pr-285' 'ddpg_continuous_action_jax?tag=pr-298' \
@@ -228,7 +233,7 @@ python -m openrlbenchmark.rlops \
 
 ### Compare CleanRL's PPO + JAX + EnvPool's XLA with `openai/baselines`'s Atari wrappers vs [Machado's recommendetation for Atari](https://arxiv.org/abs/1709.06009) (e.g., sticky action with probability 0.25). The machado's experiments ran for 10M steps, which corresponds to 200M frames.
 
-```
+```shell
 python -m openrlbenchmark.rlops \
     --filters '?we=openrlbenchmark&wpn=envpool-atari&ceik=env_id&cen=exp_name&metric=charts/avg_episodic_return' 'ppo_atari_envpool_xla_jax_truncation_machado_10M' 'ppo_atari_envpool_xla_jax_truncation'  \
     --env-ids Alien-v5 Amidar-v5 Assault-v5 Asterix-v5 Asteroids-v5 Atlantis-v5 BankHeist-v5 BattleZone-v5 BeamRider-v5 Berzerk-v5 Bowling-v5 Boxing-v5 Breakout-v5 Centipede-v5 ChopperCommand-v5 CrazyClimber-v5 Defender-v5 DemonAttack-v5 DoubleDunk-v5 Enduro-v5 FishingDerby-v5 Freeway-v5 Frostbite-v5 Gopher-v5 Gravitar-v5 Hero-v5 IceHockey-v5 PrivateEye-v5 Qbert-v5 Riverraid-v5 RoadRunner-v5 Robotank-v5 Seaquest-v5 Skiing-v5 Solaris-v5 SpaceInvaders-v5 StarGunner-v5 Surround-v5 Tennis-v5 TimePilot-v5 Tutankham-v5 UpNDown-v5 Venture-v5 VideoPinball-v5 WizardOfWor-v5 YarsRevenge-v5 Zaxxon-v5 Jamesbond-v5 Kangaroo-v5 Krull-v5 KungFuMaster-v5 MontezumaRevenge-v5 MsPacman-v5 NameThisGame-v5 Phoenix-v5 Pitfall-v5 Pong-v5 \
@@ -242,7 +247,8 @@ python -m openrlbenchmark.rlops \
 
 
 ### Compare CleanRL's PPO + JAX + EnvPool's XLA with `openai/baselines`'s Atari wrappers vs [Machado's recommendetation for Atari](https://arxiv.org/abs/1709.06009) (e.g., sticky action with probability 0.25). The machado's experiments ran for 50M steps, which corresponds to 200M frames.
-```
+
+```shell
 python -m openrlbenchmark.rlops \
     --filters '?we=openrlbenchmark&wpn=envpool-atari&ceik=env_id&cen=exp_name&metric=charts/avg_episodic_return' 'ppo_atari_envpool_xla_jax_truncation_machado' 'ppo_atari_envpool_xla_jax_truncation'  \
     --env-ids Alien-v5 Amidar-v5 Assault-v5 Asterix-v5 Asteroids-v5 Atlantis-v5 BankHeist-v5 BattleZone-v5 BeamRider-v5 Berzerk-v5 Bowling-v5 Boxing-v5 Breakout-v5 Centipede-v5 ChopperCommand-v5 CrazyClimber-v5 Defender-v5 DemonAttack-v5 DoubleDunk-v5 Enduro-v5 FishingDerby-v5 Freeway-v5 Frostbite-v5 Gopher-v5 Gravitar-v5 Hero-v5 IceHockey-v5 PrivateEye-v5 Qbert-v5 Riverraid-v5 RoadRunner-v5 Robotank-v5 Seaquest-v5 Skiing-v5 Solaris-v5 SpaceInvaders-v5 StarGunner-v5 Surround-v5 Tennis-v5 TimePilot-v5 Tutankham-v5 UpNDown-v5 Venture-v5 VideoPinball-v5 WizardOfWor-v5 YarsRevenge-v5 Zaxxon-v5 Jamesbond-v5 Kangaroo-v5 Krull-v5 KungFuMaster-v5 MontezumaRevenge-v5 MsPacman-v5 NameThisGame-v5 Phoenix-v5 Pitfall-v5 Pong-v5 \
@@ -256,9 +262,10 @@ python -m openrlbenchmark.rlops \
 
 ### Calculate human normalized scores
 
-```
+```shell
 python -m openrlbenchmark.hns --files static/cleanrl_vs_baselines.csv static/machado_10M.csv static/machado_50M.csv 
 ```
+
 ```
 baselines-ppo2-cnn ({})
 ┣━━ median hns: 0.7959851540635047
@@ -289,7 +296,7 @@ This is a project we are slowly working on. There is no specific timeline or roa
 
 
 
-```
+```shell
 pip install --upgrade openrlbenchmark
 python -m openrlbenchmark.rlops \
     --filters '?we=openrlbenchmark&wpn=cleanrl&ceik=env_id&cen=exp_name&metric=charts/episodic_return' 'dqn_atari?tag=latest' 'c51_atari?tag=latest' \
