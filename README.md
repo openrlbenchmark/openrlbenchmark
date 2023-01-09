@@ -231,7 +231,7 @@ python -m openrlbenchmark.rlops \
 ![](static/td3_vs_cleanrl.png)
 
 
-### Compare CleanRL's PPO + JAX + EnvPool's XLA with `openai/baselines`'s Atari wrappers vs [Machado's recommendetation for Atari](https://arxiv.org/abs/1709.06009) (e.g., sticky action with probability 0.25). The machado's experiments ran for 10M steps, which corresponds to 200M frames.
+### Compare CleanRL's PPO + JAX + EnvPool's XLA with `openai/baselines`'s Atari wrappers vs [Machado's recommendetation for Atari](https://arxiv.org/abs/1709.06009) (e.g., sticky action with probability 0.25). The machado's experiments ran for 10M steps, which corresponds to 40M frames.
 
 ```shell
 python -m openrlbenchmark.rlops \
