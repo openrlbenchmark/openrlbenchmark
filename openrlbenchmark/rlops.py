@@ -46,6 +46,10 @@ def parse_args():
         help="the unit of time in the x-axis of the chart (e.g., `s` for seconds, `m` for minutes, `h` for hours); default: `m`")
     parser.add_argument("--report", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
         help="if toggled, a wandb report will be created")
+    parser.add_argument("--xlabel", type=str, default="Step",
+        help="the label of the x-axis")
+    parser.add_argument("--ylabel", type=str, default="Episodic Return",
+        help="the label of the y-axis")
     # fmt: on
     return parser.parse_args()
 
@@ -224,6 +228,8 @@ def compare(
             # n_samples=500,
             legend=False,
         )
+        ax.set_xlabel(args.xlabel)
+        ax.set_ylabel(args.ylabel)
         ax_time = axes_time_flatten[idx]
         ex.plot(
             ax=ax_time,
@@ -237,6 +243,7 @@ def compare(
             # n_samples=500,
             legend=False,
         )
+        ax_time.set_ylabel(args.ylabel)
         ax_time.set_xlabel(f"Time ({time_unit})")
 
     print(result_table)
@@ -262,8 +269,10 @@ def compare(
         os.makedirs(os.path.dirname(output_filename), exist_ok=True)
     fig.savefig(f"{output_filename}.png", bbox_inches="tight")
     fig.savefig(f"{output_filename}.pdf", bbox_inches="tight")
+    fig.savefig(f"{output_filename}.svg", bbox_inches="tight")
     fig_time.savefig(f"{output_filename}-time.png", bbox_inches="tight")
     fig_time.savefig(f"{output_filename}-time.pdf", bbox_inches="tight")
+    fig_time.savefig(f"{output_filename}-time.svg", bbox_inches="tight")
     return blocks
 
 
@@ -298,7 +307,6 @@ if __name__ == "__main__":
             },
             expand_all=True,
         )
-        # raise
 
         for filter_str, color in zip(filters[1:], colors[filters_idx]):
             print("=========", filter_str)
@@ -308,6 +316,10 @@ if __name__ == "__main__":
             query = parse_qs(parse_result.query)
             user = [{"username": query["user"][0]}] if "user" in query else []
             include_tag_groups = [{"tags": {"$in": [tag]}} for tag in query["tag"]] if "tag" in query else []
+            custom_legend = query["cl"][0] if "cl" in query else ""
+
+            # HACK unescape
+            custom_legend = custom_legend.replace("\\n", "\n")
 
             runsets = []
             for env_id in args.env_ids:
@@ -318,9 +330,9 @@ if __name__ == "__main__":
                 if exp_name == "ppo_continuous_action" and "rlops-pilot" in query["tag"]:
                     env_id = env_id.replace("-v4", "-v2")
 
-                runsets += [
+                runsets.append(
                     Runset(
-                        name=f"{wandb_entity}/{wandb_project_name}/{exp_name} ({query})",
+                        name=f"{wandb_entity}/{wandb_project_name}/{exp_name} ({query})" if custom_legend == "" else custom_legend,
                         filters={
                             "$and": [
                                 {f"config.{custom_env_id_key}.value": env_id},
@@ -336,13 +348,13 @@ if __name__ == "__main__":
                         metric=metric,
                         color=color,
                     )
-                ]
+                )
                 if args.check_empty_runs:
                     console.print(f"{exp_name} [green]({query})[/] in [purple]{env_id}[/] has {len(runsets[-1].runs)} runs")
                     for run in runsets[-1].runs:
                         console.print(f"┣━━ [link={run.url}]{run.name}[/link] with tags = {run.tags}")
                     assert len(runsets[0].runs) > 0, f"{exp_name} ({query}) in {env_id} has no runs"
-            runsetss += [runsets]
+            runsetss.append(runsets)
 
     blocks = compare(
         runsetss,
