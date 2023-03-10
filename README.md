@@ -49,19 +49,20 @@ Open RL Benchmark provides an RLops CLI to pull and compare metrics from Weights
 ```shell
 python -m openrlbenchmark.rlops \
     --filters '?we=openrlbenchmark&wpn=sb3&ceik=env&cen=algo&metric=rollout/ep_rew_mean' \
-        'a2c' \
-        'ddpg' \
-        'ppo_lstm' \
-        'sac' \
-        'td3' \
-        'ppo' \
-        'trpo' \
+        'a2c?cl=A2C' \
+        'ddpg?cl=DDPG' \
+        'ppo_lstm?cl=PPO_LSTM' \
+        'sac?cl=SAC' \
+        'td3?cl=TD3' \
+        'ppo?cl=PPO' \
+        'trpo?cl=TRPO' \
     --filters '?we=openrlbenchmark&wpn=cleanrl&ceik=env_id&cen=exp_name&metric=charts/episodic_return' \
-        'sac_continuous_action?tag=rlops-pilot' \
+        'sac_continuous_action?tag=rlops-pilot&cl=CleanRL-SAC' \
     --env-ids HalfCheetahBulletEnv-v0 \
     --ncols 1 \
     --ncols-legend 2 \
     --output-filename compare.png \
+    --ylabel 'Average episodic return' \
     --report
 ```
 
@@ -73,7 +74,7 @@ Here, we created multiple filters. The first string in the first filter is `'?we
 * `cen`: the custom key for the experiment name
 * `metric`: the metric we are interested in
 
-So we are fetching metrics from [https://wandb.ai/openrlbenchmark/sb3](https://wandb.ai/openrlbenchmark/sb3). The environment id is stored in the `env` key, and the experiment name is stored in the `algo` key. The metric we are interested in is `rollout/ep_rew_mean`.
+So we are fetching metrics from [https://wandb.ai/openrlbenchmark/sb3](https://wandb.ai/openrlbenchmark/sb3). The environment id is stored in the `env` key, and the experiment name is stored in the `algo` key. The metric we are interested in is `rollout/ep_rew_mean`. In the filter string specifying the algorithms, e.g. `'a2c?cl=A2C'`, `cl` key specifies the label for the plot legend.
 
 Similarly, we are fetching metrics from [https://wandb.ai/openrlbenchmark/cleanrl](https://wandb.ai/openrlbenchmark/cleanrl). The environment id is stored in the `env_id` key, and the experiment name is stored in the `exp_name` key. The metric we are interested in is `charts/episodic_return`.
 
@@ -82,7 +83,7 @@ The command above generates the following plot:
 ![](static/cleanrl_vs_sb3.png)
 
 The `--report` tag also generates a [wandb report](https://wandb.ai/costa-huang/cleanrl/reports/Regression-Report-sac_continuous_action--VmlldzozMTY4NDQ3)
-
+The `--ylabel` tag specifies the y-axis label for the plot.
 
 The command also generates a `compare.png`, a `compare.md`, and a `compare.csv` in the current directory.
 
@@ -122,6 +123,10 @@ The command also generates a `compare.png`, a `compare.md`, and a `compare.csv` 
     * `ceik`: `task`
     * `cen`: `algo_name` (e.g., `ppo`, `iqn`)
     * `metric`: `test/reward`
+* [MORL-Baselines](https://wandb.ai/openrlbenchmark/morl-baselines)
+    * `ceik`: `env_id`
+    * `cen`: `algo` (e.g., `PGMORL`, `PCN`)
+    * `metric`: `eval/hypervolume`, `eval/igd`, `eval/sparsity`, `eval/eum`, `eval/mul`
 
 The following libraries have some recorded experiments:
 
