@@ -58,6 +58,8 @@ python -m openrlbenchmark.rlops \
     --env-ids HalfCheetahBulletEnv-v0 \
     --ncols 1 \
     --ncols-legend 2 \
+    --xlabel 'Training Steps' \
+    --ylabel 'Episodic Return' \
     --output-filename compare \
     --report
 ```
@@ -74,9 +76,15 @@ So we are fetching metrics from [https://wandb.ai/openrlbenchmark/sb3](https://w
 
 Similarly, we are fetching metrics from [https://wandb.ai/openrlbenchmark/cleanrl](https://wandb.ai/openrlbenchmark/cleanrl). The environment id is stored in the `env_id` key, and the experiment name is stored in the `exp_name` key. The metric we are interested in is `charts/episodic_return`. You can also customize the legend with the `cl` query string, such as `ppo_lstm?cl=PPO w/ LSTM`.
 
+The labels of the figure can be customized with the `--xlabel` and `--ylabel` flags. The `--ncols` flag specifies the number of columns in the figure. The `--ncols-legend` flag specifies the number of columns in the legend. The `--output-filename` flag specifies the filename of the output figure
+
 The command above generates the following plot:
 
-![](static/cleanrl_vs_sb3.png)
+|    cleanrl vs. Stable Baselines 3   |    cleanrl vs. Stable Baselines 3 (Time)   |
+|:----------------------------------:|:----------------------------------------:|
+|  ![](static/cleanrl_vs_sb3.png)   |   ![](static/cleanrl_vs_sb3-time.png)   |
+
+
 
 The `--report` tag also generates a [wandb report](https://wandb.ai/costa-huang/cleanrl/reports/Regression-Report-sac_continuous_action--VmlldzozMTY4NDQ3)
 
