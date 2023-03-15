@@ -15,9 +15,6 @@ Open RL Benchmark is a comprehensive collection of tracked experiments for RL. I
 * 📜 [Design docs](https://docs.google.com/document/d/1cDI_AMr2QVmkC53dCHFMYwGJtLC8V4p6KdL2wnYPaiI/edit?usp=sharing): our motivation and vision.
 * 🔗 [Open RL Benchmark reports](https://wandb.ai/openrlbenchmark/openrlbenchmark/reportlist):  W&B reports with tracked Atari, MuJoCo experiments from SB3, CleanRL, and others.
 
-> **Warning**
-> This is the `0.1.1a5` alpha release. There has been a major refactoring. If you are looking for Pre-Alpha API, check out [43fc8e2](https://github.com/openrlbenchmark/openrlbenchmark/tree/43fc8e2066ac6371913ac53b629928ac15a65e13). Expect breaking changes in the future.
-
 
 
 ## Installation
@@ -26,7 +23,7 @@ You can install it via pip or the dev setup.
 ### Pip install
 
 ```shell
-pip install openrlbenchmark
+pip install openrlbenchmark --upgrade
 ```
 
 ### Dev Setup
@@ -49,20 +46,21 @@ Open RL Benchmark provides an RLops CLI to pull and compare metrics from Weights
 ```shell
 python -m openrlbenchmark.rlops \
     --filters '?we=openrlbenchmark&wpn=sb3&ceik=env&cen=algo&metric=rollout/ep_rew_mean' \
-        'a2c?cl=A2C' \
-        'ddpg?cl=DDPG' \
-        'ppo_lstm?cl=PPO_LSTM' \
-        'sac?cl=SAC' \
-        'td3?cl=TD3' \
-        'ppo?cl=PPO' \
-        'trpo?cl=TRPO' \
+        'a2c' \
+        'ddpg' \
+        'ppo_lstm?cl=PPO w/ LSTM' \
+        'sac' \
+        'td3' \
+        'ppo' \
+        'trpo' \
     --filters '?we=openrlbenchmark&wpn=cleanrl&ceik=env_id&cen=exp_name&metric=charts/episodic_return' \
-        'sac_continuous_action?tag=rlops-pilot&cl=CleanRL-SAC' \
+        'sac_continuous_action?tag=rlops-pilot&cl=SAC' \
     --env-ids HalfCheetahBulletEnv-v0 \
     --ncols 1 \
     --ncols-legend 2 \
-    --output-filename compare.png \
-    --ylabel 'Average episodic return' \
+    --xlabel 'Training Steps' \
+    --ylabel 'Episodic Return' \
+    --output-filename compare \
     --report
 ```
 
@@ -74,16 +72,22 @@ Here, we created multiple filters. The first string in the first filter is `'?we
 * `cen`: the custom key for the experiment name
 * `metric`: the metric we are interested in
 
-So we are fetching metrics from [https://wandb.ai/openrlbenchmark/sb3](https://wandb.ai/openrlbenchmark/sb3). The environment id is stored in the `env` key, and the experiment name is stored in the `algo` key. The metric we are interested in is `rollout/ep_rew_mean`. In the filter string specifying the algorithms, e.g. `'a2c?cl=A2C'`, `cl` key specifies the label for the plot legend.
+So we are fetching metrics from [https://wandb.ai/openrlbenchmark/sb3](https://wandb.ai/openrlbenchmark/sb3). The environment id is stored in the `env` key, and the experiment name is stored in the `algo` key. The metric we are interested in is `rollout/ep_rew_mean`.
 
-Similarly, we are fetching metrics from [https://wandb.ai/openrlbenchmark/cleanrl](https://wandb.ai/openrlbenchmark/cleanrl). The environment id is stored in the `env_id` key, and the experiment name is stored in the `exp_name` key. The metric we are interested in is `charts/episodic_return`.
+Similarly, we are fetching metrics from [https://wandb.ai/openrlbenchmark/cleanrl](https://wandb.ai/openrlbenchmark/cleanrl). The environment id is stored in the `env_id` key, and the experiment name is stored in the `exp_name` key. The metric we are interested in is `charts/episodic_return`. You can also customize the legend with the `cl` query string, such as `ppo_lstm?cl=PPO w/ LSTM`.
+
+The labels of the figure can be customized with the `--xlabel` and `--ylabel` flags. The `--ncols` flag specifies the number of columns in the figure. The `--ncols-legend` flag specifies the number of columns in the legend. The `--output-filename` flag specifies the filename of the output figure
 
 The command above generates the following plot:
 
-![](static/cleanrl_vs_sb3.png)
+|    cleanrl vs. Stable Baselines 3   |    cleanrl vs. Stable Baselines 3 (Time)   |
+|:----------------------------------:|:----------------------------------------:|
+|  ![](static/cleanrl_vs_sb3.png)   |   ![](static/cleanrl_vs_sb3-time.png)   |
+
+
 
 The `--report` tag also generates a [wandb report](https://wandb.ai/costa-huang/cleanrl/reports/Regression-Report-sac_continuous_action--VmlldzozMTY4NDQ3)
-The `--ylabel` tag specifies the y-axis label for the plot.
+
 
 The command also generates a `compare.png`, a `compare.md`, and a `compare.csv` in the current directory.
 
