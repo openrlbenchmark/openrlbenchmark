@@ -2,8 +2,9 @@ import json
 import os
 
 import pandas as pd
-import wandb
 import tqdm
+import wandb
+
 
 class CachedRun:
     def __init__(self, run: wandb.apis.public.Run, cache_dir: str = None):
