@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from rich.table import Table
 import wandb
 import wandb.apis.reports as wb  # noqa
 from expt import Hypothesis, Run
@@ -54,12 +55,21 @@ def parse_args():
     return parser.parse_args()
 
 
+def to_rich_table(df: pd.DataFrame) -> Table:
+    table = Table()
+    for column in df.columns:
+        table.add_column(column)
+    for _, row in df.iterrows():
+        table.add_row(*row.astype(str).tolist())
+    return table
+
+
 def create_hypothesis(
     name: str, wandb_runs: List[wandb.apis.public.Run], scan_history: bool = False, metric: str = ""
 ) -> Hypothesis:
     runs = []
     for idx, run in enumerate(wandb_runs):
-        print(run, run.url)
+        print("loading", run, run.url)
         if scan_history:
             # equivalent to `run_df = pd.DataFrame([row for row in run.scan_history()])`
             run = openrlbenchmark.cache.CachedRun(run, cache_dir=os.path.join(openrlbenchmark.__path__[0], "dataset"))
@@ -111,6 +121,7 @@ class Runset:
 
 
 def compare(
+    console: Console,
     runsetss: List[List[Runset]],
     env_ids: List[str],
     ncols: int,
@@ -190,7 +201,9 @@ def compare(
     axes_time_flatten = axes_time.flatten()
 
     result_table = pd.DataFrame(index=env_ids, columns=[runsets[0].name for runsets in runsetss])
+    runtimes = []
     for idx, env_id in enumerate(env_ids):
+        print(f"collecting runs for {env_id}")
         ex = expt.Experiment("Comparison")
         for runsets in runsetss:
             h = create_hypothesis(runsets[idx].name, runsets[idx].runs, scan_history, runsets[idx].metric)
@@ -201,10 +214,8 @@ def compare(
         result = []
         for hypothesis in ex.hypotheses:
             metric_result = []
-            runtimes = []
             for run in hypothesis.runs:
                 metric_result += [run.df["charts/episodic_return"].dropna()[-metric_last_n_average_window:].mean()]
-                runtimes += [run.df["_runtime"].iloc[-1]]
 
                 # convert time unit in place
                 if time_unit == "m":
@@ -214,7 +225,7 @@ def compare(
             metric_result = np.array(metric_result)
             result += [f"{metric_result.mean():.2f} ± {metric_result.std():.2f}"] # , {np.mean(runtimes):.2f} ± {np.std(runtimes):.2f}
         result_table.loc[env_id] = result
-
+        runtimes.append(list(ex.summary()["_runtime"]))
         ax = axes_flatten[idx]
         ex.plot(
             ax=ax,
@@ -225,7 +236,6 @@ def compare(
             std_alpha=0.1,
             rolling=rolling,
             colors=[runsets[idx].color for runsets in runsetss],
-            # n_samples=500,
             legend=False,
         )
         ax.set_xlabel(args.xlabel)
@@ -240,15 +250,23 @@ def compare(
             std_alpha=0.1,
             rolling=rolling,
             colors=[runsets[idx].color for runsets in runsetss],
-            # n_samples=500,
             legend=False,
         )
         ax_time.set_ylabel(args.ylabel)
         ax_time.set_xlabel(f"Time ({time_unit})")
-
-    print(result_table)
+    runtimes = pd.DataFrame(np.array(runtimes), index=env_ids, columns=list(ex.summary()["name"]))
+    console.rule(f"[bold red]Runtime ({time_unit}) (mean ± std)")
+    console.print(to_rich_table(runtimes))
+    console.rule(f"[bold red]{args.ylabel} (mean ± std)")
+    console.print(to_rich_table(result_table))
     result_table.to_markdown(open(f"{output_filename}.md", "w"))
     result_table.to_csv(open(f"{output_filename}.csv", "w"))
+    runtimes.to_markdown(open(f"{output_filename}_runtimes.md", "w"))
+    runtimes.to_csv(open(f"{output_filename}_runtimes.csv", "w"))
+    console.rule(f"[bold red]Runtime ({time_unit}) Average")
+    average_runtime = pd.DataFrame(runtimes.mean(axis=0)).reset_index()
+    average_runtime.columns = ['Experiment Name', f"Runtime ({time_unit})"]
+    console.print(to_rich_table(average_runtime))
 
     # add legend
     h, l = axes_flatten[0].get_legend_handles_labels()
@@ -264,7 +282,7 @@ def compare(
     for ax in axes_time_flatten[len(env_ids) :]:
         ax.remove()
 
-    print(f"saving figure to {output_filename}")
+    print(f"saving figures and tables to {output_filename}")
     if os.path.dirname(output_filename) != "":
         os.makedirs(os.path.dirname(output_filename), exist_ok=True)
     fig.savefig(f"{output_filename}.png", bbox_inches="tight")
@@ -278,7 +296,6 @@ def compare(
 
 if __name__ == "__main__":
     args = parse_args()
-    # raise
     console = Console()
     blocks = []
     runsetss = []
@@ -324,9 +341,11 @@ if __name__ == "__main__":
             runsets = []
             for env_id in args.env_ids:
                 # HACK
-                if "envpool" not in exp_name:
-                    env_id = env_id.replace("-v4", "-v2")
-                    env_id = env_id.replace("-v5", "NoFrameskip-v4")
+                if "alepy" in exp_name: # alepy experiments: `Breakout-v5` -> `ALE/Breakout-v5`
+                    env_id = f"ALE/{env_id}"
+                elif "envpool" not in exp_name:
+                    env_id = env_id.replace("-v4", "-v2") # mujoco experiments: `HalfCheetah-v4` -> `HalfCheetah-v2`
+                    env_id = env_id.replace("-v5", "NoFrameskip-v4") # old atari experiments: `Breakout-v5` -> `BreakoutNoFrameskip-v4`
                 if exp_name == "ppo_continuous_action" and "rlops-pilot" in query["tag"]:
                     env_id = env_id.replace("-v4", "-v2")
 
@@ -357,6 +376,7 @@ if __name__ == "__main__":
             runsetss.append(runsets)
 
     blocks = compare(
+        console,
         runsetss,
         args.env_ids,
         output_filename=args.output_filename,

@@ -13,9 +13,10 @@ expt = "^0.4.1"
 multiprocess = "^0.70.13"
 tueplots = "^0.0.4"
 seaborn = "^0.12.1"
-rich = "^12.6.0"
+rich = "<12.0"
 tabulate = "^0.9.0"
 importlib-metadata = "^5.1.0"
+tqdm = "^4.65.0"
 
 [tool.poetry.dev-dependencies]
 pre-commit = "^2.20.0"
