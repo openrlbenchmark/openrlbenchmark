@@ -9,12 +9,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from rich.table import Table
 import wandb
 import wandb.apis.reports as wb  # noqa
 from expt import Hypothesis, Run
 from rich.console import Console
 from rich.pretty import pprint
+from rich.table import Table
 
 import openrlbenchmark
 import openrlbenchmark.cache
@@ -70,6 +70,9 @@ def create_hypothesis(
     runs = []
     for idx, run in enumerate(wandb_runs):
         print("loading", run, run.url)
+        if run.state == "running":
+            print(f"Skipping running run: {run}")
+            continue
         if scan_history:
             # equivalent to `run_df = pd.DataFrame([row for row in run.scan_history()])`
             run = openrlbenchmark.cache.CachedRun(run, cache_dir=os.path.join(openrlbenchmark.__path__[0], "dataset"))
@@ -214,6 +217,7 @@ def compare(
         result = []
         for hypothesis in ex.hypotheses:
             metric_result = []
+            console.print(f"{hypothesis.name} has {len(hypothesis.runs)} runs", style="bold")
             for run in hypothesis.runs:
                 metric_result += [run.df["charts/episodic_return"].dropna()[-metric_last_n_average_window:].mean()]
 
@@ -223,7 +227,9 @@ def compare(
                 elif time_unit == "h":
                     run.df["_runtime"] /= 3600
             metric_result = np.array(metric_result)
-            result += [f"{metric_result.mean():.2f} ± {metric_result.std():.2f}"] # , {np.mean(runtimes):.2f} ± {np.std(runtimes):.2f}
+            result += [
+                f"{metric_result.mean():.2f} ± {metric_result.std():.2f}"
+            ]  # , {np.mean(runtimes):.2f} ± {np.std(runtimes):.2f}
         result_table.loc[env_id] = result
         runtimes.append(list(ex.summary()["_runtime"]))
         ax = axes_flatten[idx]
@@ -256,16 +262,16 @@ def compare(
         ax_time.set_xlabel(f"Time ({time_unit})")
     runtimes = pd.DataFrame(np.array(runtimes), index=env_ids, columns=list(ex.summary()["name"]))
     console.rule(f"[bold red]Runtime ({time_unit}) (mean ± std)")
-    console.print(to_rich_table(runtimes))
+    console.print(to_rich_table(runtimes.rename_axis("Environment").reset_index()))
     console.rule(f"[bold red]{args.ylabel} (mean ± std)")
-    console.print(to_rich_table(result_table))
+    console.print(to_rich_table(result_table.rename_axis("Environment").reset_index()))
     result_table.to_markdown(open(f"{output_filename}.md", "w"))
     result_table.to_csv(open(f"{output_filename}.csv", "w"))
     runtimes.to_markdown(open(f"{output_filename}_runtimes.md", "w"))
     runtimes.to_csv(open(f"{output_filename}_runtimes.csv", "w"))
     console.rule(f"[bold red]Runtime ({time_unit}) Average")
     average_runtime = pd.DataFrame(runtimes.mean(axis=0)).reset_index()
-    average_runtime.columns = ['Experiment Name', f"Runtime ({time_unit})"]
+    average_runtime.columns = ["Environment", "Average Runtime"]
     console.print(to_rich_table(average_runtime))
 
     # add legend
@@ -341,17 +347,21 @@ if __name__ == "__main__":
             runsets = []
             for env_id in args.env_ids:
                 # HACK
-                if "alepy" in exp_name: # alepy experiments: `Breakout-v5` -> `ALE/Breakout-v5`
+                if "alepy" in exp_name:  # alepy experiments: `Breakout-v5` -> `ALE/Breakout-v5`
                     env_id = f"ALE/{env_id}"
                 elif "envpool" not in exp_name:
-                    env_id = env_id.replace("-v4", "-v2") # mujoco experiments: `HalfCheetah-v4` -> `HalfCheetah-v2`
-                    env_id = env_id.replace("-v5", "NoFrameskip-v4") # old atari experiments: `Breakout-v5` -> `BreakoutNoFrameskip-v4`
+                    env_id = env_id.replace("-v4", "-v2")  # mujoco experiments: `HalfCheetah-v4` -> `HalfCheetah-v2`
+                    env_id = env_id.replace(
+                        "-v5", "NoFrameskip-v4"
+                    )  # old atari experiments: `Breakout-v5` -> `BreakoutNoFrameskip-v4`
                 if exp_name == "ppo_continuous_action" and "rlops-pilot" in query["tag"]:
                     env_id = env_id.replace("-v4", "-v2")
 
                 runsets.append(
                     Runset(
-                        name=f"{wandb_entity}/{wandb_project_name}/{exp_name} ({query})" if custom_legend == "" else custom_legend,
+                        name=f"{wandb_entity}/{wandb_project_name}/{exp_name} ({query})"
+                        if custom_legend == ""
+                        else custom_legend,
                         filters={
                             "$and": [
                                 {f"config.{custom_env_id_key}.value": env_id},

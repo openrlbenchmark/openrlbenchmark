@@ -101,13 +101,16 @@ if __name__ == "__main__":
     runset_names = set()
     for file in args.files:
         df = pd.read_csv(file, index_col=0)
-        env_ids = atari_human_normalized_scores.keys()
+        # env_ids = atari_human_normalized_scores.keys()
+        env_ids = df.index
         for runset_name in df.columns:
             if runset_name in runset_names:
                 continue
             runset_names.add(runset_name)
             hnss = []
             for env_id in env_ids:
+                # if env_id not in df.index:
+                #     continue
                 episodic_return = float(df.loc[env_id, runset_name].split(" ± ")[0])
                 hns = (episodic_return - atari_human_normalized_scores[env_id][0]) / (
                     atari_human_normalized_scores[env_id][1] - atari_human_normalized_scores[env_id][0]
