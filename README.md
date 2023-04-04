@@ -127,6 +127,10 @@ The command also generates a `compare.png`, a `compare.md`, and a `compare.csv` 
     * `ceik`: `task`
     * `cen`: `algo_name` (e.g., `ppo`, `iqn`)
     * `metric`: `test/reward`
+* [MORL-Baselines](https://wandb.ai/openrlbenchmark/morl-baselines)
+    * `ceik`: `env_id`
+    * `cen`: `algo` (e.g., `PGMORL`, `PCN`)
+    * `metric`: `eval/hypervolume`, `eval/igd`, `eval/sparsity`, `eval/eum`, `eval/mul`
 
 The following libraries have some recorded experiments:
 
@@ -265,6 +269,26 @@ python -m openrlbenchmark.rlops \
     --scan-history
 ```
 ![](static/machado_50M.png)
+
+### Compare MORL Baselines algorithms on deterministic environments
+
+```shell
+python -m openrlbenchmark.rlops \
+  --filters '?we=openrlbenchmark&wpn=MORL-Baselines&ceik=env_id&cen=algo&metric=eval/hypervolume' \
+  'Pareto Q-Learning?cl=Pareto Q-Learning' \
+  'MultiPolicy MO Q-Learning?cl=MultiPolicy MO Q-Learning' \
+  'MultiPolicy MO Q-Learning (OLS)?cl=MultiPolicy MO Q-Learning (OLS)' \
+  --env-ids deep-sea-treasure-v0 deep-sea-treasure-concave-v0 \
+  --ncols 2 \
+  --ncols-legend 1 \
+  --xlabel 'Training steps' \
+  --ylabel 'Hypervolume' \
+  --output-filename morl_deterministic_envs \
+  --scan-history
+```
+
+![](static/morl_deterministic_envs.png)
+![](static/morl_deterministic_envs-time.png)
 
 ### Calculate human normalized scores
 
