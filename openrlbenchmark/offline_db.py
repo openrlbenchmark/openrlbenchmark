@@ -1,13 +1,12 @@
 import peewee as pw
-import json
 from playhouse.sqlite_ext import JSONField
 
 database_proxy = pw.Proxy()  # Create a proxy for our db.
 
 # db = pw.SqliteDatabase('runs_database.db')
 
-class BaseModel(pw.Model):
 
+class BaseModel(pw.Model):
     class Meta:
         database = database_proxy
 
@@ -23,9 +22,11 @@ class OfflineRun(BaseModel):
     entity = pw.CharField()
     config = JSONField()
 
+
 class Tag(BaseModel):
     name = pw.CharField()
     runs = pw.ManyToManyField(OfflineRun, backref="tags")
+
 
 OfflineRunTag = Tag.runs.get_through_model()
 
@@ -57,7 +58,7 @@ if __name__ == "__main__":
                 project="project",
                 entity="entity",
                 config={"config": "config"},
-                tags=[tag1, tag2]
+                tags=[tag1, tag2],
             )
             new_run.save()
 
@@ -68,9 +69,14 @@ if __name__ == "__main__":
             cond = True
             for tag in tags:
                 cond = cond and (Tag.name == tag)
-            runs = OfflineRun.select().join(OfflineRunTag).join(Tag).where(
-                # (OfflineRun.name == 'name') and
-                cond
+            runs = (
+                OfflineRun.select()
+                .join(OfflineRunTag)
+                .join(Tag)
+                .where(
+                    # (OfflineRun.name == 'name') and
+                    cond
+                )
             )
             for run in runs:
                 print(run.name)  # This will print a list of strings
