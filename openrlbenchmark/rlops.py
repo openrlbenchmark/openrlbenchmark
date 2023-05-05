@@ -194,7 +194,7 @@ def create_hypothesis(runset: Runset, scan_history: bool = False) -> Hypothesis:
                         tags=tags,
                         project=run.run.project,
                         entity=run.run.entity,
-                        config=run.run.config.toDict(),
+                        config=run.run.config if isinstance(run.run.config, dict) else run.run.config.toDict(),
                     )
                     offline_run.save()
             run_df = run.run_df

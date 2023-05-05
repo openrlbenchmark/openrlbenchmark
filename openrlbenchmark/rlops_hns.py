@@ -204,7 +204,7 @@ def create_hypothesis(runset: Runset, scan_history: bool = False) -> Hypothesis:
                         tags=tags,
                         project=run.run.project,
                         entity=run.run.entity,
-                        config=run.run.config.toDict(),
+                        config=run.run.config if isinstance(run.run.config, dict) else run.run.config.toDict(),
                     )
                     offline_run.save()
             run_df = run.run_df
@@ -327,9 +327,12 @@ def compare(
                 min_num_seeds_per_hypothesis[hypothesis.name], len(hypothesis.runs)
             )
             for run in hypothesis.runs:
-                # calculate hns
-                run.df["hns"] = (run.df["charts/episodic_return"] - atari_hns[env_id][0]) / (
-                    atari_hns[env_id][1] - atari_hns[env_id][0]
+                # HACK: handle different Atari env id types.
+                standard_env_id = env_id
+                if env_id.endswith("NoFrameskip-v4"):
+                    standard_env_id = env_id.replace("NoFrameskip-v4", "-v5")
+                run.df["hns"] = (run.df["charts/episodic_return"] - atari_hns[standard_env_id][0]) / (
+                    atari_hns[standard_env_id][1] - atari_hns[standard_env_id][0]
                 )
                 metric_result += [run.df["charts/episodic_return"].dropna()[-metric_last_n_average_window:].mean()]
                 hns_metric_result += [run.df["hns"].dropna()[-metric_last_n_average_window:].mean()]
@@ -511,6 +514,7 @@ def compare(
     fig.legend(h, l, loc="lower center", ncol=pc.ncols_legend, bbox_to_anchor=(0.5, 1.0), bbox_transform=fig.transFigure)
     fig.supxlabel(pc.xlabel)
     fig.supylabel(pc.ylabel)
+    fig.text(0.99, 0.5, "Human-Normalized Score", va="center", rotation=-90)
     fig.tight_layout()
     h, l = axes_time_flatten[0].get_legend_handles_labels()
     fig_time.legend(

@@ -1,0 +1,4 @@
+,openrlbenchmark/sfujim-TD3/TD3 ({}),openrlbenchmark/cleanrl/td3_continuous_action_jax ({'tag': ['pr-285']}),openrlbenchmark/cleanrl/ddpg_continuous_action_jax ({'tag': ['pr-298']})
+HalfCheetah-v2,70.13747222222223,30.32093210697408,27.184945685134256
+Walker2d-v2,65.63724358974359,23.68115640572421,24.09334314314952
+Hopper-v2,60.71175950486295,28.970189770134418,26.019340371088834

@@ -16,8 +16,8 @@ python -m openrlbenchmark.rlops \
     --env-ids HalfCheetahBulletEnv-v0 \
     --pc.ncols 1 \
     --pc.ncols-legend 2 \
-    --xlabel 'Training Steps' \
-    --ylabel 'Episodic Return' \
+    --pc.xlabel 'Training Steps' \
+    --pc.ylabel 'Episodic Return' \
     --output-filename static/0compare
 """,
         shell=True,
@@ -42,8 +42,8 @@ python -m openrlbenchmark.rlops \
     --scan-history \
     --pc.ncols 1 \
     --pc.ncols-legend 2 \
-    --xlabel 'Training Steps' \
-    --ylabel 'Episodic Return' \
+    --pc.xlabel 'Training Steps' \
+    --pc.ylabel 'Episodic Return' \
     --output-filename static/0compare
 """,
         shell=True,
@@ -97,11 +97,11 @@ python -m openrlbenchmark.rlops \
 
 def test_rliable_hns():
     """
-    test rliable hns integration 
+    test rliable hns integration
     """
     subprocess.run(
         """
-python -i -m openrlbenchmark.rlops_hns_iqm \
+python -i -m openrlbenchmark.rlops_hns \
     --filters '?we=costa-huang&wpn=moolib-atari-2&ceik=env_id&cen=exp_name&metric=global/mean_episode_return' \
         'moolib_impala_envpool_machado?cl=Moolib (Resnet CNN) 1 A100, 10 CPU' \
     --filters '?we=openrlbenchmark&wpn=moolib-atari&ceik=env_id&cen=exp_name&metric=global/mean_episode_return' \
@@ -115,10 +115,9 @@ python -i -m openrlbenchmark.rlops_hns_iqm \
     --no-check-empty-runs \
     --pc.ncols 2 \
     --pc.ncols-legend 2 \
-    --output-filename figures/0compare \
-    --scan-history --offline
+    --output-filename static/0compare \
+    --scan-history --offline --rliable
 """,
         shell=True,
         check=True,
     )
-
