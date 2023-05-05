@@ -7,7 +7,9 @@ import expt
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import peewee as pw
 import seaborn as sns
+import tyro
 import wandb
 import wandb.apis.reports as wb  # noqa
 from expt import Hypothesis, Run
@@ -17,10 +19,7 @@ from rich.table import Table
 
 import openrlbenchmark
 import openrlbenchmark.cache
-
-api = wandb.Api()
-
-import tyro
+from openrlbenchmark.offline_db import OfflineRun, OfflineRunTag, Tag
 
 
 @dataclass
@@ -53,62 +52,74 @@ class Args:
     """the label of the y-axis"""
 
 
-def to_rich_table(df: pd.DataFrame) -> Table:
-    table = Table()
-    for column in df.columns:
-        table.add_column(column)
-    for _, row in df.iterrows():
-        table.add_row(*row.astype(str).tolist())
-    return table
-
-
-def create_hypothesis(
-    name: str, wandb_runs: List[wandb.apis.public.Run], scan_history: bool = False, metric: str = ""
-) -> Hypothesis:
-    runs = []
-    for idx, run in enumerate(wandb_runs):
-        print("loading", run, run.url)
-        if run.state == "running":
-            print(f"Skipping running run: {run}")
-            continue
-        if scan_history:
-            # equivalent to `run_df = pd.DataFrame([row for row in run.scan_history()])`
-            run = openrlbenchmark.cache.CachedRun(run, cache_dir=os.path.join(openrlbenchmark.__path__[0], "dataset"))
-            run_df = run.run_df
-        else:
-            run_df = run.history(samples=1500)
-        if "videos" in run_df:
-            run_df = run_df.drop(columns=["videos"], axis=1)
-        if len(metric) > 0:
-            run_df["charts/episodic_return"] = run_df[metric]
-        runs += [Run(f"seed{idx}", run_df)]
-    return Hypothesis(name, runs)
-
-
 class Runset:
     def __init__(
         self,
         name: str,
-        filters: dict,
         entity: str,
         project: str,
-        groupby: str = "",
-        exp_name: str = "exp_name",
         metric: str = "charts/episodic_return",
+        groupby: str = "",
+        custom_exp_name_key: str = "exp_name",
+        exp_name: str = "",
+        custom_env_id_key: str = "env_id",
+        env_id: str = "",
+        tags: List[str] = [],
+        username: str = "",
         color: str = "#000000",
+        offline_db: pw.Database = None,
+        offline: bool = False,
     ):
         self.name = name
-        self.filters = filters
         self.entity = entity
         self.project = project
-        self.groupby = groupby
-        self.exp_name = exp_name
         self.metric = metric
+        self.groupby = groupby
+        self.custom_exp_name_key = custom_exp_name_key
+        self.exp_name = exp_name
+        self.custom_env_id_key = custom_env_id_key
+        self.env_id = env_id
         self.color = color
+        self.tags = tags
+        self.username = username
+        self.offline_db = offline_db
+        self.offline = offline
 
     @property
     def runs(self):
-        return wandb.Api().runs(path=f"{self.entity}/{self.project}", filters=self.filters)
+        if not self.offline:
+            user = [{"username": self.username}] if self.username else []
+            include_tag_groups = [{"tags": {"$in": [tag]}} for tag in self.tags] if len(self.tags) > 0 else []
+            return wandb.Api().runs(
+                path=f"{self.entity}/{self.project}",
+                filters={
+                    "$and": [
+                        {f"config.{self.custom_env_id_key}.value": self.env_id},
+                        *include_tag_groups,
+                        *user,
+                        {f"config.{self.custom_exp_name_key}.value": self.exp_name},
+                    ]
+                },
+            )
+        else:
+            with self.offline_db.bind_ctx([OfflineRun, OfflineRunTag, Tag]):
+                cond = (
+                    (OfflineRun.project == self.project)
+                    & (OfflineRun.entity == self.entity)
+                    & (OfflineRun.config[self.custom_env_id_key] == self.env_id)
+                    & (OfflineRun.config[self.custom_exp_name_key] == self.exp_name)
+                )
+                if self.username:
+                    cond = cond and OfflineRun.username == self.username
+                if len(self.tags) > 0:
+                    for tag_str in self.tags:
+                        cond = cond and (Tag.name == tag_str)
+                    query = OfflineRun.select().join(OfflineRunTag).join(Tag).where(cond)
+                else:
+                    query = OfflineRun.select().where(cond)
+                g = [run for run in query]
+
+            return g
 
     @property
     def report_runset(self):
@@ -119,6 +130,58 @@ class Runset:
             filters={"$or": [self.filters]},
             groupby=[self.groupby] if len(self.groupby) > 0 else None,
         )
+
+
+def to_rich_table(df: pd.DataFrame) -> Table:
+    table = Table()
+    for column in df.columns:
+        table.add_column(column)
+    for _, row in df.iterrows():
+        table.add_row(*row.astype(str).tolist())
+    return table
+
+
+def create_hypothesis(runset: Runset, scan_history: bool = False) -> Hypothesis:
+    runs = []
+    for idx, run in enumerate(runset.runs):
+        print("loading", run, run.url)
+        if run.state == "running":
+            print(f"Skipping running run: {run}")
+            continue
+        if scan_history:
+            run = openrlbenchmark.cache.CachedRun(run, cache_dir=os.path.join(openrlbenchmark.__path__[0], "dataset"))
+            with runset.offline_db.bind_ctx([OfflineRun, OfflineRunTag, Tag]):
+                tags = []
+                for tag_str in run.run.tags:
+                    tag = Tag.get_or_none(name=tag_str)
+                    if not tag:
+                        tag = Tag.create(name=tag_str)
+                        tag.save()
+                    tags.append(tag)
+                offline_run = OfflineRun.get_or_none(id=run.run.id)
+                if not offline_run:
+                    offline_run = OfflineRun.create(
+                        id=run.run.id,
+                        name=run.run.name,
+                        state=run.run.state,
+                        url=run.run.url,
+                        path=run.run.path,
+                        username=run.run.user.username,
+                        tags=tags,
+                        project=run.run.project,
+                        entity=run.run.entity,
+                        config=run.run.config.toDict(),
+                    )
+                    offline_run.save()
+            run_df = run.run_df
+        else:
+            run_df = run.history(samples=1500)
+        if "videos" in run_df:
+            run_df = run_df.drop(columns=["videos"], axis=1)
+        if len(runset.metric) > 0:
+            run_df["charts/episodic_return"] = run_df[runset.metric]
+        runs += [Run(f"seed{idx}", run_df)]
+    return Hypothesis(runset.name, runs)
 
 
 def compare(
@@ -207,7 +270,7 @@ def compare(
         print(f"collecting runs for {env_id}")
         ex = expt.Experiment("Comparison")
         for runsets in runsetss:
-            h = create_hypothesis(runsets[idx].name, runsets[idx].runs, scan_history, runsets[idx].metric)
+            h = create_hypothesis(runsets[idx], scan_history)
             ex.add_hypothesis(h)
 
         # for each run `i` get the average of the last `rolling` episodes as r_i
@@ -306,6 +369,7 @@ if __name__ == "__main__":
     console = Console()
     blocks = []
     runsetss = []
+    offline_dbs = {}
 
     colors_flatten = sns.color_palette(n_colors=sum(len(filters) - 1 for filters in args.filters)).as_hex()
     colors = []
@@ -320,13 +384,13 @@ if __name__ == "__main__":
         wandb_project_name = query["wpn"][0] if "wpn" in query else args.wandb_project_name
         wandb_entity = query["we"][0] if "we" in query else args.wandb_entity
         custom_env_id_key = query["ceik"][0] if "ceik" in query else "env_id"
-        custom_exp_name = query["cen"][0] if "cen" in query else "exp_name"
+        custom_exp_name_key = query["cen"][0] if "cen" in query else "exp_name"
         pprint(
             {
                 "wandb_project_name": wandb_project_name,
                 "wandb_entity": wandb_entity,
                 "custom_env_id_key": custom_env_id_key,
-                "custom_exp_name": custom_exp_name,
+                "custom_exp_name_key": custom_exp_name_key,
                 "metric": metric,
             },
             expand_all=True,
@@ -338,34 +402,32 @@ if __name__ == "__main__":
             parse_result = urlparse(filter_str)
             exp_name = parse_result.path
             query = parse_qs(parse_result.query)
-            user = [{"username": query["user"][0]}] if "user" in query else []
-            include_tag_groups = [{"tags": {"$in": [tag]}} for tag in query["tag"]] if "tag" in query else []
+            username = query["user"][0] if "user" in query else None
+            tags = query["tag"] if "tag" in query else []
             custom_legend = query["cl"][0] if "cl" in query else ""
             # HACK unescape
             custom_legend = custom_legend.replace("\\n", "\n")
 
             runsets = []
             for env_id in args.env_ids[filters_idx]:
-
                 runsets.append(
                     Runset(
                         name=f"{wandb_entity}/{wandb_project_name}/{exp_name} ({query})"
                         if custom_legend == ""
                         else custom_legend,
-                        filters={
-                            "$and": [
-                                {f"config.{custom_env_id_key}.value": env_id},
-                                *include_tag_groups,
-                                *user,
-                                {f"config.{custom_exp_name}.value": exp_name},
-                            ]
-                        },
                         entity=wandb_entity,
                         project=wandb_project_name,
-                        groupby=custom_exp_name,
-                        exp_name=custom_exp_name,
                         metric=metric,
+                        groupby=custom_exp_name_key,
+                        custom_exp_name_key=custom_exp_name_key,
+                        exp_name=exp_name,
+                        custom_env_id_key=custom_env_id_key,
+                        env_id=env_id,
+                        tags=tags,
+                        username=username,
                         color=color,
+                        offline_db=offline_dbs[f"{wandb_entity}/{wandb_project_name}"],
+                        offline=args.offline,
                     )
                 )
                 if args.check_empty_runs:
