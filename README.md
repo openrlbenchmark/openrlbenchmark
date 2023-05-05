@@ -178,6 +178,26 @@ Furthermore, the `--rliable` integration generates `cleanrl_vs_baselines_iqm_pro
 ![](static/cleanrl_vs_baselines_hns_aggregate.png)
 
 
+### Offline mode
+
+Sometimes even with caching `--scan-history` the script can still take a long time if there are too many environments or experiments. This is because we are still calling many `wandb.Api().runs(..., filters)` under the hood. 
+
+No worries though. When running with `--scan-history`, we also automatically build a local `sqlite` database to store the metadata of runs, enabling us to run the script without internet connection.
+
+```shell
+python -m openrlbenchmark.rlops \
+    --filters '?we=openrlbenchmark&wpn=baselines&ceik=env&cen=exp_name&metric=charts/episodic_return' 'baselines-ppo2-mlp' \
+    --filters '?we=openrlbenchmark&wpn=cleanrl&ceik=env_id&cen=exp_name&metric=charts/episodic_return' 'ppo_continuous_action?tag=v1.0.0-27-gde3f410' \
+    --filters '?we=openrlbenchmark&wpn=jaxrl&ceik=env_name&cen=algo&metric=training/return' 'sac' \
+    --env-ids HalfCheetah-v2 Walker2d-v2 Hopper-v2 InvertedPendulum-v2 Humanoid-v2 Pusher-v2 \
+    --no-check-empty-runs \
+    --pc.ncols 3 \
+    --pc.ncols-legend 3 \
+    --output-filename static/baselines_vs_cleanrl_vs_jaxrl \
+    --scan-history \
+    --offline
+```
+
 ### Compare CleanRL's PPO with `openai/baselines`'s PPO2 and `jaxrl`'s SAC on Mujoco:
 
 ```shell
