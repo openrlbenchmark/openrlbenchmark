@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openrlbenchmark"
-version = "0.1.1b4"
+version = "0.2.0b1"
 description = ""
 authors = ["Costa Huang <costa.huang@outlook.com>"]
 readme = "README.md"
