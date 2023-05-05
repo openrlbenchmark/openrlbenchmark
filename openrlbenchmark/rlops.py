@@ -290,9 +290,7 @@ def compare(
                 elif time_unit == "h":
                     run.df["_runtime"] /= 3600
             metric_result = np.array(metric_result)
-            result += [
-                f"{metric_result.mean():.2f} ± {metric_result.std():.2f}"
-            ]  # , {np.mean(runtimes):.2f} ± {np.std(runtimes):.2f}
+            result += [f"{metric_result.mean():.2f} ± {metric_result.std():.2f}"]
         result_table.loc[env_id] = result
         runtimes.append(list(ex.summary()["_runtime"]))
         ax = axes_flatten[idx]
@@ -307,8 +305,8 @@ def compare(
             colors=[runsets[idx].color for runsets in runsetss],
             legend=False,
         )
-        ax.set_xlabel(args.xlabel)
-        ax.set_ylabel(args.ylabel)
+        ax.set_xlabel("")
+        ax.set_ylabel("")
         ax_time = axes_time_flatten[idx]
         ex.plot(
             ax=ax_time,
@@ -321,8 +319,8 @@ def compare(
             colors=[runsets[idx].color for runsets in runsetss],
             legend=False,
         )
-        ax_time.set_ylabel(args.ylabel)
-        ax_time.set_xlabel(f"Time ({time_unit})")
+        ax_time.set_xlabel("")
+        ax_time.set_ylabel("")
     runtimes = pd.DataFrame(np.array(runtimes), index=env_ids, columns=list(ex.summary()["name"]))
     console.rule(f"[bold red]Runtime ({time_unit}) (mean ± std)")
     console.print(to_rich_table(runtimes.rename_axis("Environment").reset_index()))
@@ -340,10 +338,16 @@ def compare(
     # add legend
     h, l = axes_flatten[0].get_legend_handles_labels()
     fig.legend(h, l, loc="lower center", ncol=ncols_legend, bbox_to_anchor=(0.5, 1.0), bbox_transform=fig.transFigure)
+    fig.supxlabel("Steps")
+    fig.supylabel(args.ylabel)
+    fig.tight_layout()
     h, l = axes_time_flatten[0].get_legend_handles_labels()
     fig_time.legend(
         h, l, loc="lower center", ncol=ncols_legend, bbox_to_anchor=(0.5, 1.0), bbox_transform=fig_time.transFigure
     )
+    fig_time.supxlabel(f"Time ({time_unit})")
+    fig_time.supylabel(args.ylabel)
+    fig_time.tight_layout()
 
     # remove the empty axes
     for ax in axes_flatten[len(env_ids) :]:
