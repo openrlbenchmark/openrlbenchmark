@@ -66,6 +66,8 @@ class Args:
     """if toggled, we will check for empty wandb runs"""
     report: bool = False
     """if toggled, a wandb report will be created"""
+    wandb_project_name: str = "cleanrl"
+    """the wandb project name for the report creation"""
     offline: bool = False
     """if toggled, we will use the offline database instead of wandb"""
     pc: tyro.conf.OmitSubcommandPrefixes[PlotConfig] = field(default_factory=PlotConfig)
@@ -491,7 +493,7 @@ if __name__ == "__main__":
     if args.report:
         print("saving report")
         report = wb.Report(
-            project="cleanrl",
+            project=args.wandb_project_name,
             title=f"Regression Report: {exp_name}",
             description=str(args.filters),
             blocks=blocks,
