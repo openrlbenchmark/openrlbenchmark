@@ -105,21 +105,23 @@ class Runset:
         self.offline_db = offline_db
         self.offline = offline
 
+        user = [{"username": self.username}] if self.username else []
+        include_tag_groups = [{"tags": {"$in": [tag]}} for tag in self.tags] if len(self.tags) > 0 else []
+        self.wandb_filters = {
+            "$and": [
+                {f"config.{self.custom_env_id_key}.value": self.env_id},
+                *include_tag_groups,
+                *user,
+                {f"config.{self.custom_exp_name_key}.value": self.exp_name},
+            ]
+        }
+
     @property
     def runs(self):
         if not self.offline:
-            user = [{"username": self.username}] if self.username else []
-            include_tag_groups = [{"tags": {"$in": [tag]}} for tag in self.tags] if len(self.tags) > 0 else []
             return wandb.Api().runs(
                 path=f"{self.entity}/{self.project}",
-                filters={
-                    "$and": [
-                        {f"config.{self.custom_env_id_key}.value": self.env_id},
-                        *include_tag_groups,
-                        *user,
-                        {f"config.{self.custom_exp_name_key}.value": self.exp_name},
-                    ]
-                },
+                filters=self.wandb_filters,
             )
         else:
             with self.offline_db.bind_ctx([OfflineRun, OfflineRunTag, Tag]):
@@ -147,7 +149,7 @@ class Runset:
             name=self.name,
             entity=self.entity,
             project=self.project,
-            filters={"$or": [self.filters]},
+            filters={"$or": [self.wandb_filters]},
             groupby=[self.groupby] if len(self.groupby) > 0 else None,
         )
 
@@ -254,7 +256,12 @@ def compare(
             custom_run_colors = {}
             for runsets in runsetss:
                 custom_run_colors.update(
-                    {(runsets[idx].report_runset.name, runsets[idx].runs[0].config[runsets[idx].exp_name]): runsets[idx].color}
+                    {
+                        (
+                            runsets[idx].report_runset.name,
+                            runsets[idx].runs[0].config[runsets[idx].custom_exp_name_key],
+                        ): runsets[idx].color
+                    }
                 )
             pg.custom_run_colors = custom_run_colors  # IMPORTANT: custom_run_colors is implemented as a custom `setter` that needs to be overwritten unlike regular dictionaries
             blocks += [pg]
