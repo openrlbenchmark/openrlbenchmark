@@ -19,7 +19,7 @@ from rich.table import Table
 
 import openrlbenchmark
 import openrlbenchmark.cache
-from openrlbenchmark.offline_db import OfflineRun, OfflineRunTag, Tag
+from openrlbenchmark.offline_db import OfflineRun, OfflineRunTag, Tag, database_proxy
 
 
 @dataclass
@@ -50,6 +50,8 @@ class Args:
     """the label of the x-axis"""
     ylabel: str = "Episodic Return"
     """the label of the y-axis"""
+    offline: bool = False
+    """if toggled, we will use the offline database instead of wandb"""
 
 
 class Runset:
@@ -395,6 +397,16 @@ if __name__ == "__main__":
             },
             expand_all=True,
         )
+        if f"{wandb_entity}/{wandb_project_name}" not in offline_dbs:
+            offline_db_path = os.path.join(
+                openrlbenchmark.__path__[0], "dataset", f"{wandb_entity}/{wandb_project_name}", "offline.sqlite"
+            )
+            print(offline_db_path)
+            offline_db = pw.SqliteDatabase(offline_db_path)
+            database_proxy.initialize(offline_db)
+            offline_db.connect()
+            offline_db.create_tables([OfflineRun, Tag, OfflineRunTag])
+            offline_dbs[f"{wandb_entity}/{wandb_project_name}"] = offline_db
 
         for filter_str, color in zip(filters[1:], colors[filters_idx]):
             print("=========", filter_str)
