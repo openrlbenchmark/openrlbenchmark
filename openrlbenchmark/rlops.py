@@ -133,7 +133,7 @@ class Runset:
                     cond = cond and OfflineRun.username == self.username
                 if len(self.tags) > 0:
                     for tag_str in self.tags:
-                        cond = cond and (Tag.name == tag_str)
+                        cond = cond & (Tag.name == tag_str)
                     query = OfflineRun.select().join(OfflineRunTag).join(Tag).where(cond)
                 else:
                     query = OfflineRun.select().where(cond)
@@ -264,14 +264,14 @@ def compare(
         nrows=pc.nrows,
         ncols=pc.ncols,
         figsize=figsize,
-        # sharex=True,
+        sharex=pc.sharex,
         # sharey=True,
     )
     fig_time, axes_time = plt.subplots(
         nrows=pc.nrows,
         ncols=pc.ncols,
         figsize=figsize,
-        # sharex=True,
+        sharex=pc.sharex,
         # sharey=True,
     )
     if len(env_ids) == 1:
@@ -315,6 +315,7 @@ def compare(
             y="charts/episodic_return",
             err_style="band",
             std_alpha=0.1,
+            n_samples=10000,
             rolling=pc.rolling,
             colors=[runsets[idx].color for runsets in runsetss],
             legend=False,
@@ -329,6 +330,7 @@ def compare(
             y="charts/episodic_return",
             err_style="band",
             std_alpha=0.1,
+            n_samples=10000,
             rolling=pc.rolling,
             colors=[runsets[idx].color for runsets in runsetss],
             legend=False,
