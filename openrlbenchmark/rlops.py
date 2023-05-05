@@ -1,5 +1,5 @@
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List
 from urllib.parse import parse_qs, urlparse
 
@@ -23,6 +23,34 @@ from openrlbenchmark.offline_db import OfflineRun, OfflineRunTag, Tag, database_
 
 
 @dataclass
+class PlotConfig:
+    ncols: int = 2
+    """the number of columns in the chart"""
+    nrows: tyro.conf.Suppress[int] = None
+    """(TO BE FILLED in runtime) the number of rows in the chart"""
+    ncols_legend: int = 2
+    """the number of legend columns in the chart"""
+    xlabel: str = "Step"
+    """the label of the x-axis"""
+    ylabel: str = "Episodic Return"
+    """the label of the y-axis"""
+    sharex: bool = False
+    """if toggled, we will share the x-axis across all subplots"""
+    rolling: int = 100
+    """the rolling window for smoothing the curves"""
+    time_unit: str = "m"
+    """the unit of time in the x-axis of the chart (e.g., `s` for seconds, `m` for minutes, `h` for hours); default: `m`"""
+    cm: float = 4.0
+    """the multiplier for the column width"""
+    rm: float = 3.0
+    """the multiplier for the row height"""
+    hspace: float = None
+    """the height space between subplots"""
+    wspace: float = None
+    """the width space between subplots"""
+
+
+@dataclass
 class Args:
     filters: tyro.conf.UseAppendAction[List[List[str]]]
     """the filters of the experiments; see docs"""
@@ -30,28 +58,18 @@ class Args:
     """the ids of the environment to compare"""
     output_filename: str = "compare"
     """the output filename of the plot, without extension"""
-    rolling: int = 100
-    """the rolling window for smoothing the curves"""
     metric_last_n_average_window: int = 100
     """the last n number of episodes to average metric over in the result table"""
-    ncols: int = 2
-    """the number of columns in the chart"""
-    ncols_legend: int = 2
-    """the number of legend columns in the chart"""
     scan_history: bool = False
     """if toggled, we will pull the complete metrics from wandb instead of sampling 500 data points (recommended for generating tables)"""
     check_empty_runs: bool = False
     """if toggled, we will check for empty wandb runs"""
-    time_unit: str = "m"
-    """the unit of time in the x-axis of the chart (e.g., `s` for seconds, `m` for minutes, `h` for hours); default: `m`"""
     report: bool = False
     """if toggled, a wandb report will be created"""
-    xlabel: str = "Step"
-    """the label of the x-axis"""
-    ylabel: str = "Episodic Return"
-    """the label of the y-axis"""
     offline: bool = False
     """if toggled, we will use the offline database instead of wandb"""
+    pc: tyro.conf.OmitSubcommandPrefixes[PlotConfig] = field(default_factory=PlotConfig)
+    """the plot configuration"""
 
 
 class Runset:
@@ -190,14 +208,11 @@ def compare(
     console: Console,
     runsetss: List[List[Runset]],
     env_ids: List[str],
-    ncols: int,
-    ncols_legend: int,
-    rolling: int,
     metric_last_n_average_window: int,
     scan_history: bool = False,
     output_filename: str = "compare",
     report: bool = False,
-    time_unit: str = "m",
+    pc: PlotConfig = None,
 ):
     blocks = []
     if report:
@@ -244,18 +259,17 @@ def compare(
             pg.custom_run_colors = custom_run_colors  # IMPORTANT: custom_run_colors is implemented as a custom `setter` that needs to be overwritten unlike regular dictionaries
             blocks += [pg]
 
-    nrows = np.ceil(len(env_ids) / ncols).astype(int)
-    figsize = (ncols * 4, nrows * 3)
+    figsize = (pc.ncols * pc.cm, pc.nrows * pc.rm)
     fig, axes = plt.subplots(
-        nrows=nrows,
-        ncols=ncols,
+        nrows=pc.nrows,
+        ncols=pc.ncols,
         figsize=figsize,
         # sharex=True,
         # sharey=True,
     )
     fig_time, axes_time = plt.subplots(
-        nrows=nrows,
-        ncols=ncols,
+        nrows=pc.nrows,
+        ncols=pc.ncols,
         figsize=figsize,
         # sharex=True,
         # sharey=True,
@@ -285,9 +299,9 @@ def compare(
                 metric_result += [run.df["charts/episodic_return"].dropna()[-metric_last_n_average_window:].mean()]
 
                 # convert time unit in place
-                if time_unit == "m":
+                if pc.time_unit == "m":
                     run.df["_runtime"] /= 60
-                elif time_unit == "h":
+                elif pc.time_unit == "h":
                     run.df["_runtime"] /= 3600
             metric_result = np.array(metric_result)
             result += [f"{metric_result.mean():.2f} ± {metric_result.std():.2f}"]
@@ -301,7 +315,7 @@ def compare(
             y="charts/episodic_return",
             err_style="band",
             std_alpha=0.1,
-            rolling=rolling,
+            rolling=pc.rolling,
             colors=[runsets[idx].color for runsets in runsetss],
             legend=False,
         )
@@ -315,38 +329,38 @@ def compare(
             y="charts/episodic_return",
             err_style="band",
             std_alpha=0.1,
-            rolling=rolling,
+            rolling=pc.rolling,
             colors=[runsets[idx].color for runsets in runsetss],
             legend=False,
         )
         ax_time.set_xlabel("")
         ax_time.set_ylabel("")
     runtimes = pd.DataFrame(np.array(runtimes), index=env_ids, columns=list(ex.summary()["name"]))
-    console.rule(f"[bold red]Runtime ({time_unit}) (mean ± std)")
+    console.rule(f"[bold red]Runtime ({pc.time_unit}) (mean ± std)")
     console.print(to_rich_table(runtimes.rename_axis("Environment").reset_index()))
-    console.rule(f"[bold red]{args.ylabel} (mean ± std)")
+    console.rule(f"[bold red]{pc.ylabel} (mean ± std)")
     console.print(to_rich_table(result_table.rename_axis("Environment").reset_index()))
     result_table.to_markdown(open(f"{output_filename}.md", "w"))
     result_table.to_csv(open(f"{output_filename}.csv", "w"))
     runtimes.to_markdown(open(f"{output_filename}_runtimes.md", "w"))
     runtimes.to_csv(open(f"{output_filename}_runtimes.csv", "w"))
-    console.rule(f"[bold red]Runtime ({time_unit}) Average")
+    console.rule(f"[bold red]Runtime ({pc.time_unit}) Average")
     average_runtime = pd.DataFrame(runtimes.mean(axis=0)).reset_index()
     average_runtime.columns = ["Environment", "Average Runtime"]
     console.print(to_rich_table(average_runtime))
 
     # add legend
     h, l = axes_flatten[0].get_legend_handles_labels()
-    fig.legend(h, l, loc="lower center", ncol=ncols_legend, bbox_to_anchor=(0.5, 1.0), bbox_transform=fig.transFigure)
-    fig.supxlabel("Steps")
-    fig.supylabel(args.ylabel)
+    fig.legend(h, l, loc="lower center", ncol=pc.ncols_legend, bbox_to_anchor=(0.5, 1.0), bbox_transform=fig.transFigure)
+    fig.supxlabel(pc.xlabel)
+    fig.supylabel(pc.ylabel)
     fig.tight_layout()
     h, l = axes_time_flatten[0].get_legend_handles_labels()
     fig_time.legend(
-        h, l, loc="lower center", ncol=ncols_legend, bbox_to_anchor=(0.5, 1.0), bbox_transform=fig_time.transFigure
+        h, l, loc="lower center", ncol=pc.ncols_legend, bbox_to_anchor=(0.5, 1.0), bbox_transform=fig_time.transFigure
     )
-    fig_time.supxlabel(f"Time ({time_unit})")
-    fig_time.supylabel(args.ylabel)
+    fig_time.supxlabel(f"Time ({pc.time_unit})")
+    fig_time.supylabel(pc.ylabel)
     fig_time.tight_layout()
 
     # remove the empty axes
@@ -372,11 +386,13 @@ if __name__ == "__main__":
     # by default assume all the env_ids are the same
     if len(args.filters) > 1 and len(args.env_ids) == 1:
         args.env_ids = args.env_ids * len(args.filters)
+    # calculate the number of rows
+    args.pc.nrows = np.ceil(len(args.env_ids[0]) / args.pc.ncols).astype(int)
+
     console = Console()
     blocks = []
     runsetss = []
     offline_dbs = {}
-
     colors_flatten = sns.color_palette(n_colors=sum(len(filters) - 1 for filters in args.filters)).as_hex()
     colors = []
     for filters in args.filters:
@@ -458,13 +474,10 @@ if __name__ == "__main__":
         runsetss,
         args.env_ids[0],
         output_filename=args.output_filename,
-        ncols=args.ncols,
-        ncols_legend=args.ncols_legend,
-        rolling=args.rolling,
         metric_last_n_average_window=args.metric_last_n_average_window,
         scan_history=args.scan_history,
         report=args.report,
-        time_unit=args.time_unit,
+        pc=args.pc,
     )
     if args.report:
         print("saving report")
