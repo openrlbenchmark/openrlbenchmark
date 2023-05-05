@@ -1,6 +1,5 @@
-import argparse
 import os
-from distutils.util import strtobool
+from dataclasses import dataclass
 from typing import List
 from urllib.parse import parse_qs, urlparse
 
@@ -21,38 +20,37 @@ import openrlbenchmark.cache
 
 api = wandb.Api()
 
+import tyro
 
-def parse_args():
-    # fmt: off
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--filters", nargs="+", action="append", default=[],
-        help="the filters of the experiments; see docs")
-    parser.add_argument("--env-ids", nargs="+", default=["Hopper-v2", "Walker2d-v2", "HalfCheetah-v2"],
-        help="the ids of the environment to compare")
-    parser.add_argument("--output-filename", type=str, default="compare",
-        help="the output filename of the plot, without extension")
-    parser.add_argument("--rolling", type=int, default=100,
-        help="the rolling window for smoothing the curves")
-    parser.add_argument("--metric-last-n-average-window", type=int, default=100,
-        help="the last n number of episodes to average metric over in the result table")
-    parser.add_argument("--ncols", type=int, default=2,
-        help="the number of columns in the chart")
-    parser.add_argument("--ncols-legend", type=int, default=2,
-        help="the number of legend columns in the chart")
-    parser.add_argument("--scan-history", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
-        help="if toggled, we will pull the complete metrics from wandb instead of sampling 500 data points (recommended for generating tables)")
-    parser.add_argument("--check-empty-runs", type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,
-        help="if toggled, we will check for empty wandb runs")
-    parser.add_argument("--time-unit", type=str, default="m", choices=["s", "m", "h"],
-        help="the unit of time in the x-axis of the chart (e.g., `s` for seconds, `m` for minutes, `h` for hours); default: `m`")
-    parser.add_argument("--report", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
-        help="if toggled, a wandb report will be created")
-    parser.add_argument("--xlabel", type=str, default="Step",
-        help="the label of the x-axis")
-    parser.add_argument("--ylabel", type=str, default="Episodic Return",
-        help="the label of the y-axis")
-    # fmt: on
-    return parser.parse_args()
+
+@dataclass
+class Args:
+    filters: tyro.conf.UseAppendAction[List[List[str]]]
+    """the filters of the experiments; see docs"""
+    env_ids: tyro.conf.UseAppendAction[List[List[str]]]
+    """the ids of the environment to compare"""
+    output_filename: str = "compare"
+    """the output filename of the plot, without extension"""
+    rolling: int = 100
+    """the rolling window for smoothing the curves"""
+    metric_last_n_average_window: int = 100
+    """the last n number of episodes to average metric over in the result table"""
+    ncols: int = 2
+    """the number of columns in the chart"""
+    ncols_legend: int = 2
+    """the number of legend columns in the chart"""
+    scan_history: bool = False
+    """if toggled, we will pull the complete metrics from wandb instead of sampling 500 data points (recommended for generating tables)"""
+    check_empty_runs: bool = False
+    """if toggled, we will check for empty wandb runs"""
+    time_unit: str = "m"
+    """the unit of time in the x-axis of the chart (e.g., `s` for seconds, `m` for minutes, `h` for hours); default: `m`"""
+    report: bool = False
+    """if toggled, a wandb report will be created"""
+    xlabel: str = "Step"
+    """the label of the x-axis"""
+    ylabel: str = "Episodic Return"
+    """the label of the y-axis"""
 
 
 def to_rich_table(df: pd.DataFrame) -> Table:
@@ -301,7 +299,10 @@ def compare(
 
 
 if __name__ == "__main__":
-    args = parse_args()
+    args = tyro.cli(Args)
+    # by default assume all the env_ids are the same
+    if len(args.filters) > 1 and len(args.env_ids) == 1:
+        args.env_ids = args.env_ids * len(args.filters)
     console = Console()
     blocks = []
     runsetss = []
@@ -340,22 +341,11 @@ if __name__ == "__main__":
             user = [{"username": query["user"][0]}] if "user" in query else []
             include_tag_groups = [{"tags": {"$in": [tag]}} for tag in query["tag"]] if "tag" in query else []
             custom_legend = query["cl"][0] if "cl" in query else ""
-
             # HACK unescape
             custom_legend = custom_legend.replace("\\n", "\n")
 
             runsets = []
-            for env_id in args.env_ids:
-                # HACK
-                if "alepy" in exp_name:  # alepy experiments: `Breakout-v5` -> `ALE/Breakout-v5`
-                    env_id = f"ALE/{env_id}"
-                elif "envpool" not in exp_name:
-                    env_id = env_id.replace("-v4", "-v2")  # mujoco experiments: `HalfCheetah-v4` -> `HalfCheetah-v2`
-                    env_id = env_id.replace(
-                        "-v5", "NoFrameskip-v4"
-                    )  # old atari experiments: `Breakout-v5` -> `BreakoutNoFrameskip-v4`
-                if exp_name == "ppo_continuous_action" and "rlops-pilot" in query["tag"]:
-                    env_id = env_id.replace("-v4", "-v2")
+            for env_id in args.env_ids[filters_idx]:
 
                 runsets.append(
                     Runset(
@@ -388,7 +378,7 @@ if __name__ == "__main__":
     blocks = compare(
         console,
         runsetss,
-        args.env_ids,
+        args.env_ids[0],
         output_filename=args.output_filename,
         ncols=args.ncols,
         ncols_legend=args.ncols_legend,
