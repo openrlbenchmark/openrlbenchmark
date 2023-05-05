@@ -12,6 +12,7 @@ import seaborn as sns
 import tyro
 import wandb
 import wandb.apis.reports as wb  # noqa
+from dotmap import DotMap
 from expt import Hypothesis, Run
 from rich.console import Console
 from rich.pretty import pprint
@@ -194,7 +195,7 @@ def create_hypothesis(runset: Runset, scan_history: bool = False) -> Hypothesis:
                         tags=tags,
                         project=run.run.project,
                         entity=run.run.entity,
-                        config=run.run.config if isinstance(run.run.config, dict) else run.run.config.toDict(),
+                        config=run.run.config.toDict() if isinstance(run.run.config, DotMap) else run.run.config,
                     )
                     offline_run.save()
             run_df = run.run_df
