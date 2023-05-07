@@ -580,10 +580,12 @@ if __name__ == "__main__":
             expand_all=True,
         )
         if f"{wandb_entity}/{wandb_project_name}" not in offline_dbs:
-            offline_db_path = os.path.join(
-                openrlbenchmark.__path__[0], "dataset", f"{wandb_entity}/{wandb_project_name}", "offline.sqlite"
+            offline_db_folder = os.path.join(
+                openrlbenchmark.__path__[0], "dataset", f"{wandb_entity}/{wandb_project_name}"
             )
+            offline_db_path = os.path.join(offline_db_folder, "offline.sqlite")
             print(offline_db_path)
+            os.makedirs(offline_db_folder, exist_ok=True)
             offline_db = pw.SqliteDatabase(offline_db_path)
             database_proxy.initialize(offline_db)
             offline_db.connect()
