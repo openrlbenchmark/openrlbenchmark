@@ -32,6 +32,6 @@ jobs:
       - name: Install core dependencies
         run: poetry install --with dev
       - name: login to wandb
-        run: wandb login $WANDB_API_KEY
+        run: poetry run wandb login $WANDB_API_KEY
       - name: Run core tests
         run: poetry run pytest tests/test_e2e_ci.py
