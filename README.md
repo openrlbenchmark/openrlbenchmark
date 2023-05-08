@@ -56,10 +56,10 @@ python -m openrlbenchmark.rlops \
     --filters '?we=openrlbenchmark&wpn=cleanrl&ceik=env_id&cen=exp_name&metric=charts/episodic_return' \
         'sac_continuous_action?tag=rlops-pilot&cl=SAC' \
     --env-ids HalfCheetahBulletEnv-v0 \
-    --ncols 1 \
-    --ncols-legend 2 \
-    --xlabel 'Training Steps' \
-    --ylabel 'Episodic Return' \
+    --pc.ncols 1 \
+    --pc.ncols-legend 2 \
+    --pc.xlabel 'Training Steps' \
+    --pc.ylabel 'Episodic Return' \
     --output-filename compare \
     --report
 ```
@@ -76,7 +76,7 @@ So we are fetching metrics from [https://wandb.ai/openrlbenchmark/sb3](https://w
 
 Similarly, we are fetching metrics from [https://wandb.ai/openrlbenchmark/cleanrl](https://wandb.ai/openrlbenchmark/cleanrl). The environment id is stored in the `env_id` key, and the experiment name is stored in the `exp_name` key. The metric we are interested in is `charts/episodic_return`. You can also customize the legend with the `cl` query string, such as `ppo_lstm?cl=PPO w/ LSTM`.
 
-The labels of the figure can be customized with the `--xlabel` and `--ylabel` flags. The `--ncols` flag specifies the number of columns in the figure. The `--ncols-legend` flag specifies the number of columns in the legend. The `--output-filename` flag specifies the filename of the output figure
+The labels of the figure can be customized with the `--pc.xlabel` and `--pc.ylabel` flags. The `--pc.ncols` flag specifies the number of columns in the figure. The `--pc.ncols-legend` flag specifies the number of columns in the legend. The `--output-filename` flag specifies the filename of the output figure
 
 The command above generates the following plot:
 
@@ -97,8 +97,7 @@ The command also generates a `compare.png`, a `compare.md`, and a `compare.csv` 
 
 
 > **Warning**
-> You may get slightly different curves every time you run the commands. This is because we sample 500 data points from the track experiments to save bandwidth. You can, however, get all of the data points by running the command with `--scan-history` which will always give you the same curves but will take longer to run. For generating an accurate `compare.md`, you should always use `--scan-history`.
-
+> You may get slightly different curves every time you run the commands. This is because we sample 500 data points from the track experiments to save bandwidth. If you are using `openrlbenchmark` repeatedly or you wanto to generate consistent `compare.md` and learning curves, we recommend you to use `--scan-history` to get all of the data points, but initially it may take a while to run.
 
 
 ## Currently supported libraries
@@ -148,19 +147,56 @@ The following libraries have some recorded experiments:
 
 ### Compare CleanRL's PPO with `openai/baselines`'s PPO2 on Atari games:
 
+Sometimes the same environments could have different names in different libraries. For example, `openai/baselines` uses `BreakoutNoFrameskip-v4` while [EnvPool](https://envpool.readthedocs.io/en/latest/env/atari.html) uses `Breakout-v5`. To compare the two libraries, we need to specify the `env_id` for `CleanRL` and `env` for `openai/baselines`. In this case, can specify the corresponding `env_ids` for each filter.
+
+For Atari games, we have additional batteries included `openrlbenchmark.rlops_hns` to show human normalized-scores and further statistical analysis through [`rliable`](https://github.com/google-research/rliable).
+
+
 ```shell
-python -m openrlbenchmark.rlops \
+python -m openrlbenchmark.rlops_hns \
     --filters '?we=openrlbenchmark&wpn=baselines&ceik=env&cen=exp_name&metric=charts/episodic_return' 'baselines-ppo2-cnn' \
     --filters '?we=openrlbenchmark&wpn=envpool-atari&ceik=env_id&cen=exp_name&metric=charts/avg_episodic_return' 'ppo_atari_envpool_xla_jax_truncation' \
+    --env-ids AlienNoFrameskip-v4 AmidarNoFrameskip-v4 AssaultNoFrameskip-v4 AsterixNoFrameskip-v4 AsteroidsNoFrameskip-v4 AtlantisNoFrameskip-v4 BankHeistNoFrameskip-v4 BattleZoneNoFrameskip-v4 BeamRiderNoFrameskip-v4 BerzerkNoFrameskip-v4 BowlingNoFrameskip-v4 BoxingNoFrameskip-v4 BreakoutNoFrameskip-v4 CentipedeNoFrameskip-v4 ChopperCommandNoFrameskip-v4 CrazyClimberNoFrameskip-v4 DefenderNoFrameskip-v4 DemonAttackNoFrameskip-v4 DoubleDunkNoFrameskip-v4 EnduroNoFrameskip-v4 FishingDerbyNoFrameskip-v4 FreewayNoFrameskip-v4 FrostbiteNoFrameskip-v4 GopherNoFrameskip-v4 GravitarNoFrameskip-v4 HeroNoFrameskip-v4 IceHockeyNoFrameskip-v4 PrivateEyeNoFrameskip-v4 QbertNoFrameskip-v4 RiverraidNoFrameskip-v4 RoadRunnerNoFrameskip-v4 RobotankNoFrameskip-v4 SeaquestNoFrameskip-v4 SkiingNoFrameskip-v4 SolarisNoFrameskip-v4 SpaceInvadersNoFrameskip-v4 StarGunnerNoFrameskip-v4 SurroundNoFrameskip-v4 TennisNoFrameskip-v4 TimePilotNoFrameskip-v4 TutankhamNoFrameskip-v4 UpNDownNoFrameskip-v4 VentureNoFrameskip-v4 VideoPinballNoFrameskip-v4 WizardOfWorNoFrameskip-v4 YarsRevengeNoFrameskip-v4 ZaxxonNoFrameskip-v4 JamesbondNoFrameskip-v4 KangarooNoFrameskip-v4 KrullNoFrameskip-v4 KungFuMasterNoFrameskip-v4 MontezumaRevengeNoFrameskip-v4 MsPacmanNoFrameskip-v4 NameThisGameNoFrameskip-v4 PhoenixNoFrameskip-v4 PitfallNoFrameskip-v4 PongNoFrameskip-v4 \
     --env-ids Alien-v5 Amidar-v5 Assault-v5 Asterix-v5 Asteroids-v5 Atlantis-v5 BankHeist-v5 BattleZone-v5 BeamRider-v5 Berzerk-v5 Bowling-v5 Boxing-v5 Breakout-v5 Centipede-v5 ChopperCommand-v5 CrazyClimber-v5 Defender-v5 DemonAttack-v5 DoubleDunk-v5 Enduro-v5 FishingDerby-v5 Freeway-v5 Frostbite-v5 Gopher-v5 Gravitar-v5 Hero-v5 IceHockey-v5 PrivateEye-v5 Qbert-v5 Riverraid-v5 RoadRunner-v5 Robotank-v5 Seaquest-v5 Skiing-v5 Solaris-v5 SpaceInvaders-v5 StarGunner-v5 Surround-v5 Tennis-v5 TimePilot-v5 Tutankham-v5 UpNDown-v5 Venture-v5 VideoPinball-v5 WizardOfWor-v5 YarsRevenge-v5 Zaxxon-v5 Jamesbond-v5 Kangaroo-v5 Krull-v5 KungFuMaster-v5 MontezumaRevenge-v5 MsPacman-v5 NameThisGame-v5 Phoenix-v5 Pitfall-v5 Pong-v5 \
-    --check-empty-runs False \
-    --ncols 5 \
-    --ncols-legend 2 \
+    --no-check-empty-runs \
+    --pc.ncols 5 \
+    --pc.ncols-legend 2 \
     --output-filename static/cleanrl_vs_baselines \
-    --scan-history
+    --scan-history --rliable
 ```
 
-![](static/cleanrl_vs_baselines.png)
+In the individual learning curves below, the right y-axis is the human normalized score. The left y-axis is the raw episodic return.
+![](static/cleanrl_vs_baselines.png) The script also generates `cleanrl_vs_baselines_hns_median.png`, the learning curves for median human-normalized scores. 
+
+Furthermore, the `--rliable` integration generates `cleanrl_vs_baselines_iqm_profile.png`, the  Interquartile Mean (IQM) and performance profile ([Agarwal et al., 2022](https://arxiv.org/pdf/2108.13264.pdf)), and `cleanrl_vs_baselines_hns_aggregate.png`, the aggregate human-normalized scores with Stratified Bootstrap Confidence Intervals (see @araffin's excellent blog post [explainer](https://araffin.github.io/post/rliable/)). 
+
+
+![](static/cleanrl_vs_baselines_hns_median.png)
+
+![](static/cleanrl_vs_baselines_iqm_profile.png)
+
+![](static/cleanrl_vs_baselines_hns_aggregate.png)
+
+
+### Offline mode
+
+Sometimes even with caching `--scan-history` the script can still take a long time if there are too many environments or experiments. This is because we are still calling many `wandb.Api().runs(..., filters)` under the hood. 
+
+No worries though. When running with `--scan-history`, we also automatically build a local `sqlite` database to store the metadata of runs, enabling us to run the script without internet connection.
+
+```shell
+python -m openrlbenchmark.rlops \
+    --filters '?we=openrlbenchmark&wpn=baselines&ceik=env&cen=exp_name&metric=charts/episodic_return' 'baselines-ppo2-mlp' \
+    --filters '?we=openrlbenchmark&wpn=cleanrl&ceik=env_id&cen=exp_name&metric=charts/episodic_return' 'ppo_continuous_action?tag=v1.0.0-27-gde3f410' \
+    --filters '?we=openrlbenchmark&wpn=jaxrl&ceik=env_name&cen=algo&metric=training/return' 'sac' \
+    --env-ids HalfCheetah-v2 Walker2d-v2 Hopper-v2 InvertedPendulum-v2 Humanoid-v2 Pusher-v2 \
+    --no-check-empty-runs \
+    --pc.ncols 3 \
+    --pc.ncols-legend 3 \
+    --output-filename static/baselines_vs_cleanrl_vs_jaxrl \
+    --scan-history \
+    --offline
+```
 
 ### Compare CleanRL's PPO with `openai/baselines`'s PPO2 and `jaxrl`'s SAC on Mujoco:
 
@@ -170,27 +206,14 @@ python -m openrlbenchmark.rlops \
     --filters '?we=openrlbenchmark&wpn=cleanrl&ceik=env_id&cen=exp_name&metric=charts/episodic_return' 'ppo_continuous_action?tag=v1.0.0-27-gde3f410' \
     --filters '?we=openrlbenchmark&wpn=jaxrl&ceik=env_name&cen=algo&metric=training/return' 'sac' \
     --env-ids HalfCheetah-v2 Walker2d-v2 Hopper-v2 InvertedPendulum-v2 Humanoid-v2 Pusher-v2 \
-    --check-empty-runs False \
-    --ncols 3 \
-    --ncols-legend 3 \
+    --no-check-empty-runs \
+    --pc.ncols 3 \
+    --pc.ncols-legend 3 \
     --output-filename static/baselines_vs_cleanrl_vs_jaxrl \
     --scan-history
 ```
 ![](static/baselines_vs_cleanrl_vs_jaxrl.png)
 
-
-```shell
-python -m openrlbenchmark.rlops \
-    --filters '?we=openrlbenchmark&wpn=baselines&ceik=env&cen=exp_name&metric=charts/episodic_return' 'baselines-ppo2-cnn' \
-    --filters '?we=openrlbenchmark&wpn=envpool-atari&ceik=env_id&cen=exp_name&metric=charts/avg_episodic_return' 'ppo_atari_envpool_xla_jax_truncation' \
-    --filters '?we=openrlbenchmark&wpn=cleanrl&ceik=env_id&cen=exp_name&metric=charts/avg_episodic_return' 'ppo_atari_envpool_xla_jax_scan?tag=pr-328' \
-    --env-ids BeamRider-v5 Breakout-v5 Pong-v5 \
-    --check-empty-runs False \
-    --ncols 3 \
-    --ncols-legend 2 \
-    --output-filename compare \
-    --scan-history
-```
 
 
 ### Compare Tianshou's algorithms with `openai/baselines`'s PPO2 on Atari:
@@ -200,9 +223,9 @@ python -m openrlbenchmark.rlops \
     --filters '?we=tianshou&wpn=atari.benchmark&ceik=task&cen=algo_name&metric=test/reward' 'iqn' 'ppo' 'rainbow' 'fqf' 'c51' 'dqn' 'qrdqn' \
     --filters '?we=openrlbenchmark&wpn=baselines&ceik=env&cen=exp_name&metric=charts/episodic_return' 'baselines-ppo2-cnn' \
     --env-ids BreakoutNoFrameskip-v4 SpaceInvadersNoFrameskip-v4 SeaquestNoFrameskip-v4 MsPacmanNoFrameskip-v4 EnduroNoFrameskip-v4 PongNoFrameskip-v4 QbertNoFrameskip-v4 \
-    --check-empty-runs False \
-    --ncols 4 \
-    --ncols-legend 4 \
+    --no-check-empty-runs \
+    --pc.ncols 4 \
+    --pc.ncols-legend 4 \
     --output-filename static/baselines_vs_tianshou --scan-history
 ```
 ![](static/baselines_vs_tianshou.png)
@@ -215,9 +238,9 @@ python -m openrlbenchmark.rlops \
     --filters '?we=openrlbenchmark&wpn=phasic-policy-gradient&ceik=env_name&cen=arch&metric=charts/episodic_return' 'shared' \
     --filters '?we=openrlbenchmark&wpn=cleanrl&ceik=env_id&cen=exp_name&metric=charts/episodic_return' 'ppo_procgen?tag=v1.0.0b1-4-g4ea73d9' 'ppg_procgen?tag=v1.0.0b1-4-g4ea73d9' \
     --env-ids starpilot bossfight bigfish \
-    --check-empty-runs False \
-    --ncols 3 \
-    --ncols-legend 3 \
+    --no-check-empty-runs \
+    --pc.ncols 3 \
+    --pc.ncols-legend 3 \
     --output-filename static/ppg_vs_cleanrl \
     --scan-history
 ```
@@ -232,43 +255,15 @@ python -m openrlbenchmark.rlops \
     --filters '?we=openrlbenchmark&wpn=sfujim-TD3&ceik=env&cen=policy&metric=charts/episodic_return' 'TD3' \
     --filters '?we=openrlbenchmark&wpn=cleanrl&ceik=env_id&cen=exp_name&metric=charts/episodic_return' 'td3_continuous_action_jax?tag=pr-285' 'ddpg_continuous_action_jax?tag=pr-298' \
     --env-ids HalfCheetah-v2 Walker2d-v2 Hopper-v2 \
-    --check-empty-runs False \
-    --ncols 3 \
-    --ncols-legend 3 \
+    --no-check-empty-runs \
+    --pc.ncols 3 \
+    --pc.ncols-legend 3 \
     --output-filename static/td3_vs_cleanrl \
     --scan-history
 ```
 ![](static/td3_vs_cleanrl.png)
 
 
-### Compare CleanRL's PPO + JAX + EnvPool's XLA with `openai/baselines`'s Atari wrappers vs [Machado's recommendetation for Atari](https://arxiv.org/abs/1709.06009) (e.g., sticky action with probability 0.25). The machado's experiments ran for 10M steps, which corresponds to 40M frames.
-
-```shell
-python -m openrlbenchmark.rlops \
-    --filters '?we=openrlbenchmark&wpn=envpool-atari&ceik=env_id&cen=exp_name&metric=charts/avg_episodic_return' 'ppo_atari_envpool_xla_jax_truncation_machado_10M' 'ppo_atari_envpool_xla_jax_truncation'  \
-    --env-ids Alien-v5 Amidar-v5 Assault-v5 Asterix-v5 Asteroids-v5 Atlantis-v5 BankHeist-v5 BattleZone-v5 BeamRider-v5 Berzerk-v5 Bowling-v5 Boxing-v5 Breakout-v5 Centipede-v5 ChopperCommand-v5 CrazyClimber-v5 Defender-v5 DemonAttack-v5 DoubleDunk-v5 Enduro-v5 FishingDerby-v5 Freeway-v5 Frostbite-v5 Gopher-v5 Gravitar-v5 Hero-v5 IceHockey-v5 PrivateEye-v5 Qbert-v5 Riverraid-v5 RoadRunner-v5 Robotank-v5 Seaquest-v5 Skiing-v5 Solaris-v5 SpaceInvaders-v5 StarGunner-v5 Surround-v5 Tennis-v5 TimePilot-v5 Tutankham-v5 UpNDown-v5 Venture-v5 VideoPinball-v5 WizardOfWor-v5 YarsRevenge-v5 Zaxxon-v5 Jamesbond-v5 Kangaroo-v5 Krull-v5 KungFuMaster-v5 MontezumaRevenge-v5 MsPacman-v5 NameThisGame-v5 Phoenix-v5 Pitfall-v5 Pong-v5 \
-    --check-empty-runs False \
-    --ncols 5 \
-    --ncols-legend 2 \
-    --output-filename static/machado_10M \
-    --scan-history
-```
-![](static/machado_10M.png)
-
-
-### Compare CleanRL's PPO + JAX + EnvPool's XLA with `openai/baselines`'s Atari wrappers vs [Machado's recommendetation for Atari](https://arxiv.org/abs/1709.06009) (e.g., sticky action with probability 0.25). The machado's experiments ran for 50M steps, which corresponds to 200M frames.
-
-```shell
-python -m openrlbenchmark.rlops \
-    --filters '?we=openrlbenchmark&wpn=envpool-atari&ceik=env_id&cen=exp_name&metric=charts/avg_episodic_return' 'ppo_atari_envpool_xla_jax_truncation_machado' 'ppo_atari_envpool_xla_jax_truncation'  \
-    --env-ids Alien-v5 Amidar-v5 Assault-v5 Asterix-v5 Asteroids-v5 Atlantis-v5 BankHeist-v5 BattleZone-v5 BeamRider-v5 Berzerk-v5 Bowling-v5 Boxing-v5 Breakout-v5 Centipede-v5 ChopperCommand-v5 CrazyClimber-v5 Defender-v5 DemonAttack-v5 DoubleDunk-v5 Enduro-v5 FishingDerby-v5 Freeway-v5 Frostbite-v5 Gopher-v5 Gravitar-v5 Hero-v5 IceHockey-v5 PrivateEye-v5 Qbert-v5 Riverraid-v5 RoadRunner-v5 Robotank-v5 Seaquest-v5 Skiing-v5 Solaris-v5 SpaceInvaders-v5 StarGunner-v5 Surround-v5 Tennis-v5 TimePilot-v5 Tutankham-v5 UpNDown-v5 Venture-v5 VideoPinball-v5 WizardOfWor-v5 YarsRevenge-v5 Zaxxon-v5 Jamesbond-v5 Kangaroo-v5 Krull-v5 KungFuMaster-v5 MontezumaRevenge-v5 MsPacman-v5 NameThisGame-v5 Phoenix-v5 Pitfall-v5 Pong-v5 \
-    --check-empty-runs False \
-    --ncols 5 \
-    --ncols-legend 2 \
-    --output-filename static/machado_50M \
-    --scan-history
-```
-![](static/machado_50M.png)
 
 ### Compare MORL Baselines algorithms on deterministic environments
 
@@ -279,10 +274,10 @@ python -m openrlbenchmark.rlops \
   'MultiPolicy MO Q-Learning?cl=MultiPolicy MO Q-Learning' \
   'MultiPolicy MO Q-Learning (OLS)?cl=MultiPolicy MO Q-Learning (OLS)' \
   --env-ids deep-sea-treasure-v0 deep-sea-treasure-concave-v0 \
-  --ncols 2 \
-  --ncols-legend 1 \
-  --xlabel 'Training steps' \
-  --ylabel 'Hypervolume' \
+  --pc.ncols 2 \
+  --pc.ncols-legend 1 \
+  --pc.xlabel 'Training steps' \
+  --pc.ylabel 'Hypervolume' \
   --output-filename morl_deterministic_envs \
   --scan-history
 ```
@@ -323,20 +318,3 @@ This is a project we are slowly working on. There is no specific timeline or roa
 * Documentation and designing standards
 * Download the tensorboard metrics from the tracked experiments and load them locally to save time
 
-
-
-
-```shell
-pip install --upgrade openrlbenchmark
-python -m openrlbenchmark.rlops \
-    --filters '?we=openrlbenchmark&wpn=cleanrl&ceik=env_id&cen=exp_name&metric=charts/episodic_return' 'dqn_atari?tag=latest' 'c51_atari?tag=latest' \
-    --filters '?we=openrlbenchmark&wpn=baselines&ceik=env&cen=exp_name&metric=charts/episodic_return' 'baselines-ppo2-cnn' \
-    --filters '?we=openrlbenchmark&wpn=envpool-atari&ceik=env_id&cen=exp_name&metric=charts/avg_episodic_return' 'ppo_atari_envpool_xla_jax_truncation?user=costa-huang' \
-    --env-ids BeamRider-v5 Breakout-v5 Pong-v5 \
-    --ncols 3 \
-    --ncols-legend 2 \
-    --output-filename compare \
-    --scan-history \
-    --report \
-    --check-empty-runs False 
-```
