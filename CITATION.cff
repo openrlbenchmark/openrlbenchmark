@@ -1,0 +1,59 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+# core contributors and organizers
+- family-names: "Huang" # for creating and maintaining `openrlbenchmark`
+  given-names: "Shengyi"
+  orcid: "https://orcid.org/0000-0003-4986-1365"
+- family-names: "Gallouédec" # for contributing SB3's experiments and maintaining `openrlbenchmark`
+  given-names: "Quentin"
+  orcid: "https://orcid.org/0000-0003-2947-0295"
+- family-names: "Felten"  # for contributing MORL's experiments and maintaining `openrlbenchmark`
+  given-names: "Florian"
+# data contributors and other maintainers
+- family-names: "Raffin" # for contributing SB3's experiments
+  given-names: "Antonin"
+- family-names: "Fernand Julien Dossa" # for general contribution of runs from `vwxyzjn/cleanrl`
+  given-names: "Rousslan"
+- family-names: "Zhao" # for contributing experiments to `sdpkjc/abcdrl`
+  given-names: "Yanxiao"
+- family-names: "Sullivan" # for contributing SB3 and CleanRL + Dreamerv3 tricks experiments @RyanNavillus
+  given-names: "Ryan"
+- family-names: "Makoviychuk" # for contributing `rl_games` experiments @ViktorM @Denys88
+  given-names: "Victor"
+- family-names: "Roumégous" # for contributing SB3 experiments https://github.com/openrlbenchmark/openrlbenchmark/issues/7 @croumegous
+  given-names: "Cyril"
+- family-names: "Chen" # for contributing SB3 experiments https://github.com/openrlbenchmark/openrlbenchmark/issues/7 @ChufanSuki
+  given-names: "Chufan"
+- family-names: "Rahman" # for contributing RPO runs to https://docs.cleanrl.dev/rl-algorithms/rpo/
+  given-names: "Masudur"
+- family-names: "João G.M. Araújo" # for contributing CleanRL's TD3 and DDPG experiments https://github.com/vwxyzjn/cleanrl/pull/298 @joaogui1
+  given-names: "João"
+- family-names: "Quan" # for contributing CleanRL's PPO experiments # https://github.com/vwxyzjn/cleanrl/pull/355 @quangr
+  given-names: "Guorui"
+- family-names: "Tan" # for contributing CleanRL's gymnasium experiments https://github.com/vwxyzjn/cleanrl/pull/320 @dtch1997
+  given-names: "Daniel"
+- family-names: "K" # for contributing CleanRL's SAC discrete experiments https://github.com/vwxyzjn/cleanrl/pull/270 @timoklein 
+  given-names: "Timo"
+- family-names: "Charakorn" # for contributing CleanRL's PPO XLA experiments https://github.com/vwxyzjn/cleanrl/pull/328 @timoklein 
+  given-names: "Rujikorn"
+- family-names: "Towers" # for contributing CleanRL's gymnasium experiments https://github.com/vwxyzjn/cleanrl/pull/377 @pseudo-rnd-thoughts
+  given-names: "Mark"
+- family-names: "Berthelot" # for contributing SB3 experiments https://github.com/openrlbenchmark/openrlbenchmark/issues/7 @YannBerthelot
+  given-names: "Yann"
+- family-names: "Mehta" # for contributing CleanRL's DQN JAX and other experiments https://github.com/vwxyzjn/cleanrl/pull/335 @kinalmehta
+  given-names: "Kinal"
+- family-names: "Chakraborty" # for contributing CleanRL's PPG experiments https://github.com/vwxyzjn/cleanrl/pull/186 @dipamc
+  given-names: "Dipam"
+- family-names: "KG" # for contributing CleanRL's gymnasium experiments https://github.com/vwxyzjn/cleanrl/pull/371 @arjun-kg
+  given-names: "Arjun"
+- family-names: "N/A" # for contributing CleanRL's gymnasium experiments https://github.com/vwxyzjn/cleanrl/pull/370 @valentin-cnt
+  given-names: "Valentin"
+- family-names: "Ye" # for contributing CleanRL's PPO RND experiments https://github.com/vwxyzjn/cleanrl/pull/151 @yooceii
+  given-names: "Chang"
+- family-names: "Liu" # for contributing ACME experiments used in the EnvPool paper https://wandb.ai/openrlbenchmark/acme/ @lkevinzc
+  given-names: "Zichen"
+
+title: "openrlbenchmark"
+date-released: 2023-05-13
+url: "https://github.com/openrlbenchmark/openrlbenchmark"
