@@ -79,7 +79,7 @@ class Args:
     """the wandb project name for the report creation"""
     offline: bool = False
     """if toggled, we will use the offline database instead of wandb"""
-    pc: tyro.conf.OmitSubcommandPrefixes[PlotConfig] = field(default_factory=PlotConfig)
+    pc: PlotConfig = field(default_factory=PlotConfig)
     """the plot configuration"""
     rliable: bool = False
     """if toggled, we will use rliable to compute the metrics"""
