@@ -47,7 +47,7 @@ authors:
   given-names: "Dipam"
 - family-names: "KG" # for contributing CleanRL's gymnasium experiments https://github.com/vwxyzjn/cleanrl/pull/371 @arjun-kg
   given-names: "Arjun"
-- family-names: "N/A" # for contributing CleanRL's gymnasium experiments https://github.com/vwxyzjn/cleanrl/pull/370 @valentin-cnt
+- family-names: "Charraut" # for contributing CleanRL's gymnasium experiments https://github.com/vwxyzjn/cleanrl/pull/370 @charraut
   given-names: "Valentin"
 - family-names: "Ye" # for contributing CleanRL's PPO RND experiments https://github.com/vwxyzjn/cleanrl/pull/151 @yooceii
   given-names: "Chang"
