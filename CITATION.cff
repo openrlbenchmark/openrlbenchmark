@@ -21,8 +21,12 @@ authors:
   given-names: "Ryan"
 - family-names: "Makoviychuk" # for contributing `rl_games` experiments @ViktorM @Denys88
   given-names: "Victor"
+- family-names: "Makoviichuk" # for contributing `rl_games` experiments @ViktorM @Denys88
+  given-names: "Denys"
 - family-names: "Roumégous" # for contributing SB3 experiments https://github.com/openrlbenchmark/openrlbenchmark/issues/7 @croumegous
   given-names: "Cyril"
+- family-names: "Weng" # for contributing Tianshou experiments https://wandb.ai/tianshou/atari.benchmark @Trinkle23897
+  given-names: "Jiayi"
 - family-names: "Chen" # for contributing SB3 experiments https://github.com/openrlbenchmark/openrlbenchmark/issues/7 @ChufanSuki
   given-names: "Chufan"
 - family-names: "Rahman" # for contributing RPO runs to https://docs.cleanrl.dev/rl-algorithms/rpo/
@@ -53,6 +57,12 @@ authors:
   given-names: "Chang"
 - family-names: "Liu" # for contributing ACME experiments used in the EnvPool paper https://wandb.ai/openrlbenchmark/acme/ @lkevinzc
   given-names: "Zichen"
+# tooling contributors
+- family-names: "Choi" # for creating https://github.com/wookayin/expt that underpins this project @wookayin
+  given-names: "Jongwook"
+- family-names: "Yi" # for offering help using `tyro` (https://github.com/openrlbenchmark/openrlbenchmark/issues/15) @brentyi
+  given-names: "Brent"
+
 
 title: "openrlbenchmark"
 date-released: 2023-05-13
