@@ -20,7 +20,7 @@ authors:
 - family-names: "Sullivan" # for contributing SB3 and CleanRL + Dreamerv3 tricks experiments @RyanNavillus
   given-names: "Ryan"
 - family-names: "Makoviychuk" # for contributing `rl_games` experiments @ViktorM @Denys88
-  given-names: "Victor"
+  given-names: "Viktor"
 - family-names: "Makoviichuk" # for contributing `rl_games` experiments @ViktorM @Denys88
   given-names: "Denys"
 - family-names: "Roumégous" # for contributing SB3 experiments https://github.com/openrlbenchmark/openrlbenchmark/issues/7 @croumegous
@@ -37,7 +37,7 @@ authors:
   given-names: "Guorui"
 - family-names: "Tan" # for contributing CleanRL's gymnasium experiments https://github.com/vwxyzjn/cleanrl/pull/320 @dtch1997
   given-names: "Daniel"
-- family-names: "K" # for contributing CleanRL's SAC discrete experiments https://github.com/vwxyzjn/cleanrl/pull/270 @timoklein 
+- family-names: "Klein" # for contributing CleanRL's SAC discrete experiments https://github.com/vwxyzjn/cleanrl/pull/270 @timoklein 
   given-names: "Timo"
 - family-names: "Charakorn" # for contributing CleanRL's PPO XLA experiments https://github.com/vwxyzjn/cleanrl/pull/328 @timoklein 
   given-names: "Rujikorn"
