@@ -31,8 +31,8 @@ authors:
   given-names: "Chufan"
 - family-names: "Rahman" # for contributing RPO runs to https://docs.cleanrl.dev/rl-algorithms/rpo/
   given-names: "Masudur"
-- family-names: "João G.M. Araújo" # for contributing CleanRL's TD3 and DDPG experiments https://github.com/vwxyzjn/cleanrl/pull/298 @joaogui1
-  given-names: "João"
+- family-names: "M. Araújo" # for contributing CleanRL's TD3 and DDPG experiments https://github.com/vwxyzjn/cleanrl/pull/298 @joaogui1
+  given-names: "João G."
 - family-names: "Quan" # for contributing CleanRL's PPO experiments # https://github.com/vwxyzjn/cleanrl/pull/355 @quangr
   given-names: "Guorui"
 - family-names: "Tan" # for contributing CleanRL's gymnasium experiments https://github.com/vwxyzjn/cleanrl/pull/320 @dtch1997
