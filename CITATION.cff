@@ -13,8 +13,8 @@ authors:
 # data contributors and other maintainers
 - family-names: "Raffin" # for contributing SB3's experiments
   given-names: "Antonin"
-- family-names: "Fernand Julien Dossa" # for general contribution of runs from `vwxyzjn/cleanrl`
-  given-names: "Rousslan"
+- family-names: "Dossa" # for general contribution of runs from `vwxyzjn/cleanrl`
+  given-names: "Rousslan Fernand Julien"
 - family-names: "Zhao" # for contributing experiments to `sdpkjc/abcdrl`
   given-names: "Yanxiao"
 - family-names: "Sullivan" # for contributing SB3 and CleanRL + Dreamerv3 tricks experiments @RyanNavillus
