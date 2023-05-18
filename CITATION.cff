@@ -4,10 +4,10 @@ authors:
 # core contributors and organizers
 - family-names: "Huang" # for creating and maintaining `openrlbenchmark`
   given-names: "Shengyi"
-  orcid: "https://orcid.org/0000-0003-4986-1365"
+  orcid: "0000-0003-4986-1365"
 - family-names: "Gallouédec" # for contributing SB3's experiments and maintaining `openrlbenchmark`
   given-names: "Quentin"
-  orcid: "https://orcid.org/0000-0003-2947-0295"
+  orcid: "0000-0003-2947-0295"
 - family-names: "Felten"  # for contributing MORL's experiments and maintaining `openrlbenchmark`
   given-names: "Florian"
 # data contributors and other maintainers
@@ -15,7 +15,7 @@ authors:
   given-names: "Antonin"
 - family-names: "Dossa" # for general contribution of runs from `vwxyzjn/cleanrl`
   given-names: "Rousslan Fernand Julien"
-  orcid: "https://orcid.org/0000-0003-0572-692X"
+  orcid: "0000-0003-0572-692X"
 - family-names: "Zhao" # for contributing experiments to `sdpkjc/abcdrl`
   given-names: "Yanxiao"
 - family-names: "Sullivan" # for contributing SB3 and CleanRL + Dreamerv3 tricks experiments @RyanNavillus
