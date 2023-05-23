@@ -1,3 +1,4 @@
+import copy
 import os
 from dataclasses import dataclass, field
 from typing import List
@@ -71,7 +72,7 @@ class Args:
     """the wandb project name for the report creation"""
     offline: bool = False
     """if toggled, we will use the offline database instead of wandb"""
-    pc: PlotConfig = field(default_factory=PlotConfig)
+    pc: tyro.conf.OmitSubcommandPrefixes[PlotConfig] = field(default_factory=PlotConfig)
     """the plot configuration"""
 
 
@@ -184,20 +185,21 @@ def create_hypothesis(runset: Runset, scan_history: bool = False) -> Hypothesis:
                         tag.save()
                     tags.append(tag)
                 offline_run = OfflineRun.get_or_none(id=run.run.id)
-                if not offline_run:
-                    offline_run = OfflineRun.create(
-                        id=run.run.id,
-                        name=run.run.name,
-                        state=run.run.state,
-                        url=run.run.url,
-                        path=run.run.path,
-                        username=run.run.user.username,
-                        tags=tags,
-                        project=run.run.project,
-                        entity=run.run.entity,
-                        config=run.run.config.toDict() if isinstance(run.run.config, DotMap) else run.run.config,
-                    )
-                    offline_run.save()
+                if offline_run:
+                    offline_run.delete_instance()
+                offline_run = OfflineRun.create(
+                    id=run.run.id,
+                    name=run.run.name,
+                    state=run.run.state,
+                    url=run.run.url,
+                    path=run.run.path,
+                    username=run.run.user.username,
+                    tags=tags,
+                    project=run.run.project,
+                    entity=run.run.entity,
+                    config=run.run.config.toDict() if isinstance(run.run.config, DotMap) else run.run.config,
+                )
+                offline_run.save()
             run_df = run.run_df
         else:
             run_df = run.history(samples=1500)
@@ -384,6 +386,8 @@ def compare(
     print(f"saving figures and tables to {output_filename}")
     if os.path.dirname(output_filename) != "":
         os.makedirs(os.path.dirname(output_filename), exist_ok=True)
+    fig.subplots_adjust(hspace=pc.hspace, wspace=pc.wspace)
+    fig_time.subplots_adjust(hspace=pc.hspace, wspace=pc.wspace)
     fig.savefig(f"{output_filename}.png", bbox_inches="tight")
     fig.savefig(f"{output_filename}.pdf", bbox_inches="tight")
     fig.savefig(f"{output_filename}.svg", bbox_inches="tight")
@@ -405,7 +409,9 @@ if __name__ == "__main__":
     blocks = []
     runsetss = []
     offline_dbs = {}
-    colors_flatten = sns.color_palette(n_colors=sum(len(filters) - 1 for filters in args.filters)).as_hex()
+    colors_flatten_original = [c for item in ["deep", "dark", "bright"] for c in sns.color_palette(item).as_hex()]
+    plt.rcParams["axes.prop_cycle"] = plt.cycler("color", colors_flatten_original)
+    colors_flatten = copy.deepcopy(colors_flatten_original)
     colors = []
     for filters in args.filters:
         colors += [colors_flatten[: len(filters) - 1]]
