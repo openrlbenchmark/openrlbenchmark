@@ -44,11 +44,11 @@ class RliableConfig:
     """if toggled, we will generate performance profile plots"""
     aggregate_metrics_plots: bool = False
     """if toggled, we will generate aggregate metrics plots"""
-    sample_efficiency_num_bootstrap_reps: int = 50000
+    sample_efficiency_num_bootstrap_reps: int = 10 # 50000
     """the number of bootstrap replications in `rliable` to use for computing the sample efficiency"""
-    performance_profile_num_bootstrap_reps: int = 2000
+    performance_profile_num_bootstrap_reps: int = 10 # 2000
     """the number of bootstrap replications in `rliable` to use for computing the performance profile"""
-    interval_estimates_num_bootstrap_reps: int = 2000
+    interval_estimates_num_bootstrap_reps: int = 10 # 2000
     """the number of bootstrap replications in `rliable` to use for computing the the interval estimates"""
 
 
