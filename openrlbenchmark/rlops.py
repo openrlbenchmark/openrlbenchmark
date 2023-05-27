@@ -745,16 +745,8 @@ if __name__ == "__main__":
         aggregate_scores, aggregate_score_cis = rly.get_interval_estimates(
             performance_profile_normalized_score_dict, aggregate_func, reps=args.pc.rc.interval_estimates_num_bootstrap_reps
         )
-        # make aggregate_scores into a dataframe
         aggregate_scores_df = pd.DataFrame.from_dict(aggregate_scores, orient="index", columns=["Median", "IQM", "Mean", "Optimality Gap"])
-        # print("aggregate_scores", aggregate_scores_df)
         print_rich_table(f"Aggregate Scores", aggregate_scores_df.reset_index(), console)
-        # best_y_coordinates = {
-        #     1: -1.4,
-        #     4: -0.3,
-        #     10: -0.08,
-        #     17: 0.02,
-        # }
         fig, axes = plot_utils.plot_interval_estimates(
             aggregate_scores,
             aggregate_score_cis,
@@ -765,7 +757,7 @@ if __name__ == "__main__":
             # xlabel='Normalized Score',
             # xlabel_y_coordinate=-0.08, # this variable needs to be adjusted for each plot... :( so we just disable xlabel for now.
         )
-        fig.supxlabel(r"Normalized Score", fontsize="xx-large")
+        axes[1].set_xlabel("Normalized Score", fontsize="xx-large")
         fig.tight_layout()
         plt.savefig(f"{args.output_filename}_aggregate.png", bbox_inches="tight")
         plt.savefig(f"{args.output_filename}_aggregate.pdf", bbox_inches="tight")
