@@ -60,7 +60,7 @@ class PlotConfig:
     """(TO BE FILLED in runtime) the number of rows in the chart"""
     ncols_legend: int = 2
     """the number of legend columns in the chart"""
-    xlabel: str = "Step"
+    xlabel: str = "Steps"
     """the label of the x-axis"""
     ylabel: str = "Episodic Return"
     """the label of the y-axis"""
@@ -330,6 +330,7 @@ def compare(
         min_num_seeds_per_hypothesis[runsets[0].name] = float("inf")
     exs = []
     runtimes = []
+    global_steps = []
     for idx, env_id in enumerate(env_ids):
         print(f"collecting runs for {env_id}")
         ex = expt.Experiment("Comparison")
@@ -359,6 +360,7 @@ def compare(
             result += [f"{metric_result.mean():.2f} ± {metric_result.std():.2f}"]
         result_table.loc[env_id] = result
         runtimes.append(list(ex.summary()["_runtime"]))
+        global_steps.append(list(ex.summary()["global_step"]))
         ax = axes_flatten[idx]
         ex.plot(
             ax=ax,
@@ -390,6 +392,7 @@ def compare(
         ax_time.set_xlabel("")
         ax_time.set_ylabel("")
     runtimes = pd.DataFrame(np.array(runtimes), index=env_ids, columns=list(ex.summary()["name"]))
+    global_steps = pd.DataFrame(np.array(global_steps), index=env_ids, columns=list(ex.summary()["name"]))
     print_rich_table(f"Runtime ({pc.time_unit}) (mean ± std)", runtimes.rename_axis("Environment").reset_index(), console)
 
     # for each run set, for each seed, plot 57 curves and get their median curves, then plot the average of the median curves
@@ -459,7 +462,7 @@ def compare(
     fig_time.savefig(f"{output_filename}-time.png", bbox_inches="tight")
     fig_time.savefig(f"{output_filename}-time.pdf", bbox_inches="tight")
     fig_time.savefig(f"{output_filename}-time.svg", bbox_inches="tight")
-    return blocks, score_dict, max_global_steps, runtimes
+    return blocks, score_dict, max_global_steps, runtimes, global_steps
 
 
 def normalize_score(score_dict: Dict[str, np.ndarray], max_scores: np.ndarray, min_scores: np.ndarray):
@@ -590,7 +593,7 @@ if __name__ == "__main__":
                     assert len(runsets[0].runs) > 0, f"{exp_name} ({query}) in {env_id} has no runs"
             runsetss.append(runsets)
 
-    blocks, score_dict, max_global_steps, runtimes = compare(
+    blocks, score_dict, max_global_steps, runtimes, global_steps = compare(
         console,
         runsetss,
         args.env_ids[0],
@@ -635,18 +638,21 @@ if __name__ == "__main__":
         for metric_fn, ax, metric_name in zip(metric_fns, axes_sample_efficiency.flatten(), metric_names):
             aggregate_fn = lambda scores: np.array([metric_fn(scores[..., frame]) for frame in range(scores.shape[-1])])
             aggregate_scores, aggregate_cis = rly.get_interval_estimates(normalized_score_dict, aggregate_fn, reps=args.pc.rc.sample_efficiency_num_bootstrap_reps)
-            plot_utils.plot_sample_efficiency_curve(
-                frames + 1,
-                aggregate_scores,
-                aggregate_cis,
-                algorithms=exp_names,
-                colors=colors,
-                xlabel=r"Steps",
-                ax=ax,
-                ylabel=metric_name,
-                labelsize="x-large",
-                ticklabelsize="x-large",
-            )
+            for exp_name in score_dict.keys():
+                global_step = global_steps[exp_name].mean()
+                global_step_xaxis = np.linspace(0, global_step, args.pc.rc.nsubsamples)
+                plot_utils.plot_sample_efficiency_curve(
+                    global_step_xaxis,
+                    {exp_name: aggregate_scores[exp_name]},
+                    {exp_name: aggregate_cis[exp_name]},
+                    algorithms=[exp_name],
+                    colors=colors,
+                    xlabel=r"Steps",
+                    ax=ax,
+                    ylabel=metric_name,
+                    labelsize="x-large",
+                    ticklabelsize="x-large",
+                )
             ax.set_xlabel("")
             expt.plot.autoformat_xaxis(ax)
 
@@ -656,18 +662,21 @@ if __name__ == "__main__":
                     figsize=(7 * 2, 3.4),
                     sharey=True,
                 )
-                plot_utils.plot_sample_efficiency_curve(
-                    frames + 1,
-                    aggregate_scores,
-                    aggregate_cis,
-                    algorithms=exp_names,
-                    colors=colors,
-                    xlabel=r"Steps",
-                    ax=axes_median_sample_walltime_efficiency[0],
-                    ylabel=metric_name,
-                    labelsize="x-large",
-                    ticklabelsize="x-large",
-                )
+                for exp_name in score_dict.keys():
+                    global_step = global_steps[exp_name].mean()
+                    global_step_xaxis = np.linspace(0, global_step, args.pc.rc.nsubsamples)
+                    plot_utils.plot_sample_efficiency_curve(
+                        global_step_xaxis,
+                        {exp_name: aggregate_scores[exp_name]},
+                        {exp_name: aggregate_cis[exp_name]},
+                        algorithms=[exp_name],
+                        colors=colors,
+                        xlabel=r"Steps",
+                        ax=axes_median_sample_walltime_efficiency[0],
+                        ylabel=metric_name,
+                        labelsize="x-large",
+                        ticklabelsize="x-large",
+                    )
                 expt.plot.autoformat_xaxis(axes_median_sample_walltime_efficiency[0])
                 for exp_name in score_dict.keys():
                     runtime = runtimes[exp_name].mean()
