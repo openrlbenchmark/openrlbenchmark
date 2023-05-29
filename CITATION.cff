@@ -10,6 +10,7 @@ authors:
   orcid: "0000-0003-2947-0295"
 - family-names: "Felten"  # for contributing MORL's experiments and maintaining `openrlbenchmark`
   given-names: "Florian"
+  orcid: "0000-0002-2874-3645"
 # data contributors and other maintainers
 - family-names: "Raffin" # for contributing SB3's experiments
   given-names: "Antonin"
