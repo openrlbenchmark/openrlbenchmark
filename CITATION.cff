@@ -59,6 +59,8 @@ authors:
   given-names: "Chang"
 - family-names: "Liu" # for contributing ACME experiments used in the EnvPool paper https://wandb.ai/openrlbenchmark/acme/ @lkevinzc
   given-names: "Zichen"
+- family-names: "Alegre" # for contributing MORL baselines results https://wandb.ai/openrlbenchmark/morl-baselines @lnalegre
+  given-names: "Lucas N."
 # tooling contributors
 - family-names: "Choi" # for creating https://github.com/wookayin/expt that underpins this project @wookayin
   given-names: "Jongwook"
