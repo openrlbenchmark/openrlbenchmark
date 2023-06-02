@@ -318,3 +318,17 @@ This is a project we are slowly working on. There is no specific timeline or roa
 * Documentation and designing standards
 * Download the tensorboard metrics from the tracked experiments and load them locally to save time
 
+## Citation
+
+If you have used this software in your work, please use the following citation.
+
+```tex
+@software{
+    Huang_openrlbenchmark_2023,
+    author = {Huang, Shengyi and Gallouédec, Quentin and Felten, Florian and Raffin, Antonin and Dossa, Rousslan Fernand Julien and Zhao, Yanxiao and Sullivan, Ryan and Makoviychuk, Viktor and Makoviichuk, Denys and Roumégous, Cyril and Weng, Jiayi and Chen, Chufan and Rahman, Masudur and M. Araújo, João G. and Quan, Guorui and Tan, Daniel and Klein, Timo and Charakorn, Rujikorn and Towers, Mark and Berthelot, Yann and Mehta, Kinal and Chakraborty, Dipam and KG, Arjun and Charraut, Valentin and Ye, Chang and Liu, Zichen and Alegre, Lucas N. and Choi, Jongwook and Yi, Brent},
+    month = may,
+    title = {{openrlbenchmark}},
+    url = {https://github.com/openrlbenchmark/openrlbenchmark},
+    year = {2023}
+}
+```
