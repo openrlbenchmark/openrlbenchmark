@@ -345,23 +345,23 @@ def compare(
         # for each run `i` get the average of the last `rolling` episodes as r_i
         # then take the average and std of r_i as the results.
         result = []
-        # for hypothesis in ex.hypotheses:
-        #     metric_result = []
-        #     console.print(f"{hypothesis.name} has {len(hypothesis.runs)} runs", style="bold")
-        #     min_num_seeds_per_hypothesis[hypothesis.name] = min(
-        #         min_num_seeds_per_hypothesis[hypothesis.name], len(hypothesis.runs)
-        #     )
-        #     for run in hypothesis.runs:
-        #         metric_result += [run.df["charts/episodic_return"].dropna()[-metric_last_n_average_window:].mean()]
-        #
-        #         # convert time unit in place
-        #         if pc.time_unit == "m":
-        #             run.df["_runtime"] /= 60
-        #         elif pc.time_unit == "h":
-        #             run.df["_runtime"] /= 3600
-        #     metric_result = np.array(metric_result)
-        #     result += [f"{metric_result.mean():.2f} ± {metric_result.std():.2f}"]
-        # result_table.loc[env_id] = result
+        for hypothesis in ex.hypotheses:
+            metric_result = []
+            console.print(f"{hypothesis.name} has {len(hypothesis.runs)} runs", style="bold")
+            min_num_seeds_per_hypothesis[hypothesis.name] = min(
+                min_num_seeds_per_hypothesis[hypothesis.name], len(hypothesis.runs)
+            )
+            for run in hypothesis.runs:
+                # metric_result += [run.df["charts/episodic_return"].dropna()[-metric_last_n_average_window:].mean()]
+
+                # convert time unit in place
+                if pc.time_unit == "m":
+                    run.df["_runtime"] /= 60
+                elif pc.time_unit == "h":
+                    run.df["_runtime"] /= 3600
+            metric_result = np.array(metric_result)
+            result += [f"{metric_result.mean():.2f} ± {metric_result.std():.2f}"]
+        result_table.loc[env_id] = result
         runtimes.append(list(ex.summary()["_runtime"]))
         global_steps.append(list(ex.summary()["global_step"]))
         for idx_metric, metric in enumerate(runsetss[0][0].metrics):
@@ -403,9 +403,9 @@ def compare(
             )
             ax_time.set_xlabel("")
             if idx_metric == 0:
-                ax.set_title(env_id)
+                ax_time.set_title(env_id)
             else:
-                ax.set_title("")
+                ax_time.set_title("")
             if idx == 0:
                 ax_time.set_ylabel(metric_str)
             else:
