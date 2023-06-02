@@ -269,13 +269,14 @@ python -m openrlbenchmark.rlops \
 
 ```shell
 python -m openrlbenchmark.rlops \
---filters '?we=openrlbenchmark&wpn=MORL-Baselines&ceik=env_id&cen=algo&metrics=eval/hypervolume&metrics=eval/igd&metrics=eval/sparsity&metrics=eval/eum&metrics=eval/mul' \
+  --filters '?we=openrlbenchmark&wpn=MORL-Baselines&ceik=env_id&cen=algo&metrics=eval/hypervolume&metrics=eval/igd&metrics=eval/sparsity&metrics=eval/eum&metrics=eval/mul' \
   'Pareto Q-Learning?cl=Pareto Q-Learning' \
   'MultiPolicy MO Q-Learning?cl=MultiPolicy MO Q-Learning' \
   'MultiPolicy MO Q-Learning (OLS)?cl=MultiPolicy MO Q-Learning (OLS)' \
+  'MultiPolicy MO Q-Learning (GPI-LS)?cl=MultiPolicy MO Q-Learning (GPI-LS)' \
   --env-ids deep-sea-treasure-v0 deep-sea-treasure-concave-v0 fruit-tree-v0 \
   --pc.ncols 3 \
-  --pc.ncols-legend 1 \
+  --pc.ncols-legend 4 \
   --pc.xlabel 'Training steps' \
   --pc.ylabel '' \
   --output-filename morl_deterministic_envs/ \
