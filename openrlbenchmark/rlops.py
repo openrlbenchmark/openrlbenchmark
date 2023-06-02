@@ -380,7 +380,14 @@ def compare(
                 legend=False,
             )
             ax.set_xlabel("")
-            ax.set_ylabel(metric_str)
+            if idx_metric == 0:
+                ax.set_title(env_id)
+            else:
+                ax.set_title("")
+            if idx == 0:
+                ax.set_ylabel(metric_str)
+            else:
+                ax.set_ylabel("")
             ax_time = axes_time_flatten[len(env_ids) * idx_metric + idx]
             ex.plot(
                 ax=ax_time,
@@ -395,7 +402,14 @@ def compare(
                 legend=False,
             )
             ax_time.set_xlabel("")
-            ax_time.set_ylabel(metric_str)
+            if idx_metric == 0:
+                ax.set_title(env_id)
+            else:
+                ax.set_title("")
+            if idx == 0:
+                ax_time.set_ylabel(metric_str)
+            else:
+                ax_time.set_ylabel("")
     runtimes = pd.DataFrame(np.array(runtimes), index=env_ids, columns=list(ex.summary()["name"]))
     global_steps = pd.DataFrame(np.array(global_steps), index=env_ids, columns=list(ex.summary()["name"]))
     print_rich_table(f"Runtime ({pc.time_unit}) (mean ± std)", runtimes.rename_axis("Environment").reset_index(), console)
