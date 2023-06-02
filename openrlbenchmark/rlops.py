@@ -240,7 +240,7 @@ def create_hypothesis(runset: Runset, scan_history: bool = False) -> Hypothesis:
             run_df["charts/episodic_return"] = run_df[metrics]
             cleaned_df = run_df[["global_step", "_runtime", "charts/episodic_return"]].dropna()
         else:
-            cleaned_df = run_df[["global_step", "_runtime"] + runset.metrics].dropna()
+            cleaned_df = run_df[["global_step", "_runtime"] + runset.metrics].dropna(how="all")
         runs += [Run(f"seed{idx}", cleaned_df)]
     return Hypothesis(runset.name, runs)
 
