@@ -605,67 +605,44 @@ if __name__ == "__main__":
         scan_history=args.scan_history,
         report=args.report,
         pc=args.pc,
-        rc=args.rc if args.rliable else None,
+        rc=args.rc,
     )
 
-    exp_names = list(reversed(list(score_dict.keys())))
-    colors_flatten = colors_flatten_original
-    colors = dict(zip(list(score_dict.keys()), colors_flatten))
-    frames = np.linspace(0, max(max_global_steps.values()), args.rc.nsubsamples)
-    print_rich_table(f"Items in the `score_dict` used for `rliable`", pd.DataFrame(
-        data=[score_dict[key].shape for key in score_dict],
-        columns=["Number of Seeds", "Number of Environments", "Number of Sub-samples"],
-        index=list(score_dict.keys())).rename_axis("Experiments").reset_index(), console)
+    if args.rliable:
+        exp_names = list(reversed(list(score_dict.keys())))
+        colors_flatten = colors_flatten_original
+        colors = dict(zip(list(score_dict.keys()), colors_flatten))
+        frames = np.linspace(0, max(max_global_steps.values()), args.rc.nsubsamples)
+        print_rich_table(f"Items in the `score_dict` used for `rliable`", pd.DataFrame(
+            data=[score_dict[key].shape for key in score_dict],
+            columns=["Number of Seeds", "Number of Environments", "Number of Sub-samples"],
+            index=list(score_dict.keys())).rename_axis("Experiments").reset_index(), console)
 
-    # normalize scores. Each item in `score_dict` has shape (num_runs, len(args.env_ids[0]), nsubsamples)
-    if args.rc.score_normalization_method == "maxmin":
-        normalized_score_dict = maxmin_normalize_score(score_dict)
-    elif args.rc.score_normalization_method == "atari": 
-        normalized_score_dict = atari_normalize_score(args.env_ids[0])
-    else:
-        raise NotImplementedError(f"Normalization method {args.rc.score_normalization_method} not implemented")
-    performance_profile_normalized_score_dict = {}
-    for key, value in normalized_score_dict.items():
-        performance_profile_normalized_score_dict[key] = np.nanmean(value[:, :, -1:], axis=-1)
-    metric_fns = [metrics.aggregate_median, metrics.aggregate_iqm, metrics.aggregate_mean, metrics.aggregate_optimality_gap]
-    metric_names = ["Median", "IQM", "Mean", "Optimality Gap"]
+        # normalize scores. Each item in `score_dict` has shape (num_runs, len(args.env_ids[0]), nsubsamples)
+        if args.rc.score_normalization_method == "maxmin":
+            normalized_score_dict = maxmin_normalize_score(score_dict)
+        elif args.rc.score_normalization_method == "atari": 
+            normalized_score_dict = atari_normalize_score(args.env_ids[0])
+        else:
+            raise NotImplementedError(f"Normalization method {args.rc.score_normalization_method} not implemented")
+        performance_profile_normalized_score_dict = {}
+        for key, value in normalized_score_dict.items():
+            performance_profile_normalized_score_dict[key] = np.nanmean(value[:, :, -1:], axis=-1)
+        metric_fns = [metrics.aggregate_median, metrics.aggregate_iqm, metrics.aggregate_mean, metrics.aggregate_optimality_gap]
+        metric_names = ["Median", "IQM", "Mean", "Optimality Gap"]
 
 
-    if args.rc.sample_efficiency_plots:
-        print("plotting sample efficiency curve (this is slow and may take several minutes)")
-        fig_sample_efficiency, axes_sample_efficiency = plt.subplots(
-            ncols=2,
-            nrows=2,
-            figsize=(7 * 2, 3.4 * 2),
-            sharex=args.pc.sharex,
-        )
-        for metric_fn, ax, metric_name in zip(metric_fns, axes_sample_efficiency.flatten(), metric_names):
-            aggregate_fn = lambda scores: np.array([metric_fn(scores[..., frame]) for frame in range(scores.shape[-1])])
-            aggregate_scores, aggregate_cis = rly.get_interval_estimates(normalized_score_dict, aggregate_fn, reps=args.rc.sample_efficiency_num_bootstrap_reps)
-            for exp_name in score_dict.keys():
-                global_step = global_steps[exp_name].mean()
-                global_step_xaxis = np.linspace(0, global_step, args.rc.nsubsamples)
-                plot_utils.plot_sample_efficiency_curve(
-                    global_step_xaxis,
-                    {exp_name: aggregate_scores[exp_name]},
-                    {exp_name: aggregate_cis[exp_name]},
-                    algorithms=[exp_name],
-                    colors=colors,
-                    xlabel=r"Steps",
-                    ax=ax,
-                    ylabel=metric_name,
-                    labelsize="x-large",
-                    ticklabelsize="x-large",
-                )
-            ax.set_xlabel("")
-            expt.plot.autoformat_xaxis(ax)
-
-            if metric_name == args.rc.sample_efficiency_and_walltime_efficiency_method:
-                fig_median_sample_walltime_efficiency, axes_median_sample_walltime_efficiency = plt.subplots(
-                    ncols=2,
-                    figsize=(7 * 2, 3.4),
-                    sharey=True,
-                )
+        if args.rc.sample_efficiency_plots:
+            print("plotting sample efficiency curve (this is slow and may take several minutes)")
+            fig_sample_efficiency, axes_sample_efficiency = plt.subplots(
+                ncols=2,
+                nrows=2,
+                figsize=(7 * 2, 3.4 * 2),
+                sharex=args.pc.sharex,
+            )
+            for metric_fn, ax, metric_name in zip(metric_fns, axes_sample_efficiency.flatten(), metric_names):
+                aggregate_fn = lambda scores: np.array([metric_fn(scores[..., frame]) for frame in range(scores.shape[-1])])
+                aggregate_scores, aggregate_cis = rly.get_interval_estimates(normalized_score_dict, aggregate_fn, reps=args.rc.sample_efficiency_num_bootstrap_reps)
                 for exp_name in score_dict.keys():
                     global_step = global_steps[exp_name].mean()
                     global_step_xaxis = np.linspace(0, global_step, args.rc.nsubsamples)
@@ -676,104 +653,128 @@ if __name__ == "__main__":
                         algorithms=[exp_name],
                         colors=colors,
                         xlabel=r"Steps",
-                        ax=axes_median_sample_walltime_efficiency[0],
+                        ax=ax,
                         ylabel=metric_name,
                         labelsize="x-large",
                         ticklabelsize="x-large",
                     )
-                expt.plot.autoformat_xaxis(axes_median_sample_walltime_efficiency[0])
-                for exp_name in score_dict.keys():
-                    runtime = runtimes[exp_name].mean()
-                    runtime_xaxis =  np.linspace(0, runtime, args.rc.nsubsamples)
-                    plot_utils.plot_sample_efficiency_curve(
-                        runtime_xaxis,
-                        {exp_name: aggregate_scores[exp_name]},
-                        {exp_name: aggregate_cis[exp_name]},
-                        algorithms=[exp_name],
-                        colors=colors,
-                        xlabel=f"Time ({args.pc.time_unit})",
-                        ax=axes_median_sample_walltime_efficiency[1],
-                        ylabel=metric_name,
-                        labelsize="x-large",
-                        ticklabelsize="x-large",
+                ax.set_xlabel("")
+                expt.plot.autoformat_xaxis(ax)
+
+                if metric_name == args.rc.sample_efficiency_and_walltime_efficiency_method:
+                    fig_median_sample_walltime_efficiency, axes_median_sample_walltime_efficiency = plt.subplots(
+                        ncols=2,
+                        figsize=(7 * 2, 3.4),
+                        sharey=True,
                     )
-                axes_median_sample_walltime_efficiency[1].set_ylabel("")
-                h, l = axes_median_sample_walltime_efficiency[1].get_legend_handles_labels()
-                fig_median_sample_walltime_efficiency.legend(h, l, loc="lower center", ncol=args.pc.ncols_legend, bbox_to_anchor=(0.5, 1.0), bbox_transform=fig_median_sample_walltime_efficiency.transFigure)
-                fig_median_sample_walltime_efficiency.tight_layout()
-                fig_median_sample_walltime_efficiency.savefig(f"{args.output_filename}_sample_walltime_efficiency.png", bbox_inches="tight")
-                fig_median_sample_walltime_efficiency.savefig(f"{args.output_filename}_sample_walltime_efficiency.pdf", bbox_inches="tight")
+                    for exp_name in score_dict.keys():
+                        global_step = global_steps[exp_name].mean()
+                        global_step_xaxis = np.linspace(0, global_step, args.rc.nsubsamples)
+                        plot_utils.plot_sample_efficiency_curve(
+                            global_step_xaxis,
+                            {exp_name: aggregate_scores[exp_name]},
+                            {exp_name: aggregate_cis[exp_name]},
+                            algorithms=[exp_name],
+                            colors=colors,
+                            xlabel=r"Steps",
+                            ax=axes_median_sample_walltime_efficiency[0],
+                            ylabel=metric_name,
+                            labelsize="x-large",
+                            ticklabelsize="x-large",
+                        )
+                    expt.plot.autoformat_xaxis(axes_median_sample_walltime_efficiency[0])
+                    for exp_name in score_dict.keys():
+                        runtime = runtimes[exp_name].mean()
+                        runtime_xaxis =  np.linspace(0, runtime, args.rc.nsubsamples)
+                        plot_utils.plot_sample_efficiency_curve(
+                            runtime_xaxis,
+                            {exp_name: aggregate_scores[exp_name]},
+                            {exp_name: aggregate_cis[exp_name]},
+                            algorithms=[exp_name],
+                            colors=colors,
+                            xlabel=f"Time ({args.pc.time_unit})",
+                            ax=axes_median_sample_walltime_efficiency[1],
+                            ylabel=metric_name,
+                            labelsize="x-large",
+                            ticklabelsize="x-large",
+                        )
+                    axes_median_sample_walltime_efficiency[1].set_ylabel("")
+                    h, l = axes_median_sample_walltime_efficiency[1].get_legend_handles_labels()
+                    fig_median_sample_walltime_efficiency.legend(h, l, loc="lower center", ncol=args.pc.ncols_legend, bbox_to_anchor=(0.5, 1.0), bbox_transform=fig_median_sample_walltime_efficiency.transFigure)
+                    fig_median_sample_walltime_efficiency.tight_layout()
+                    fig_median_sample_walltime_efficiency.savefig(f"{args.output_filename}_sample_walltime_efficiency.png", bbox_inches="tight")
+                    fig_median_sample_walltime_efficiency.savefig(f"{args.output_filename}_sample_walltime_efficiency.pdf", bbox_inches="tight")
 
-        h, l = axes_sample_efficiency[0][0].get_legend_handles_labels()
-        fig_sample_efficiency.legend(h, l, loc="lower center", ncol=args.pc.ncols_legend, bbox_to_anchor=(0.5, 1.0), bbox_transform=fig_sample_efficiency.transFigure)
-        fig_sample_efficiency.supxlabel(args.pc.xlabel, fontsize="x-large")
-        fig_sample_efficiency.tight_layout()
-        fig_sample_efficiency.savefig(f"{args.output_filename}_sample_efficiency.png", bbox_inches="tight")
-        fig_sample_efficiency.savefig(f"{args.output_filename}_sample_efficiency.pdf", bbox_inches="tight")
+            h, l = axes_sample_efficiency[0][0].get_legend_handles_labels()
+            fig_sample_efficiency.legend(h, l, loc="lower center", ncol=args.pc.ncols_legend, bbox_to_anchor=(0.5, 1.0), bbox_transform=fig_sample_efficiency.transFigure)
+            fig_sample_efficiency.supxlabel(args.pc.xlabel, fontsize="x-large")
+            fig_sample_efficiency.tight_layout()
+            fig_sample_efficiency.savefig(f"{args.output_filename}_sample_efficiency.png", bbox_inches="tight")
+            fig_sample_efficiency.savefig(f"{args.output_filename}_sample_efficiency.pdf", bbox_inches="tight")
 
-    if args.rc.performance_profile_plots:
-        print("plotting performance profiles")
-        fig_performance_profile, axes_performance_profile = plt.subplots(
-            ncols=2,
-            figsize=(7 * 2, 3.4),
-        )
-        performance_profile_thresholds = np.linspace(0.0, args.rc.normalized_score_threashold, 81)
-        score_distributions, score_distributions_cis = rly.create_performance_profile(
-            performance_profile_normalized_score_dict,
-            performance_profile_thresholds,
-            reps=args.rc.performance_profile_num_bootstrap_reps,
-        )
-        avg_score_distributions, avg_score_distributions_cis = rly.create_performance_profile(
-            performance_profile_normalized_score_dict,
-            performance_profile_thresholds,
-            reps=args.rc.performance_profile_num_bootstrap_reps,
-            use_score_distribution=False,
-        )
-        plot_utils.plot_performance_profiles(
-            score_distributions,
-            performance_profile_thresholds,
-            performance_profile_cis=score_distributions_cis,
-            colors=colors,
-            xlabel=r"Human Normalized Score $(\tau)$",
-            ax=axes_performance_profile[0],
-        )
-        plot_utils.plot_performance_profiles(
-            avg_score_distributions,
-            performance_profile_thresholds,
-            performance_profile_cis=avg_score_distributions_cis,
-            colors=colors,
-            xlabel=r"Human Normalized Score $(\tau)$",
-            ylabel=r"Fraction of tasks with score > $\tau$",
-            ax=axes_performance_profile[1],
-        )
-        h, l = axes_performance_profile[0].get_legend_handles_labels()
-        fig_performance_profile.legend(h, l, loc="lower center", ncol=args.pc.ncols_legend, bbox_to_anchor=(0.5, 1.0), bbox_transform=fig_performance_profile.transFigure)
-        fig_performance_profile.tight_layout()
-        fig_performance_profile.savefig(f"{args.output_filename}_performance_profile.png", bbox_inches="tight")
-        fig_performance_profile.savefig(f"{args.output_filename}_performance_profile.pdf", bbox_inches="tight")
+        if args.rc.performance_profile_plots:
+            print("plotting performance profiles")
+            fig_performance_profile, axes_performance_profile = plt.subplots(
+                ncols=2,
+                figsize=(7 * 2, 3.4),
+            )
+            performance_profile_thresholds = np.linspace(0.0, args.rc.normalized_score_threashold, 81)
+            score_distributions, score_distributions_cis = rly.create_performance_profile(
+                performance_profile_normalized_score_dict,
+                performance_profile_thresholds,
+                reps=args.rc.performance_profile_num_bootstrap_reps,
+            )
+            avg_score_distributions, avg_score_distributions_cis = rly.create_performance_profile(
+                performance_profile_normalized_score_dict,
+                performance_profile_thresholds,
+                reps=args.rc.performance_profile_num_bootstrap_reps,
+                use_score_distribution=False,
+            )
+            plot_utils.plot_performance_profiles(
+                score_distributions,
+                performance_profile_thresholds,
+                performance_profile_cis=score_distributions_cis,
+                colors=colors,
+                xlabel=r"Human Normalized Score $(\tau)$",
+                ax=axes_performance_profile[0],
+            )
+            plot_utils.plot_performance_profiles(
+                avg_score_distributions,
+                performance_profile_thresholds,
+                performance_profile_cis=avg_score_distributions_cis,
+                colors=colors,
+                xlabel=r"Human Normalized Score $(\tau)$",
+                ylabel=r"Fraction of tasks with score > $\tau$",
+                ax=axes_performance_profile[1],
+            )
+            h, l = axes_performance_profile[0].get_legend_handles_labels()
+            fig_performance_profile.legend(h, l, loc="lower center", ncol=args.pc.ncols_legend, bbox_to_anchor=(0.5, 1.0), bbox_transform=fig_performance_profile.transFigure)
+            fig_performance_profile.tight_layout()
+            fig_performance_profile.savefig(f"{args.output_filename}_performance_profile.png", bbox_inches="tight")
+            fig_performance_profile.savefig(f"{args.output_filename}_performance_profile.pdf", bbox_inches="tight")
 
-    if args.rc.aggregate_metrics_plots:
-        print("plotting aggregate metrics")
-        aggregate_func = lambda x: np.array([metric_fn(x) for metric_fn in metric_fns])
-        aggregate_scores, aggregate_score_cis = rly.get_interval_estimates(
-            performance_profile_normalized_score_dict, aggregate_func, reps=args.rc.interval_estimates_num_bootstrap_reps
-        )
-        aggregate_scores_df = pd.DataFrame.from_dict(aggregate_scores, orient="index", columns=["Median", "IQM", "Mean", "Optimality Gap"])
-        print_rich_table(f"Aggregate Scores", aggregate_scores_df.reset_index(), console)
-        fig, axes = plot_utils.plot_interval_estimates(
-            aggregate_scores,
-            aggregate_score_cis,
-            metric_names=["Median", "IQM", "Mean", "Optimality Gap"],
-            algorithms=exp_names,
-            colors=colors,
-            xlabel='',
-            # xlabel='Normalized Score',
-            # xlabel_y_coordinate=-0.08, # this variable needs to be adjusted for each plot... :( so we just disable xlabel for now.
-        )
-        axes[1].set_xlabel("Normalized Score", fontsize="xx-large")
-        fig.tight_layout()
-        plt.savefig(f"{args.output_filename}_aggregate.png", bbox_inches="tight")
-        plt.savefig(f"{args.output_filename}_aggregate.pdf", bbox_inches="tight")
+        if args.rc.aggregate_metrics_plots:
+            print("plotting aggregate metrics")
+            aggregate_func = lambda x: np.array([metric_fn(x) for metric_fn in metric_fns])
+            aggregate_scores, aggregate_score_cis = rly.get_interval_estimates(
+                performance_profile_normalized_score_dict, aggregate_func, reps=args.rc.interval_estimates_num_bootstrap_reps
+            )
+            aggregate_scores_df = pd.DataFrame.from_dict(aggregate_scores, orient="index", columns=["Median", "IQM", "Mean", "Optimality Gap"])
+            print_rich_table(f"Aggregate Scores", aggregate_scores_df.reset_index(), console)
+            fig, axes = plot_utils.plot_interval_estimates(
+                aggregate_scores,
+                aggregate_score_cis,
+                metric_names=["Median", "IQM", "Mean", "Optimality Gap"],
+                algorithms=exp_names,
+                colors=colors,
+                xlabel='',
+                # xlabel='Normalized Score',
+                # xlabel_y_coordinate=-0.08, # this variable needs to be adjusted for each plot... :( so we just disable xlabel for now.
+            )
+            axes[1].set_xlabel("Normalized Score", fontsize="xx-large")
+            fig.tight_layout()
+            plt.savefig(f"{args.output_filename}_aggregate.png", bbox_inches="tight")
+            plt.savefig(f"{args.output_filename}_aggregate.pdf", bbox_inches="tight")
 
     if args.report:
         print("saving report")
