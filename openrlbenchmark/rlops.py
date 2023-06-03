@@ -735,7 +735,7 @@ if __name__ == "__main__":
                 performance_profile_thresholds,
                 performance_profile_cis=score_distributions_cis,
                 colors=colors,
-                xlabel=r"Human Normalized Score $(\tau)$",
+                xlabel=r"Normalized Score $(\tau)$",
                 ax=axes_performance_profile[0],
             )
             plot_utils.plot_performance_profiles(
@@ -743,7 +743,7 @@ if __name__ == "__main__":
                 performance_profile_thresholds,
                 performance_profile_cis=avg_score_distributions_cis,
                 colors=colors,
-                xlabel=r"Human Normalized Score $(\tau)$",
+                xlabel=r"Normalized Score $(\tau)$",
                 ylabel=r"Fraction of tasks with score > $\tau$",
                 ax=axes_performance_profile[1],
             )
