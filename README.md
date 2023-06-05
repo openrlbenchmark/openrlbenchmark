@@ -45,26 +45,30 @@ Open RL Benchmark provides an RLops CLI to pull and compare metrics from Weights
 
 ```shell
 python -m openrlbenchmark.rlops \
-    --filters '?we=openrlbenchmark&wpn=sb3&ceik=env&cen=algo&metric=rollout/ep_rew_mean' \
-        'a2c' \
-        'ddpg' \
-        'ppo_lstm?cl=PPO w/ LSTM' \
-        'sac' \
-        'td3' \
-        'ppo' \
-        'trpo' \
     --filters '?we=openrlbenchmark&wpn=cleanrl&ceik=env_id&cen=exp_name&metric=charts/episodic_return' \
-        'sac_continuous_action?tag=rlops-pilot&cl=SAC' \
-    --env-ids HalfCheetahBulletEnv-v0 \
-    --pc.ncols 1 \
-    --pc.ncols-legend 2 \
-    --pc.xlabel 'Training Steps' \
-    --pc.ylabel 'Episodic Return' \
+        'ppo_continuous_action?tag=v1.0.0-27-gde3f410&cl=CleanRL PPO' \
+    --filters '?we=openrlbenchmark&wpn=baselines&ceik=env&cen=exp_name&metric=charts/episodic_return' \
+        'baselines-ppo2-mlp?cl=openai/baselines PPO2' \
+    --env-ids HalfCheetah-v2 Hopper-v2 Walker2d-v2 \
+    --env-ids HalfCheetah-v2 Hopper-v2 Walker2d-v2 \
+    --no-check-empty-runs \
+    --pc.ncols 3 \
+    --pc.ncols-legend 3 \
+    --rliable \
+    --rc.score_normalization_method maxmin \
+    --rc.normalized_score_threshold 1.0 \
+    --rc.sample_efficiency_plots \
+    --rc.sample_efficiency_and_walltime_efficiency_method Median \
+    --rc.performance_profile_plots  \
+    --rc.aggregate_metrics_plots  \
+    --rc.sample_efficiency_num_bootstrap_reps 10 \
+    --rc.performance_profile_num_bootstrap_reps 10 \
+    --rc.interval_estimates_num_bootstrap_reps 10 \
     --output-filename compare \
-    --report
+    --scan-history
 ```
 
-Here, we created multiple filters. The first string in the first filter is `'?we=openrlbenchmark&wpn=sb3&ceik=env&cen=algo&metric=rollout/ep_rew_mean'`, which is a query string that specifies the following:
+Here, we created multiple filters. The first string in the first filter is `'?we=openrlbenchmark&wpn=baselines&ceik=env&cen=exp_name&metric=charts/episodic_return'`, which is a query string that specifies the following:
 
 * `we`: the W&B entity name
 * `wpn`: the W&B project name
@@ -72,21 +76,24 @@ Here, we created multiple filters. The first string in the first filter is `'?we
 * `cen`: the custom key for the experiment name
 * `metric`: the metric we are interested in
 
-So we are fetching metrics from [https://wandb.ai/openrlbenchmark/sb3](https://wandb.ai/openrlbenchmark/sb3). The environment id is stored in the `env` key, and the experiment name is stored in the `algo` key. The metric we are interested in is `rollout/ep_rew_mean`.
+So we are fetching metrics from [https://wandb.ai/openrlbenchmark/baselines](https://wandb.ai/openrlbenchmark/baselines). The environment id is stored in the `env` key, and the experiment name is stored in the `exp_name` key. The metric we are interested in is `charts/episodic_return`.
 
-Similarly, we are fetching metrics from [https://wandb.ai/openrlbenchmark/cleanrl](https://wandb.ai/openrlbenchmark/cleanrl). The environment id is stored in the `env_id` key, and the experiment name is stored in the `exp_name` key. The metric we are interested in is `charts/episodic_return`. You can also customize the legend with the `cl` query string, such as `ppo_lstm?cl=PPO w/ LSTM`.
+Similarly, we are fetching metrics from [https://wandb.ai/openrlbenchmark/cleanrl](https://wandb.ai/openrlbenchmark/cleanrl). The environment id is stored in the `env_id` key, and the experiment name is stored in the `exp_name` key. The metric we are interested in is `charts/episodic_return`. You can also customize the legend with the `cl` query string, such as `baselines-ppo2-mlp?cl=openai/baselines PPO2`.
 
 The labels of the figure can be customized with the `--pc.xlabel` and `--pc.ylabel` flags. The `--pc.ncols` flag specifies the number of columns in the figure. The `--pc.ncols-legend` flag specifies the number of columns in the legend. The `--output-filename` flag specifies the filename of the output figure
 
-The command above generates the following plot:
+The `--rliable` toggles our [rliable](https://github.com/google-research/rliable) integration, and its configuration can be tweeked via `--rc`. The command above generates the following plot:
 
-|    cleanrl vs. Stable Baselines 3   |    cleanrl vs. Stable Baselines 3 (Time)   |
-|:----------------------------------:|:----------------------------------------:|
-|  ![](static/cleanrl_vs_sb3.png)   |   ![](static/cleanrl_vs_sb3-time.png)   |
+![](static/baseline_vs_cleanrl.png)
+![](static/baseline_vs_cleanrl-time.png)
+![](static/baseline_vs_cleanrl_sample_walltime_efficiency.png)
+![](static/baseline_vs_cleanrl_sample_efficiency.png)
+![](static/baseline_vs_cleanrl_performance_profile.png)
+![](static/baseline_vs_cleanrl_aggregate.png)
 
 
 
-The `--report` tag also generates a [wandb report](https://wandb.ai/costa-huang/cleanrl/reports/Regression-Report-sac_continuous_action--VmlldzozMTY4NDQ3)
+The `--report` tag also generates a [wandb report](https://wandb.ai/costa-huang/cleanrl/reports/Regression-Report-openai-baselines-PPO2--Vmlldzo0NTU4MTE5)
 
 
 The command also generates a `compare.png`, a `compare.md`, and a `compare.csv` in the current directory.
@@ -97,7 +104,15 @@ The command also generates a `compare.png`, a `compare.md`, and a `compare.csv` 
 
 
 > **Warning**
-> You may get slightly different curves every time you run the commands. This is because we sample 500 data points from the track experiments to save bandwidth. If you are using `openrlbenchmark` repeatedly or you wanto to generate consistent `compare.md` and learning curves, we recommend you to use `--scan-history` to get all of the data points, but initially it may take a while to run.
+> We recommend you to use `--scan-history` which pullts all of the data points, but initially it will cache the data and may take a while to run. If you don't use `--scan-history`, it will only pull 500 data points from wandb randomly, which could generate different learning curves each time you run the command.
+
+
+## Offline mode
+
+We introduced an experimental **offline** mode. Sometimes even with caching `--scan-history` the script can still take a long time if there are too many environments or experiments. This is because we are still calling many `wandb.Api().runs(..., filters)` under the hood. 
+
+No worries though. When running with `--scan-history`, we also automatically build a local `sqlite` database to store the metadata of runs. Then, you can run `python -m openrlbenchmark.rlops ... --scan-history --offline` to generate the plots without having access to the internet. It should considerably speed up the plotting process as well. We are still working on improving the offline mode, so please let us know if you encounter any issues. 
+
 
 
 ## Currently supported libraries
@@ -149,11 +164,11 @@ The following libraries have some recorded experiments:
 
 Sometimes the same environments could have different names in different libraries. For example, `openai/baselines` uses `BreakoutNoFrameskip-v4` while [EnvPool](https://envpool.readthedocs.io/en/latest/env/atari.html) uses `Breakout-v5`. To compare the two libraries, we need to specify the `env_id` for `CleanRL` and `env` for `openai/baselines`. In this case, can specify the corresponding `env_ids` for each filter.
 
-For Atari games, we have additional batteries included `openrlbenchmark.rlops_hns` to show human normalized-scores and further statistical analysis through [`rliable`](https://github.com/google-research/rliable).
+For Atari games, we can toggle `--rc.score_normalization_method atari` option to use human-normalized scores for `rliable` analysis.
 
 
 ```shell
-python -m openrlbenchmark.rlops_hns \
+python -m openrlbenchmark.rlops \
     --filters '?we=openrlbenchmark&wpn=baselines&ceik=env&cen=exp_name&metric=charts/episodic_return' 'baselines-ppo2-cnn' \
     --filters '?we=openrlbenchmark&wpn=envpool-atari&ceik=env_id&cen=exp_name&metric=charts/avg_episodic_return' 'ppo_atari_envpool_xla_jax_truncation' \
     --env-ids AlienNoFrameskip-v4 AmidarNoFrameskip-v4 AssaultNoFrameskip-v4 AsterixNoFrameskip-v4 AsteroidsNoFrameskip-v4 AtlantisNoFrameskip-v4 BankHeistNoFrameskip-v4 BattleZoneNoFrameskip-v4 BeamRiderNoFrameskip-v4 BerzerkNoFrameskip-v4 BowlingNoFrameskip-v4 BoxingNoFrameskip-v4 BreakoutNoFrameskip-v4 CentipedeNoFrameskip-v4 ChopperCommandNoFrameskip-v4 CrazyClimberNoFrameskip-v4 DefenderNoFrameskip-v4 DemonAttackNoFrameskip-v4 DoubleDunkNoFrameskip-v4 EnduroNoFrameskip-v4 FishingDerbyNoFrameskip-v4 FreewayNoFrameskip-v4 FrostbiteNoFrameskip-v4 GopherNoFrameskip-v4 GravitarNoFrameskip-v4 HeroNoFrameskip-v4 IceHockeyNoFrameskip-v4 PrivateEyeNoFrameskip-v4 QbertNoFrameskip-v4 RiverraidNoFrameskip-v4 RoadRunnerNoFrameskip-v4 RobotankNoFrameskip-v4 SeaquestNoFrameskip-v4 SkiingNoFrameskip-v4 SolarisNoFrameskip-v4 SpaceInvadersNoFrameskip-v4 StarGunnerNoFrameskip-v4 SurroundNoFrameskip-v4 TennisNoFrameskip-v4 TimePilotNoFrameskip-v4 TutankhamNoFrameskip-v4 UpNDownNoFrameskip-v4 VentureNoFrameskip-v4 VideoPinballNoFrameskip-v4 WizardOfWorNoFrameskip-v4 YarsRevengeNoFrameskip-v4 ZaxxonNoFrameskip-v4 JamesbondNoFrameskip-v4 KangarooNoFrameskip-v4 KrullNoFrameskip-v4 KungFuMasterNoFrameskip-v4 MontezumaRevengeNoFrameskip-v4 MsPacmanNoFrameskip-v4 NameThisGameNoFrameskip-v4 PhoenixNoFrameskip-v4 PitfallNoFrameskip-v4 PongNoFrameskip-v4 \
@@ -161,42 +176,33 @@ python -m openrlbenchmark.rlops_hns \
     --no-check-empty-runs \
     --pc.ncols 5 \
     --pc.ncols-legend 2 \
-    --output-filename static/cleanrl_vs_baselines \
-    --scan-history --rliable
+    --rliable \
+    --rc.score_normalization_method atari \
+    --rc.normalized_score_threshold 8.0 \
+    --rc.sample_efficiency_plots \
+    --rc.sample_efficiency_and_walltime_efficiency_method Median \
+    --rc.performance_profile_plots  \
+    --rc.aggregate_metrics_plots  \
+    --rc.sample_efficiency_num_bootstrap_reps 50000 \
+    --rc.performance_profile_num_bootstrap_reps 2000 \
+    --rc.interval_estimates_num_bootstrap_reps 2000 \
+    --output-filename static/cleanrl_vs_baselines_atari \
+    --scan-history
 ```
 
-In the individual learning curves below, the right y-axis is the human normalized score. The left y-axis is the raw episodic return.
-![](static/cleanrl_vs_baselines.png) The script also generates `cleanrl_vs_baselines_hns_median.png`, the learning curves for median human-normalized scores. 
 
 Furthermore, the `--rliable` integration generates `cleanrl_vs_baselines_iqm_profile.png`, the  Interquartile Mean (IQM) and performance profile ([Agarwal et al., 2022](https://arxiv.org/pdf/2108.13264.pdf)), and `cleanrl_vs_baselines_hns_aggregate.png`, the aggregate human-normalized scores with Stratified Bootstrap Confidence Intervals (see @araffin's excellent blog post [explainer](https://araffin.github.io/post/rliable/)). 
 
 
-![](static/cleanrl_vs_baselines_hns_median.png)
 
-![](static/cleanrl_vs_baselines_iqm_profile.png)
+![](static/cleanrl_vs_baselines_atari.png)
+![](static/cleanrl_vs_baselines_atari-time.png)
+![](static/cleanrl_vs_baselines_atari_sample_walltime_efficiency.png)
+![](static/cleanrl_vs_baselines_atari_sample_efficiency.png)
+![](static/cleanrl_vs_baselines_atari_performance_profile.png)
+![](static/cleanrl_vs_baselines_atari_aggregate.png)
 
-![](static/cleanrl_vs_baselines_hns_aggregate.png)
 
-
-### Offline mode
-
-Sometimes even with caching `--scan-history` the script can still take a long time if there are too many environments or experiments. This is because we are still calling many `wandb.Api().runs(..., filters)` under the hood. 
-
-No worries though. When running with `--scan-history`, we also automatically build a local `sqlite` database to store the metadata of runs, enabling us to run the script without internet connection.
-
-```shell
-python -m openrlbenchmark.rlops \
-    --filters '?we=openrlbenchmark&wpn=baselines&ceik=env&cen=exp_name&metric=charts/episodic_return' 'baselines-ppo2-mlp' \
-    --filters '?we=openrlbenchmark&wpn=cleanrl&ceik=env_id&cen=exp_name&metric=charts/episodic_return' 'ppo_continuous_action?tag=v1.0.0-27-gde3f410' \
-    --filters '?we=openrlbenchmark&wpn=jaxrl&ceik=env_name&cen=algo&metric=training/return' 'sac' \
-    --env-ids HalfCheetah-v2 Walker2d-v2 Hopper-v2 InvertedPendulum-v2 Humanoid-v2 Pusher-v2 \
-    --no-check-empty-runs \
-    --pc.ncols 3 \
-    --pc.ncols-legend 3 \
-    --output-filename static/baselines_vs_cleanrl_vs_jaxrl \
-    --scan-history \
-    --offline
-```
 
 ### Compare CleanRL's PPO with `openai/baselines`'s PPO2 and `jaxrl`'s SAC on Mujoco:
 
