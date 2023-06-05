@@ -1,7 +1,8 @@
 import copy
 import os
+from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import List
+from typing import Dict, List, Literal, Optional
 from urllib.parse import parse_qs, urlparse
 
 import expt
@@ -18,10 +19,37 @@ from expt import Hypothesis, Run
 from rich.console import Console
 from rich.pretty import pprint
 from rich.table import Table
+from rliable import library as rly
+from rliable import metrics, plot_utils
 
 import openrlbenchmark
 import openrlbenchmark.cache
+from openrlbenchmark.hns import atari_human_normalized_scores as atari_hns
 from openrlbenchmark.offline_db import OfflineRun, OfflineRunTag, Tag, database_proxy
+
+
+@dataclass
+class RliableConfig:
+    nsubsamples: int = 20
+    """the number of subsamples for rliable"""
+    score_normalization_method: Literal["maxmin", "atari"] = "maxmin"
+    """the method to normalize the scores"""
+    normalized_score_threshold: float = 8.0
+    """the threshold for the normalized score for the performance profile"""
+    sample_efficiency_plots: bool = True
+    """if toggled, we will generate sample efficiency plots"""
+    sample_efficiency_and_walltime_efficiency_method: Optional[Literal["Median", "IQM", "Mean", "Optimality Gap"]] = "Median"
+    """the method to compute the sample efficiency and walltime efficiency"""
+    performance_profile_plots: bool = True
+    """if toggled, we will generate performance profile plots"""
+    aggregate_metrics_plots: bool = True
+    """if toggled, we will generate aggregate metrics plots"""
+    sample_efficiency_num_bootstrap_reps: int = 10  # 50000
+    """the number of bootstrap replications in `rliable` to use for computing the sample efficiency"""
+    performance_profile_num_bootstrap_reps: int = 10  # 2000
+    """the number of bootstrap replications in `rliable` to use for computing the performance profile"""
+    interval_estimates_num_bootstrap_reps: int = 10  # 2000
+    """the number of bootstrap replications in `rliable` to use for computing the the interval estimates"""
 
 
 @dataclass
@@ -32,7 +60,7 @@ class PlotConfig:
     """(TO BE FILLED in runtime) the number of rows in the chart"""
     ncols_legend: int = 2
     """the number of legend columns in the chart"""
-    xlabel: str = "Step"
+    xlabel: str = "Steps"
     """the label of the x-axis"""
     ylabel: str = "Episodic Return"
     """the label of the y-axis"""
@@ -74,6 +102,10 @@ class Args:
     """if toggled, we will use the offline database instead of wandb"""
     pc: PlotConfig = field(default_factory=PlotConfig)
     """the plot configuration"""
+    rliable: bool = False
+    """if toggled, we will use rliable to compute the metrics"""
+    rc: RliableConfig = field(default_factory=RliableConfig)
+    """the rliable configuration"""
 
 
 class Runset:
@@ -158,13 +190,14 @@ class Runset:
         )
 
 
-def to_rich_table(df: pd.DataFrame) -> Table:
+def print_rich_table(title: str, df: pd.DataFrame, console: Console) -> Table:
     table = Table()
     for column in df.columns:
         table.add_column(column)
     for _, row in df.iterrows():
         table.add_row(*row.astype(str).tolist())
-    return table
+    console.rule(f"[bold red]{title}")
+    console.print(table)
 
 
 def create_hypothesis(runset: Runset, scan_history: bool = False) -> Hypothesis:
@@ -207,7 +240,8 @@ def create_hypothesis(runset: Runset, scan_history: bool = False) -> Hypothesis:
             run_df = run_df.drop(columns=["videos"], axis=1)
         if len(runset.metric) > 0:
             run_df["charts/episodic_return"] = run_df[runset.metric]
-        runs += [Run(f"seed{idx}", run_df)]
+        cleaned_df = run_df[["global_step", "_runtime", "charts/episodic_return"]].dropna()
+        runs += [Run(f"seed{idx}", cleaned_df)]
     return Hypothesis(runset.name, runs)
 
 
@@ -293,13 +327,14 @@ def compare(
     axes_time_flatten = axes_time.flatten()
 
     result_table = pd.DataFrame(index=env_ids, columns=[runsets[0].name for runsets in runsetss])
+    exs = []
     runtimes = []
+    global_steps = []
     for idx, env_id in enumerate(env_ids):
         print(f"collecting runs for {env_id}")
-        ex = expt.Experiment("Comparison")
-        for runsets in runsetss:
-            h = create_hypothesis(runsets[idx], scan_history)
-            ex.add_hypothesis(h)
+        hypotheses = [create_hypothesis(runsets[idx], scan_history) for runsets in runsetss]
+        ex = expt.Experiment("Comparison", hypotheses)
+        exs.append(ex)
 
         # for each run `i` get the average of the last `rolling` episodes as r_i
         # then take the average and std of r_i as the results.
@@ -319,6 +354,7 @@ def compare(
             result += [f"{metric_result.mean():.2f} ± {metric_result.std():.2f}"]
         result_table.loc[env_id] = result
         runtimes.append(list(ex.summary()["_runtime"]))
+        global_steps.append(list(ex.summary()["global_step"]))
         ax = axes_flatten[idx]
         ex.plot(
             ax=ax,
@@ -350,18 +386,19 @@ def compare(
         ax_time.set_xlabel("")
         ax_time.set_ylabel("")
     runtimes = pd.DataFrame(np.array(runtimes), index=env_ids, columns=list(ex.summary()["name"]))
-    console.rule(f"[bold red]Runtime ({pc.time_unit}) (mean ± std)")
-    console.print(to_rich_table(runtimes.rename_axis("Environment").reset_index()))
-    console.rule(f"[bold red]{pc.ylabel} (mean ± std)")
-    console.print(to_rich_table(result_table.rename_axis("Environment").reset_index()))
+    global_steps = pd.DataFrame(np.array(global_steps), index=env_ids, columns=list(ex.summary()["name"]))
+    print_rich_table(f"Runtime ({pc.time_unit}) (mean ± std)", runtimes.rename_axis("Environment").reset_index(), console)
+
+    # create the required directory for `output_filename`
+    os.makedirs(os.path.dirname(output_filename), exist_ok=True)
+    print_rich_table(f"{pc.ylabel} (mean ± std)", result_table.rename_axis("Environment").reset_index(), console)
     result_table.to_markdown(open(f"{output_filename}.md", "w"))
     result_table.to_csv(open(f"{output_filename}.csv", "w"))
     runtimes.to_markdown(open(f"{output_filename}_runtimes.md", "w"))
     runtimes.to_csv(open(f"{output_filename}_runtimes.csv", "w"))
-    console.rule(f"[bold red]Runtime ({pc.time_unit}) Average")
     average_runtime = pd.DataFrame(runtimes.mean(axis=0)).reset_index()
     average_runtime.columns = ["Environment", "Average Runtime"]
-    console.print(to_rich_table(average_runtime))
+    print_rich_table(f"Runtime ({pc.time_unit}) Average", average_runtime, console)
 
     # add legend
     h, l = axes_flatten[0].get_legend_handles_labels()
@@ -394,7 +431,39 @@ def compare(
     fig_time.savefig(f"{output_filename}-time.png", bbox_inches="tight")
     fig_time.savefig(f"{output_filename}-time.pdf", bbox_inches="tight")
     fig_time.savefig(f"{output_filename}-time.svg", bbox_inches="tight")
-    return blocks
+    return blocks, runtimes, global_steps, exs
+
+
+def normalize_score(score_dict: Dict[str, np.ndarray], max_scores: np.ndarray, min_scores: np.ndarray):
+    """
+    Each item in `score_dict` has shape (num_seeds, num_envs, num_subsamples)
+    `max_scores` has shape (num_envs)
+    `min_scores` has shape (num_envs)
+    """
+    normalized_score_dict = {}
+    for key in score_dict:
+        normalized_score_dict[key] = (score_dict[key] - min_scores.reshape(1, -1, 1)) / (
+            max_scores.reshape(1, -1, 1) - min_scores.reshape(1, -1, 1)
+        )
+    return normalized_score_dict
+
+
+def maxmin_normalize_score(score_dict: Dict[str, np.ndarray]):
+    all_scores = np.concatenate([score_dict[key] for key in score_dict], axis=0)
+    max_scores = all_scores.max(0).max(1)  # 1) max over all experiments and seds 2) max over all steps
+    min_scores = all_scores.min(0).min(1)  # 1) min over all experiments and seds 2) min over all steps
+    return normalize_score(score_dict, max_scores, min_scores)
+
+
+def atari_normalize_score(original_env_ids):
+    env_ids = []
+    for env_id in original_env_ids:
+        if env_id.endswith("NoFrameskip-v4"):
+            env_id = env_id.replace("NoFrameskip-v4", "-v5")
+        env_ids.append(env_id)
+    max_scores = np.array([atari_hns[env_id][1] for env_id in env_ids])
+    min_scores = np.array([atari_hns[env_id][0] for env_id in env_ids])
+    return normalize_score(score_dict, max_scores, min_scores)
 
 
 if __name__ == "__main__":
@@ -436,9 +505,7 @@ if __name__ == "__main__":
             expand_all=True,
         )
         if f"{wandb_entity}/{wandb_project_name}" not in offline_dbs:
-            offline_db_folder = os.path.join(
-                openrlbenchmark.__path__[0], "dataset", f"{wandb_entity}/{wandb_project_name}"
-            )
+            offline_db_folder = os.path.join(openrlbenchmark.__path__[0], "dataset", f"{wandb_entity}/{wandb_project_name}")
             offline_db_path = os.path.join(offline_db_folder, "offline.sqlite")
             print(offline_db_path)
             os.makedirs(offline_db_folder, exist_ok=True)
@@ -489,7 +556,7 @@ if __name__ == "__main__":
                     assert len(runsets[0].runs) > 0, f"{exp_name} ({query}) in {env_id} has no runs"
             runsetss.append(runsets)
 
-    blocks = compare(
+    blocks, runtimes, global_steps, exs = compare(
         console,
         runsetss,
         args.env_ids[0],
@@ -499,6 +566,253 @@ if __name__ == "__main__":
         report=args.report,
         pc=args.pc,
     )
+
+    if args.rliable:
+        # get min num seeds per hypothesis
+        min_num_seeds_per_hypothesis = {}
+        for runsets in runsetss:
+            min_num_seeds_per_hypothesis[runsets[0].name] = float("inf")
+        for ex in exs:
+            for hypothesis in ex.hypotheses:
+                console.print(f"{hypothesis.name} has {len(hypothesis.runs)} runs", style="bold")
+                min_num_seeds_per_hypothesis[hypothesis.name] = min(
+                    min_num_seeds_per_hypothesis[hypothesis.name], len(hypothesis.runs)
+                )
+
+        # create `score_dict`; each item in `score_dict` has shape (num_seeds, len(args.env_ids[0]), nsubsamples)
+        score_dict = {}
+        max_global_steps = defaultdict(int)
+        for runsets_idx, runsets in enumerate(runsetss):
+            score_dict[runsets[0].name] = np.zeros(
+                (min_num_seeds_per_hypothesis[runsets[0].name], len(args.env_ids[0]), args.rc.nsubsamples)
+            )
+            # for each seed
+            for seed_idx, _ in enumerate(range(min_num_seeds_per_hypothesis[runsets[0].name])):  # exs[0][runsets_idx]
+                min_global_step = float("inf")
+                print(f"collecting runs for {runsets[0].name} seed {seed_idx}")
+
+                runs_of_one_seed = []
+                for ex_idx, ex in enumerate(exs):
+                    run_of_one_seed = ex[runsets_idx][seed_idx]
+                    min_global_step = min(min_global_step, run_of_one_seed.df["global_step"].iloc[-1])
+                    runs_of_one_seed.append(run_of_one_seed)
+
+                    # interpolate
+                    x_samples = np.linspace(
+                        min(run_of_one_seed.df["global_step"]), max(run_of_one_seed.df["global_step"]), num=args.rc.nsubsamples
+                    )
+                    score_dict[runsets[0].name][seed_idx, ex_idx, :] = np.interp(
+                        x_samples, run_of_one_seed.df["global_step"], run_of_one_seed.df["charts/episodic_return"]
+                    )
+                max_global_steps[runsets[0].name] = max(max_global_steps[runsets[0].name], min_global_step)
+
+        exp_names = list(reversed(list(score_dict.keys())))
+        colors_flatten = colors_flatten_original
+        colors = dict(zip(list(score_dict.keys()), colors_flatten))
+        frames = np.linspace(0, max(max_global_steps.values()), args.rc.nsubsamples)
+        print_rich_table(
+            f"Items in the `score_dict` used for `rliable`",
+            pd.DataFrame(
+                data=[score_dict[key].shape for key in score_dict],
+                columns=["Number of Seeds", "Number of Environments", "Number of Sub-samples"],
+                index=list(score_dict.keys()),
+            )
+            .rename_axis("Experiments")
+            .reset_index(),
+            console,
+        )
+
+        # normalize scores.
+        if args.rc.score_normalization_method == "maxmin":
+            normalized_score_dict = maxmin_normalize_score(score_dict)
+        elif args.rc.score_normalization_method == "atari":
+            normalized_score_dict = atari_normalize_score(args.env_ids[0])
+        else:
+            raise NotImplementedError(f"Normalization method {args.rc.score_normalization_method} not implemented")
+        performance_profile_normalized_score_dict = {}
+        for key, value in normalized_score_dict.items():
+            performance_profile_normalized_score_dict[key] = np.nanmean(value[:, :, -1:], axis=-1)
+        metric_fns = [
+            metrics.aggregate_median,
+            metrics.aggregate_iqm,
+            metrics.aggregate_mean,
+            metrics.aggregate_optimality_gap,
+        ]
+        metric_names = ["Median", "IQM", "Mean", "Optimality Gap"]
+
+        if args.rc.sample_efficiency_plots:
+            print("plotting sample efficiency curve (this is slow and may take several minutes)")
+            fig_sample_efficiency, axes_sample_efficiency = plt.subplots(
+                ncols=2,
+                nrows=2,
+                figsize=(7 * 2, 3.4 * 2),
+                sharex=args.pc.sharex,
+            )
+            for metric_fn, ax, metric_name in zip(metric_fns, axes_sample_efficiency.flatten(), metric_names):
+                aggregate_fn = lambda scores: np.array([metric_fn(scores[..., frame]) for frame in range(scores.shape[-1])])
+                aggregate_scores, aggregate_cis = rly.get_interval_estimates(
+                    normalized_score_dict, aggregate_fn, reps=args.rc.sample_efficiency_num_bootstrap_reps
+                )
+                for exp_name in score_dict.keys():
+                    global_step = global_steps[exp_name].mean()
+                    global_step_xaxis = np.linspace(0, global_step, args.rc.nsubsamples)
+                    plot_utils.plot_sample_efficiency_curve(
+                        global_step_xaxis,
+                        {exp_name: aggregate_scores[exp_name]},
+                        {exp_name: aggregate_cis[exp_name]},
+                        algorithms=[exp_name],
+                        colors=colors,
+                        xlabel=r"Steps",
+                        ax=ax,
+                        ylabel=metric_name,
+                        labelsize="x-large",
+                        ticklabelsize="x-large",
+                    )
+                ax.set_xlabel("")
+                expt.plot.autoformat_xaxis(ax)
+
+                if metric_name == args.rc.sample_efficiency_and_walltime_efficiency_method:
+                    fig_median_sample_walltime_efficiency, axes_median_sample_walltime_efficiency = plt.subplots(
+                        ncols=2,
+                        figsize=(7 * 2, 3.4),
+                        sharey=True,
+                    )
+                    for exp_name in score_dict.keys():
+                        global_step = global_steps[exp_name].mean()
+                        global_step_xaxis = np.linspace(0, global_step, args.rc.nsubsamples)
+                        plot_utils.plot_sample_efficiency_curve(
+                            global_step_xaxis,
+                            {exp_name: aggregate_scores[exp_name]},
+                            {exp_name: aggregate_cis[exp_name]},
+                            algorithms=[exp_name],
+                            colors=colors,
+                            xlabel=r"Steps",
+                            ax=axes_median_sample_walltime_efficiency[0],
+                            ylabel=metric_name,
+                            labelsize="x-large",
+                            ticklabelsize="x-large",
+                        )
+                    expt.plot.autoformat_xaxis(axes_median_sample_walltime_efficiency[0])
+                    for exp_name in score_dict.keys():
+                        runtime = runtimes[exp_name].mean()
+                        runtime_xaxis = np.linspace(0, runtime, args.rc.nsubsamples)
+                        plot_utils.plot_sample_efficiency_curve(
+                            runtime_xaxis,
+                            {exp_name: aggregate_scores[exp_name]},
+                            {exp_name: aggregate_cis[exp_name]},
+                            algorithms=[exp_name],
+                            colors=colors,
+                            xlabel=f"Time ({args.pc.time_unit})",
+                            ax=axes_median_sample_walltime_efficiency[1],
+                            ylabel=metric_name,
+                            labelsize="x-large",
+                            ticklabelsize="x-large",
+                        )
+                    axes_median_sample_walltime_efficiency[1].set_ylabel("")
+                    h, l = axes_median_sample_walltime_efficiency[1].get_legend_handles_labels()
+                    fig_median_sample_walltime_efficiency.legend(
+                        h,
+                        l,
+                        loc="lower center",
+                        ncol=args.pc.ncols_legend,
+                        bbox_to_anchor=(0.5, 1.0),
+                        bbox_transform=fig_median_sample_walltime_efficiency.transFigure,
+                    )
+                    fig_median_sample_walltime_efficiency.tight_layout()
+                    fig_median_sample_walltime_efficiency.savefig(
+                        f"{args.output_filename}_sample_walltime_efficiency.png", bbox_inches="tight"
+                    )
+                    fig_median_sample_walltime_efficiency.savefig(
+                        f"{args.output_filename}_sample_walltime_efficiency.pdf", bbox_inches="tight"
+                    )
+
+            h, l = axes_sample_efficiency[0][0].get_legend_handles_labels()
+            fig_sample_efficiency.legend(
+                h,
+                l,
+                loc="lower center",
+                ncol=args.pc.ncols_legend,
+                bbox_to_anchor=(0.5, 1.0),
+                bbox_transform=fig_sample_efficiency.transFigure,
+            )
+            fig_sample_efficiency.supxlabel(args.pc.xlabel, fontsize="x-large")
+            fig_sample_efficiency.tight_layout()
+            fig_sample_efficiency.savefig(f"{args.output_filename}_sample_efficiency.png", bbox_inches="tight")
+            fig_sample_efficiency.savefig(f"{args.output_filename}_sample_efficiency.pdf", bbox_inches="tight")
+
+        if args.rc.performance_profile_plots:
+            print("plotting performance profiles")
+            fig_performance_profile, axes_performance_profile = plt.subplots(
+                ncols=2,
+                figsize=(7 * 2, 3.4),
+            )
+            performance_profile_thresholds = np.linspace(0.0, args.rc.normalized_score_threshold, 81)
+            score_distributions, score_distributions_cis = rly.create_performance_profile(
+                performance_profile_normalized_score_dict,
+                performance_profile_thresholds,
+                reps=args.rc.performance_profile_num_bootstrap_reps,
+            )
+            avg_score_distributions, avg_score_distributions_cis = rly.create_performance_profile(
+                performance_profile_normalized_score_dict,
+                performance_profile_thresholds,
+                reps=args.rc.performance_profile_num_bootstrap_reps,
+                use_score_distribution=False,
+            )
+            plot_utils.plot_performance_profiles(
+                score_distributions,
+                performance_profile_thresholds,
+                performance_profile_cis=score_distributions_cis,
+                colors=colors,
+                xlabel=r"Normalized Score $(\tau)$",
+                ax=axes_performance_profile[0],
+            )
+            plot_utils.plot_performance_profiles(
+                avg_score_distributions,
+                performance_profile_thresholds,
+                performance_profile_cis=avg_score_distributions_cis,
+                colors=colors,
+                xlabel=r"Normalized Score $(\tau)$",
+                ylabel=r"Fraction of tasks with score > $\tau$",
+                ax=axes_performance_profile[1],
+            )
+            h, l = axes_performance_profile[0].get_legend_handles_labels()
+            fig_performance_profile.legend(
+                h,
+                l,
+                loc="lower center",
+                ncol=args.pc.ncols_legend,
+                bbox_to_anchor=(0.5, 1.0),
+                bbox_transform=fig_performance_profile.transFigure,
+            )
+            fig_performance_profile.tight_layout()
+            fig_performance_profile.savefig(f"{args.output_filename}_performance_profile.png", bbox_inches="tight")
+            fig_performance_profile.savefig(f"{args.output_filename}_performance_profile.pdf", bbox_inches="tight")
+
+        if args.rc.aggregate_metrics_plots:
+            print("plotting aggregate metrics")
+            aggregate_func = lambda x: np.array([metric_fn(x) for metric_fn in metric_fns])
+            aggregate_scores, aggregate_score_cis = rly.get_interval_estimates(
+                performance_profile_normalized_score_dict, aggregate_func, reps=args.rc.interval_estimates_num_bootstrap_reps
+            )
+            aggregate_scores_df = pd.DataFrame.from_dict(
+                aggregate_scores, orient="index", columns=["Median", "IQM", "Mean", "Optimality Gap"]
+            )
+            print_rich_table(f"Aggregate Scores", aggregate_scores_df.reset_index(), console)
+            fig, axes = plot_utils.plot_interval_estimates(
+                aggregate_scores,
+                aggregate_score_cis,
+                metric_names=["Median", "IQM", "Mean", "Optimality Gap"],
+                algorithms=exp_names,
+                colors=colors,
+                xlabel="",
+                # xlabel='Normalized Score',
+                # xlabel_y_coordinate=-0.08, # this variable needs to be adjusted for each plot... :( so we just disable xlabel for now.
+            )
+            axes[1].set_xlabel("Normalized Score", fontsize="xx-large")
+            fig.tight_layout()
+            plt.savefig(f"{args.output_filename}_aggregate.png", bbox_inches="tight")
+            plt.savefig(f"{args.output_filename}_aggregate.pdf", bbox_inches="tight")
+
     if args.report:
         print("saving report")
         report = wb.Report(
