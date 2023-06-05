@@ -1,0 +1,4 @@
+,CleanRL PPO,openai/baselines PPO2
+HalfCheetah-v2,2262.50 ± 1196.81,1428.55 ± 62.40
+Hopper-v2,2311.49 ± 440.99,2158.65 ± 302.33
+Walker2d-v2,3312.32 ± 429.87,3356.49 ± 322.61
