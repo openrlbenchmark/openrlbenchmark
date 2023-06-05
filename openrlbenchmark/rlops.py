@@ -110,21 +110,21 @@ class Args:
 
 class Runset:
     def __init__(
-        self,
-        name: str,
-        entity: str,
-        project: str,
-        metrics: List[str] = ["charts/episodic_return"],
-        groupby: str = "",
-        custom_exp_name_key: str = "exp_name",
-        exp_name: str = "",
-        custom_env_id_key: str = "env_id",
-        env_id: str = "",
-        tags: List[str] = [],
-        username: str = "",
-        color: str = "#000000",
-        offline_db: pw.Database = None,
-        offline: bool = False,
+            self,
+            name: str,
+            entity: str,
+            project: str,
+            metrics: List[str] = ["charts/episodic_return"],
+            groupby: str = "",
+            custom_exp_name_key: str = "exp_name",
+            exp_name: str = "",
+            custom_env_id_key: str = "env_id",
+            env_id: str = "",
+            tags: List[str] = [],
+            username: str = "",
+            color: str = "#000000",
+            offline_db: pw.Database = None,
+            offline: bool = False,
     ):
         self.name = name
         self.entity = entity
@@ -162,10 +162,10 @@ class Runset:
         else:
             with self.offline_db.bind_ctx([OfflineRun, OfflineRunTag, Tag]):
                 cond = (
-                    (OfflineRun.project == self.project)
-                    & (OfflineRun.entity == self.entity)
-                    & (OfflineRun.config[self.custom_env_id_key] == self.env_id)
-                    & (OfflineRun.config[self.custom_exp_name_key] == self.exp_name)
+                        (OfflineRun.project == self.project)
+                        & (OfflineRun.entity == self.entity)
+                        & (OfflineRun.config[self.custom_env_id_key] == self.env_id)
+                        & (OfflineRun.config[self.custom_exp_name_key] == self.exp_name)
                 )
                 if self.username:
                     cond = cond and OfflineRun.username == self.username
@@ -248,14 +248,14 @@ def create_hypothesis(runset: Runset, scan_history: bool = False) -> Hypothesis:
 
 
 def compare(
-    console: Console,
-    runsetss: List[List[Runset]],
-    env_ids: List[str],
-    metric_last_n_average_window: int,
-    scan_history: bool = False,
-    output_filename: str = "compare",
-    report: bool = False,
-    pc: PlotConfig = None,
+        console: Console,
+        runsetss: List[List[Runset]],
+        env_ids: List[str],
+        metric_last_n_average_window: int,
+        scan_history: bool = False,
+        output_filename: str = "compare",
+        report: bool = False,
+        pc: PlotConfig = None,
 ):
     blocks = []
     if report:
@@ -357,7 +357,14 @@ def compare(
             result += [f"{metric_result.mean():.2f} ± {metric_result.std():.2f}"]
         result_table.loc[env_id] = result
         runtimes.append(list(ex.summary()["_runtime"]))
+
+        def ci(hypothesis: Hypothesis):
+            group = hypothesis.grouped
+            mean, sem = group.mean(), group.sem()
+            return (mean - 1.96 * sem, mean + 1.96 * sem)
+
         global_steps.append(list(ex.summary()["global_step"]))
+
         for idx_metric, metric in enumerate(runsetss[0][0].metrics):
             metric_str = metric.replace("eval/", "")
             ax = axes_flatten[len(env_ids) * idx_metric + idx]
@@ -368,6 +375,7 @@ def compare(
                 y=metric,
                 err_style="band",
                 std_alpha=0.1,
+                err_fn=ci,
                 n_samples=10000,
                 rolling=pc.rolling,
                 colors=[runsets[idx].color for runsets in runsetss],
@@ -390,6 +398,7 @@ def compare(
                 y=metric,
                 err_style="band",
                 std_alpha=0.1,
+                err_fn=ci,
                 n_samples=10000,
                 rolling=pc.rolling,
                 colors=[runsets[idx].color for runsets in runsetss],
@@ -434,9 +443,9 @@ def compare(
     fig_time.tight_layout()
 
     # remove the empty axes
-    for ax in axes_flatten[len(env_ids) * len(metrics) :]:
+    for ax in axes_flatten[len(env_ids) * len(metrics):]:
         ax.remove()
-    for ax in axes_time_flatten[len(env_ids) * len(metrics) :]:
+    for ax in axes_time_flatten[len(env_ids) * len(metrics):]:
         ax.remove()
 
     print(f"saving figures and tables to {output_filename}")
@@ -462,7 +471,7 @@ def normalize_score(score_dict: Dict[str, np.ndarray], max_scores: np.ndarray, m
     normalized_score_dict = {}
     for key in score_dict:
         normalized_score_dict[key] = (score_dict[key] - min_scores.reshape(1, -1, 1)) / (
-            max_scores.reshape(1, -1, 1) - min_scores.reshape(1, -1, 1)
+                max_scores.reshape(1, -1, 1) - min_scores.reshape(1, -1, 1)
         )
     return normalized_score_dict
 
@@ -507,7 +516,7 @@ if __name__ == "__main__":
     colors = []
     for filters in args.filters:
         colors += [colors_flatten[: len(filters) - 1]]
-        colors_flatten = colors_flatten[len(filters) - 1 :]
+        colors_flatten = colors_flatten[len(filters) - 1:]
 
     for filters_idx, filters in enumerate(args.filters):
         wandb_project_name = query["wpn"][0] if "wpn" in query else args.wandb_project_name
