@@ -1,9 +1,12 @@
 [tool.poetry]
 name = "openrlbenchmark"
-version = "0.2.0b3"
+version = "0.2.0b4"
 description = ""
 authors = ["Costa Huang <costa.huang@outlook.com>"]
 readme = "README.md"
+packages = [
+    { include = "openrlbenchmark" },
+]
 
 [tool.poetry.dependencies]
 python = ">=3.7.1,<3.11"
