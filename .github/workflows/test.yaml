@@ -1,9 +1,5 @@
 name: tests
 on:
-  push:
-    paths-ignore:
-      - '**/README.md'
-      - 'static/**/*'
   pull_request:
     paths-ignore:
       - '**/README.md'
