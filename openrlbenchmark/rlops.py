@@ -332,10 +332,8 @@ def compare(
     global_steps = []
     for idx, env_id in enumerate(env_ids):
         print(f"collecting runs for {env_id}")
-        ex = expt.Experiment("Comparison")
-        for runsets in runsetss:
-            hypo = create_hypothesis(runsets[idx], scan_history)
-            ex.add_hypothesis(hypo)
+        hypotheses = [create_hypothesis(runsets[idx], scan_history) for runsets in runsetss]
+        ex = expt.Experiment("Comparison", hypotheses)
         exs.append(ex)
 
         # for each run `i` get the average of the last `rolling` episodes as r_i
