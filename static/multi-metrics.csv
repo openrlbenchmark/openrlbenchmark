@@ -1,0 +1,4 @@
+,openrlbenchmark/cleanrl/ddpg_continuous_action ({'tag': ['pr-371']}),openrlbenchmark/cleanrl/ddpg_continuous_action ({'tag': ['pr-299']}),openrlbenchmark/cleanrl/ddpg_continuous_action ({'tag': ['rlops-pilot']}),openrlbenchmark/cleanrl/ddpg_continuous_action_jax ({'tag': ['pr-371-jax']}),openrlbenchmark/cleanrl/ddpg_continuous_action_jax ({'tag': ['pr-298']})
+HalfCheetah-v2,nan ± nan,nan ± nan,nan ± nan,nan ± nan,nan ± nan
+Hopper-v2,nan ± nan,nan ± nan,nan ± nan,nan ± nan,nan ± nan
+Walker2d-v2,nan ± nan,nan ± nan,nan ± nan,nan ± nan,nan ± nan

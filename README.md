@@ -221,6 +221,30 @@ python -m openrlbenchmark.rlops \
 ![](static/baselines_vs_cleanrl_vs_jaxrl.png)
 
 
+### Multi-metrics
+
+**Experimental! API may change.**
+
+Sometimes you want to compare multiple metrics at once.
+
+```shell
+python -m openrlbenchmark.rlops_multi_metrics \
+    --filters '?we=openrlbenchmark&wpn=cleanrl&ceik=env_id&cen=exp_name&metrics=charts/episodic_return&metrics=charts/episodic_length&metrics=charts/SPS&metrics=losses/actor_loss&metrics=losses/qf1_values&metrics=losses/qf1_loss' \
+        'ddpg_continuous_action?tag=pr-371' \
+        'ddpg_continuous_action?tag=pr-299' \
+        'ddpg_continuous_action?tag=rlops-pilot' \
+        'ddpg_continuous_action_jax?tag=pr-371-jax' \
+        'ddpg_continuous_action_jax?tag=pr-298' \
+    --env-ids HalfCheetah-v2 Hopper-v2 Walker2d-v2 \
+    --no-check-empty-runs \
+    --pc.ncols 3 \
+    --pc.ncols-legend 2 \
+    --output-filename static/multi-metrics \
+    --scan-history --offline
+```
+![](static/multi-metrics.png)
+
+
 
 ### Compare Tianshou's algorithms with `openai/baselines`'s PPO2 on Atari:
 
