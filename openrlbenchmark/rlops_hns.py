@@ -585,9 +585,7 @@ if __name__ == "__main__":
             expand_all=True,
         )
         if f"{wandb_entity}/{wandb_project_name}" not in offline_dbs:
-            offline_db_folder = os.path.join(
-                openrlbenchmark.__path__[0], "dataset", f"{wandb_entity}/{wandb_project_name}"
-            )
+            offline_db_folder = os.path.join(openrlbenchmark.__path__[0], "dataset", f"{wandb_entity}/{wandb_project_name}")
             offline_db_path = os.path.join(offline_db_folder, "offline.sqlite")
             print(offline_db_path)
             os.makedirs(offline_db_folder, exist_ok=True)
@@ -703,7 +701,9 @@ if __name__ == "__main__":
             atari_200m_normalized_score_dict, aggregate_func, reps=50000
         )
         # make aggregate_scores into a dataframe
-        aggregate_scores_df = pd.DataFrame.from_dict(aggregate_scores, orient="index", columns=["Median", "IQM", "Mean", "Optimality Gap"])
+        aggregate_scores_df = pd.DataFrame.from_dict(
+            aggregate_scores, orient="index", columns=["Median", "IQM", "Mean", "Optimality Gap"]
+        )
         print("aggregate_scores", aggregate_scores_df)
         fig, axes = plot_utils.plot_interval_estimates(
             aggregate_scores,
