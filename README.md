@@ -274,7 +274,7 @@ python -m openrlbenchmark.rlops \
 ### Compare MORL Baselines algorithms on deterministic environments
 
 ```shell
-python -m openrlbenchmark.rlops \
+python -m openrlbenchmark.rlops_multi_metrics \
   --filters '?we=openrlbenchmark&wpn=MORL-Baselines&ceik=env_id&cen=algo&metrics=eval/hypervolume&metrics=eval/igd&metrics=eval/sparsity&metrics=eval/eum&metrics=eval/mul' \
   'Pareto Q-Learning?cl=Pareto Q-Learning' \
   'MultiPolicy MO Q-Learning?cl=MultiPolicy MO Q-Learning' \
