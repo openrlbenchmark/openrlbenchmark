@@ -92,7 +92,7 @@ class Args:
     """the last n number of episodes to average metric over in the result table"""
     scan_history: bool = False
     """if toggled, we will pull the complete metrics from wandb instead of sampling 500 data points (recommended for generating tables)"""
-    check_empty_runs: bool = False
+    check_empty_runs: bool = True
     """if toggled, we will check for empty wandb runs"""
     report: bool = False
     """if toggled, a wandb report will be created"""
@@ -390,7 +390,8 @@ def compare(
     print_rich_table(f"Runtime ({pc.time_unit}) (mean ± std)", runtimes.rename_axis("Environment").reset_index(), console)
 
     # create the required directory for `output_filename`
-    os.makedirs(os.path.dirname(output_filename), exist_ok=True)
+    if len(os.path.dirname(output_filename)) > 0:
+        os.makedirs(os.path.dirname(output_filename), exist_ok=True)
     print_rich_table(f"{pc.ylabel} (mean ± std)", result_table.rename_axis("Environment").reset_index(), console)
     result_table.to_markdown(open(f"{output_filename}.md", "w"))
     result_table.to_csv(open(f"{output_filename}.csv", "w"))
@@ -421,8 +422,6 @@ def compare(
         ax.remove()
 
     print(f"saving figures and tables to {output_filename}")
-    if os.path.dirname(output_filename) != "":
-        os.makedirs(os.path.dirname(output_filename), exist_ok=True)
     fig.subplots_adjust(hspace=pc.hspace, wspace=pc.wspace)
     fig_time.subplots_adjust(hspace=pc.hspace, wspace=pc.wspace)
     fig.savefig(f"{output_filename}.png", bbox_inches="tight")
