@@ -66,6 +66,8 @@ class PlotConfig:
     """the label of the y-axis"""
     sharex: bool = False
     """if toggled, we will share the x-axis across all subplots"""
+    max_steps: int = None
+    """if specified, the maximum number of steps to plot"""
     rolling: int = 100
     """the rolling window for smoothing the curves"""
     time_unit: str = "m"
@@ -383,6 +385,8 @@ def compare(
                 ax.set_ylabel(metric_str)
             else:
                 ax.set_ylabel("")
+            if pc.max_steps is not None:
+                ax.set_xlim(0, pc.max_steps)
             ax_time = axes_time_flatten[len(env_ids) * idx_metric + idx]
             ex.plot(
                 ax=ax_time,
