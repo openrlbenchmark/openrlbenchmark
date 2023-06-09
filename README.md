@@ -80,7 +80,7 @@ So we are fetching metrics from [https://wandb.ai/openrlbenchmark/baselines](htt
 
 Similarly, we are fetching metrics from [https://wandb.ai/openrlbenchmark/cleanrl](https://wandb.ai/openrlbenchmark/cleanrl). The environment id is stored in the `env_id` key, and the experiment name is stored in the `exp_name` key. The metric we are interested in is `charts/episodic_return`. You can also customize the legend with the `cl` query string, such as `baselines-ppo2-mlp?cl=openai/baselines PPO2`.
 
-The labels of the figure can be customized with the `--pc.xlabel` and `--pc.ylabel` flags. The `--pc.ncols` flag specifies the number of columns in the figure. The `--pc.ncols-legend` flag specifies the number of columns in the legend. The `--output-filename` flag specifies the filename of the output figure
+The labels of the figure can be customized with the `--pc.xlabel` and `--pc.ylabel` flags. You can also specify the maximum number of timesteps to plot with `--pc.max_steps`. The `--pc.ncols` flag specifies the number of columns in the figure. The `--pc.ncols-legend` flag specifies the number of columns in the legend. The `--output-filename` flag specifies the filename of the output figure
 
 The `--rliable` toggles our [rliable](https://github.com/google-research/rliable) integration, and its configuration can be tweeked via `--rc`. The command above generates the following plot:
 
@@ -295,26 +295,28 @@ python -m openrlbenchmark.rlops \
 
 
 
-### Compare MORL Baselines algorithms on deterministic environments
+### Compare MORL Baselines algorithms
+Notice the number of timesteps is adjusted using `--pc.max_steps 400000`.
 
 ```shell
 python -m openrlbenchmark.rlops_multi_metrics \
-  --filters '?we=openrlbenchmark&wpn=MORL-Baselines&ceik=env_id&cen=algo&metrics=eval/hypervolume&metrics=eval/igd&metrics=eval/sparsity&metrics=eval/eum&metrics=eval/mul' \
-  'Pareto Q-Learning?cl=Pareto Q-Learning' \
-  'MultiPolicy MO Q-Learning?cl=MultiPolicy MO Q-Learning' \
-  'MultiPolicy MO Q-Learning (OLS)?cl=MultiPolicy MO Q-Learning (OLS)' \
-  'MultiPolicy MO Q-Learning (GPI-LS)?cl=MultiPolicy MO Q-Learning (GPI-LS)' \
-  --env-ids deep-sea-treasure-v0 deep-sea-treasure-concave-v0 fruit-tree-v0 \
-  --pc.ncols 3 \
+  --filters '?we=openrlbenchmark&wpn=MORL-Baselines&ceik=env_id&cen=algo&metrics=eval/hypervolume&metrics=eval/sparsity&metrics=eval/eum' \
+  'PGMORL?cl=PGMORL' \
+  'CAPQL?cl=CAPQL' \
+  'GPI-LS Continuous Action?cl=GPI-LS' \
+  'GPI-PD Continuous Action?cl=GPI-PD' \
+  --env-ids mo-halfcheetah-v4 mo-hopper-2d-v4  \
+  --pc.ncols 2 \
   --pc.ncols-legend 4 \
   --pc.xlabel 'Training steps' \
   --pc.ylabel '' \
-  --output-filename morl_deterministic_envs/ \
+  --pc.max_steps 400000 \
+  --output-filename morl/morl_continuous \
   --scan-history
 ```
 
-![](static/morl_deterministic_envs.png)
-![](static/morl_deterministic_envs-time.png)
+![](static/morl_continuous.png)
+![](static/morl_continuous-time.png)
 
 ### Calculate human normalized scores
 
