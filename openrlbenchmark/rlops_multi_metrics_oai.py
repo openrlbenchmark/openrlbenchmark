@@ -66,8 +66,6 @@ class PlotConfig:
     """the label of the y-axis"""
     sharex: bool = False
     """if toggled, we will share the x-axis across all subplots"""
-    max_steps: int = None
-    """if specified, the maximum number of steps to plot"""
     rolling: int = 100
     """the rolling window for smoothing the curves"""
     time_unit: str = "m"
@@ -147,10 +145,10 @@ class Runset:
         include_tag_groups = [{"tags": {"$in": [tag]}} for tag in self.tags] if len(self.tags) > 0 else []
         self.wandb_filters = {
             "$and": [
-                {f"config.{self.custom_env_id_key}.value": self.env_id},
+                {f"config.{self.custom_env_id_key}": self.env_id},
                 *include_tag_groups,
                 *user,
-                {f"config.{self.custom_exp_name_key}.value": self.exp_name},
+                {f"config.{self.custom_exp_name_key}": self.exp_name},
             ]
         }
 
@@ -240,6 +238,7 @@ def create_hypothesis(runset: Runset, scan_history: bool = False) -> Hypothesis:
             run_df = run.history(samples=1500)
         if "videos" in run_df:
             run_df = run_df.drop(columns=["videos"], axis=1)
+        run_df["global_step"] = run_df["_step"]
         if len(runset.metrics) == 1 and len(runset.metrics[0]) == 0:
             run_df["charts/episodic_return"] = run_df[metrics]
             cleaned_df = run_df[["global_step", "_runtime", "charts/episodic_return"]].dropna()
@@ -385,8 +384,6 @@ def compare(
                 ax.set_ylabel(metric_str)
             else:
                 ax.set_ylabel("")
-            if pc.max_steps is not None:
-                ax.set_xlim(0, pc.max_steps)
             ax_time = axes_time_flatten[len(env_ids) * idx_metric + idx]
             ex.plot(
                 ax=ax_time,

@@ -119,6 +119,7 @@ class Runset:
         metric: str = "charts/episodic_return",
         groupby: str = "",
         custom_exp_name_key: str = "exp_name",
+        custom_xaxis_key: str = "global_step",
         exp_name: str = "",
         custom_env_id_key: str = "env_id",
         env_id: str = "",
@@ -134,6 +135,7 @@ class Runset:
         self.metric = metric
         self.groupby = groupby
         self.custom_exp_name_key = custom_exp_name_key
+        self.custom_xaxis_key = custom_xaxis_key
         self.exp_name = exp_name
         self.custom_env_id_key = custom_env_id_key
         self.env_id = env_id
@@ -206,7 +208,7 @@ def create_hypothesis(runset: Runset, scan_history: bool = False) -> Hypothesis:
     runs = []
     for idx, run in enumerate(runset.runs):
         print("loading", run, run.url)
-        if run.state == "running":
+        if run.state == "running" or run.state == "crashed":
             print(f"Skipping running run: {run}")
             continue
         if scan_history:
@@ -240,6 +242,11 @@ def create_hypothesis(runset: Runset, scan_history: bool = False) -> Hypothesis:
             run_df = run.history(samples=1500)
         if "videos" in run_df:
             run_df = run_df.drop(columns=["videos"], axis=1)
+        if runset.custom_xaxis_key in run_df:
+            run_df["global_step"] = run_df[runset.custom_xaxis_key]
+        if runset.metric not in run_df:
+            print(f"Skipping run {run} because metric {runset.metric} not found")
+            continue
         if len(runset.metric) > 0:
             run_df["charts/episodic_return"] = run_df[runset.metric]
         cleaned_df = run_df[["global_step", "_runtime", "charts/episodic_return"]].dropna()
@@ -497,12 +504,14 @@ if __name__ == "__main__":
         wandb_entity = query["we"][0] if "we" in query else args.wandb_entity
         custom_env_id_key = query["ceik"][0] if "ceik" in query else "env_id"
         custom_exp_name_key = query["cen"][0] if "cen" in query else "exp_name"
+        custom_xaxis_key = query["xaxis"][0] if "xaxis" in query else "global_step"
         pprint(
             {
                 "wandb_project_name": wandb_project_name,
                 "wandb_entity": wandb_entity,
                 "custom_env_id_key": custom_env_id_key,
                 "custom_exp_name_key": custom_exp_name_key,
+                "custom_xaxis_key": custom_xaxis_key,
                 "metric": metric,
             },
             expand_all=True,
@@ -542,6 +551,7 @@ if __name__ == "__main__":
                         metric=metric,
                         groupby=custom_exp_name_key,
                         custom_exp_name_key=custom_exp_name_key,
+                        custom_xaxis_key=custom_xaxis_key,
                         exp_name=exp_name,
                         custom_env_id_key=custom_env_id_key,
                         env_id=env_id,
@@ -556,6 +566,7 @@ if __name__ == "__main__":
                     console.print(f"{exp_name} [green]({query})[/] in [purple]{env_id}[/] has {len(runsets[-1].runs)} runs")
                     for run in runsets[-1].runs:
                         console.print(f"┣━━ [link={run.url}]{run.name}[/link] with tags = {run.tags}")
+                    print(runsets[0].wandb_filters)
                     assert len(runsets[0].runs) > 0, f"{exp_name} ({query}) in {env_id} has no runs"
             runsetss.append(runsets)
 

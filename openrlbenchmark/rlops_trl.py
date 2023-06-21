@@ -66,8 +66,6 @@ class PlotConfig:
     """the label of the y-axis"""
     sharex: bool = False
     """if toggled, we will share the x-axis across all subplots"""
-    max_steps: int = None
-    """if specified, the maximum number of steps to plot"""
     rolling: int = 100
     """the rolling window for smoothing the curves"""
     time_unit: str = "m"
@@ -88,7 +86,7 @@ class Args:
     """the filters of the experiments; see docs"""
     env_ids: tyro.conf.UseAppendAction[List[List[str]]]
     """the ids of the environment to compare"""
-    output_filename: str = "compare"
+    output_filename: str = "static/0compare"
     """the output filename of the plot, without extension"""
     metric_last_n_average_window: int = 100
     """the last n number of episodes to average metric over in the result table"""
@@ -116,7 +114,7 @@ class Runset:
         name: str,
         entity: str,
         project: str,
-        metrics: List[str] = ["charts/episodic_return"],
+        metric: str = "charts/episodic_return",
         groupby: str = "",
         custom_exp_name_key: str = "exp_name",
         exp_name: str = "",
@@ -131,7 +129,7 @@ class Runset:
         self.name = name
         self.entity = entity
         self.project = project
-        self.metrics = metrics
+        self.metric = metric
         self.groupby = groupby
         self.custom_exp_name_key = custom_exp_name_key
         self.exp_name = exp_name
@@ -147,10 +145,10 @@ class Runset:
         include_tag_groups = [{"tags": {"$in": [tag]}} for tag in self.tags] if len(self.tags) > 0 else []
         self.wandb_filters = {
             "$and": [
-                {f"config.{self.custom_env_id_key}.value": self.env_id},
+                {f"config.trl_ppo_trainer_config.value.{self.custom_env_id_key}": self.env_id},
                 *include_tag_groups,
                 *user,
-                {f"config.{self.custom_exp_name_key}.value": self.exp_name},
+                {f"config.trl_ppo_trainer_config.value.{self.custom_exp_name_key}": self.exp_name},
             ]
         }
 
@@ -240,11 +238,11 @@ def create_hypothesis(runset: Runset, scan_history: bool = False) -> Hypothesis:
             run_df = run.history(samples=1500)
         if "videos" in run_df:
             run_df = run_df.drop(columns=["videos"], axis=1)
-        if len(runset.metrics) == 1 and len(runset.metrics[0]) == 0:
-            run_df["charts/episodic_return"] = run_df[metrics]
-            cleaned_df = run_df[["global_step", "_runtime", "charts/episodic_return"]].dropna()
-        else:
-            cleaned_df = run_df[["global_step", "_runtime"] + runset.metrics].dropna(how="all")
+        if len(runset.metric) > 0:
+            run_df["charts/episodic_return"] = run_df[runset.metric]
+        if "global_step" not in run_df:
+            run_df["global_step"] = run_df["_step"]
+        cleaned_df = run_df[["global_step", "_runtime", "charts/episodic_return"]].dropna()
         runs += [Run(f"seed{idx}", cleaned_df)]
     return Hypothesis(runset.name, runs)
 
@@ -262,40 +260,39 @@ def compare(
     blocks = []
     if report:
         for idx, env_id in enumerate(env_ids):
-            metrics_over_step = []
-            metrics_over_time = []
-            for i in range(len(runsetss[0][idx].metrics)):
-                metric_over_step = wb.LinePlot(
-                    x="global_step",
-                    y=list({runsets[idx].metrics[i] for runsets in runsetss}),
-                    title=runsetss[0][idx].metrics[i] + " " + env_id,
-                    title_x="Steps",
-                    title_y="Episodic Return",
-                    max_runs_to_show=100,
-                    smoothing_factor=0.8,
-                    groupby_rangefunc="stderr",
-                    legend_template="${runsetName}",
-                )
-                metric_over_step.config["aggregateMetrics"] = True
-                metrics_over_step.append(metric_over_step)
-                metric_over_time = wb.LinePlot(
-                    x="_runtime",
-                    y=list({runsets[idx].metrics[i] for runsets in runsetss}),
-                    title=runsetss[0][idx].metrics[i] + " " + env_id,
-                    title_y="Episodic Return",
-                    max_runs_to_show=100,
-                    smoothing_factor=0.8,
-                    groupby_rangefunc="stderr",
-                    legend_template="${runsetName}",
-                )
-                metric_over_time.config["aggregateMetrics"] = True
-                metrics_over_time.append(metric_over_time)
-
-            flattened_metrics = [metrics_over_step, metrics_over_time]
-            flattened_metrics = [item for sublist in flattened_metrics for item in sublist]
+            metric_over_step = wb.LinePlot(
+                x="global_step",
+                y=list({runsets[idx].metric for runsets in runsetss}),
+                title=env_id,
+                title_x="Steps",
+                title_y="Episodic Return",
+                max_runs_to_show=100,
+                smoothing_factor=0.8,
+                groupby_rangefunc="stderr",
+                legend_template="${runsetName}",
+            )
+            metric_over_step.config["aggregateMetrics"] = True
+            metric_over_time = wb.LinePlot(
+                x="_runtime",
+                y=list({runsets[idx].metric for runsets in runsetss}),
+                title=env_id,
+                title_y="Episodic Return",
+                max_runs_to_show=100,
+                smoothing_factor=0.8,
+                groupby_rangefunc="stderr",
+                legend_template="${runsetName}",
+            )
+            metric_over_time.config["aggregateMetrics"] = True
             pg = wb.PanelGrid(
                 runsets=[runsets[idx].report_runset for runsets in runsetss],
-                panels=flattened_metrics,
+                panels=[
+                    metric_over_step,
+                    metric_over_time,
+                    # wb.MediaBrowser(
+                    #     num_columns=2,
+                    #     media_keys="videos",
+                    # ),
+                ],
             )
             custom_run_colors = {}
             for runsets in runsetss:
@@ -348,7 +345,7 @@ def compare(
             metric_result = []
             console.print(f"{hypothesis.name} has {len(hypothesis.runs)} runs", style="bold")
             for run in hypothesis.runs:
-                # metric_result += [run.df["charts/episodic_return"].dropna()[-metric_last_n_average_window:].mean()]
+                metric_result += [run.df["charts/episodic_return"].dropna()[-metric_last_n_average_window:].mean()]
 
                 # convert time unit in place
                 if pc.time_unit == "m":
@@ -360,55 +357,36 @@ def compare(
         result_table.loc[env_id] = result
         runtimes.append(list(ex.summary()["_runtime"]))
         global_steps.append(list(ex.summary()["global_step"]))
-
-        for idx_metric, metric in enumerate(runsetss[0][0].metrics):
-            metric_str = metric.replace("eval/", "")
-            ax = axes_flatten[len(env_ids) * idx_metric + idx]
-            ex.plot(
-                ax=ax,
-                title=env_id,
-                x="global_step",
-                y=metric,
-                err_style="band",
-                std_alpha=0.1,
-                n_samples=10000,
-                rolling=pc.rolling,
-                colors=[runsets[idx].color for runsets in runsetss],
-                legend=False,
-            )
-            ax.set_xlabel("")
-            if idx_metric == 0:
-                ax.set_title(env_id)
-            else:
-                ax.set_title("")
-            if idx == 0:
-                ax.set_ylabel(metric_str)
-            else:
-                ax.set_ylabel("")
-            if pc.max_steps is not None:
-                ax.set_xlim(0, pc.max_steps)
-            ax_time = axes_time_flatten[len(env_ids) * idx_metric + idx]
-            ex.plot(
-                ax=ax_time,
-                title=env_id,
-                x="_runtime",
-                y=metric,
-                err_style="band",
-                std_alpha=0.1,
-                n_samples=10000,
-                rolling=pc.rolling,
-                colors=[runsets[idx].color for runsets in runsetss],
-                legend=False,
-            )
-            ax_time.set_xlabel("")
-            if idx_metric == 0:
-                ax_time.set_title(env_id)
-            else:
-                ax_time.set_title("")
-            if idx == 0:
-                ax_time.set_ylabel(metric_str)
-            else:
-                ax_time.set_ylabel("")
+        ax = axes_flatten[idx]
+        ex.plot(
+            ax=ax,
+            title=env_id,
+            x="global_step",
+            y="charts/episodic_return",
+            err_style="band",
+            std_alpha=0.1,
+            n_samples=10000,
+            rolling=pc.rolling,
+            colors=[runsets[idx].color for runsets in runsetss],
+            legend=False,
+        )
+        ax.set_xlabel("")
+        ax.set_ylabel("")
+        ax_time = axes_time_flatten[idx]
+        ex.plot(
+            ax=ax_time,
+            title=env_id,
+            x="_runtime",
+            y="charts/episodic_return",
+            err_style="band",
+            std_alpha=0.1,
+            n_samples=10000,
+            rolling=pc.rolling,
+            colors=[runsets[idx].color for runsets in runsetss],
+            legend=False,
+        )
+        ax_time.set_xlabel("")
+        ax_time.set_ylabel("")
     runtimes = pd.DataFrame(np.array(runtimes), index=env_ids, columns=list(ex.summary()["name"]))
     global_steps = pd.DataFrame(np.array(global_steps), index=env_ids, columns=list(ex.summary()["name"]))
     print_rich_table(f"Runtime ({pc.time_unit}) (mean ± std)", runtimes.rename_axis("Environment").reset_index(), console)
@@ -429,18 +407,20 @@ def compare(
     h, l = axes_flatten[0].get_legend_handles_labels()
     fig.legend(h, l, loc="lower center", ncol=pc.ncols_legend, bbox_to_anchor=(0.5, 1.0), bbox_transform=fig.transFigure)
     fig.supxlabel(pc.xlabel)
+    fig.supylabel(pc.ylabel)
     fig.tight_layout()
     h, l = axes_time_flatten[0].get_legend_handles_labels()
     fig_time.legend(
         h, l, loc="lower center", ncol=pc.ncols_legend, bbox_to_anchor=(0.5, 1.0), bbox_transform=fig_time.transFigure
     )
     fig_time.supxlabel(f"Time ({pc.time_unit})")
+    fig_time.supylabel(pc.ylabel)
     fig_time.tight_layout()
 
     # remove the empty axes
-    for ax in axes_flatten[len(env_ids) * len(metrics):]:
+    for ax in axes_flatten[len(env_ids) :]:
         ax.remove()
-    for ax in axes_time_flatten[len(env_ids) * len(metrics):]:
+    for ax in axes_time_flatten[len(env_ids) :]:
         ax.remove()
 
     print(f"saving figures and tables to {output_filename}")
@@ -492,12 +472,8 @@ if __name__ == "__main__":
     # by default assume all the env_ids are the same
     if len(args.filters) > 1 and len(args.env_ids) == 1:
         args.env_ids = args.env_ids * len(args.filters)
-
-    parse_result = urlparse(args.filters[0][0])
-    query = parse_qs(parse_result.query)
-    metrics = query["metrics"] if "metrics" in query else ["charts/episodic_return"]
     # calculate the number of rows
-    args.pc.nrows = np.ceil(len(args.env_ids[0]) * len(metrics) / args.pc.ncols).astype(int)
+    args.pc.nrows = np.ceil(len(args.env_ids[0]) / args.pc.ncols).astype(int)
 
     console = Console()
     blocks = []
@@ -512,6 +488,9 @@ if __name__ == "__main__":
         colors_flatten = colors_flatten[len(filters) - 1 :]
 
     for filters_idx, filters in enumerate(args.filters):
+        parse_result = urlparse(filters[0])
+        query = parse_qs(parse_result.query)
+        metric = query["metric"][0] if "metric" in query else "charts/episodic_return"
         wandb_project_name = query["wpn"][0] if "wpn" in query else args.wandb_project_name
         wandb_entity = query["we"][0] if "we" in query else args.wandb_entity
         custom_env_id_key = query["ceik"][0] if "ceik" in query else "env_id"
@@ -522,7 +501,7 @@ if __name__ == "__main__":
                 "wandb_entity": wandb_entity,
                 "custom_env_id_key": custom_env_id_key,
                 "custom_exp_name_key": custom_exp_name_key,
-                "metrics": metrics,
+                "metric": metric,
             },
             expand_all=True,
         )
@@ -558,7 +537,7 @@ if __name__ == "__main__":
                         else custom_legend,
                         entity=wandb_entity,
                         project=wandb_project_name,
-                        metrics=metrics,
+                        metric=metric,
                         groupby=custom_exp_name_key,
                         custom_exp_name_key=custom_exp_name_key,
                         exp_name=exp_name,
@@ -575,7 +554,6 @@ if __name__ == "__main__":
                     console.print(f"{exp_name} [green]({query})[/] in [purple]{env_id}[/] has {len(runsets[-1].runs)} runs")
                     for run in runsets[-1].runs:
                         console.print(f"┣━━ [link={run.url}]{run.name}[/link] with tags = {run.tags}")
-                    print(runsets[0].wandb_filters)
                     assert len(runsets[0].runs) > 0, f"{exp_name} ({query}) in {env_id} has no runs"
             runsetss.append(runsets)
 
@@ -589,6 +567,252 @@ if __name__ == "__main__":
         report=args.report,
         pc=args.pc,
     )
+
+    if args.rliable:
+        # get min num seeds per hypothesis
+        min_num_seeds_per_hypothesis = {}
+        for runsets in runsetss:
+            min_num_seeds_per_hypothesis[runsets[0].name] = float("inf")
+        for ex in exs:
+            for hypothesis in ex.hypotheses:
+                console.print(f"{hypothesis.name} has {len(hypothesis.runs)} runs", style="bold")
+                min_num_seeds_per_hypothesis[hypothesis.name] = min(
+                    min_num_seeds_per_hypothesis[hypothesis.name], len(hypothesis.runs)
+                )
+
+        # create `score_dict`; each item in `score_dict` has shape (num_seeds, len(args.env_ids[0]), nsubsamples)
+        score_dict = {}
+        max_global_steps = defaultdict(int)
+        for runsets_idx, runsets in enumerate(runsetss):
+            score_dict[runsets[0].name] = np.zeros(
+                (min_num_seeds_per_hypothesis[runsets[0].name], len(args.env_ids[0]), args.rc.nsubsamples)
+            )
+            # for each seed
+            for seed_idx, _ in enumerate(range(min_num_seeds_per_hypothesis[runsets[0].name])):  # exs[0][runsets_idx]
+                min_global_step = float("inf")
+                print(f"collecting runs for {runsets[0].name} seed {seed_idx}")
+
+                runs_of_one_seed = []
+                for ex_idx, ex in enumerate(exs):
+                    run_of_one_seed = ex[runsets_idx][seed_idx]
+                    min_global_step = min(min_global_step, run_of_one_seed.df["global_step"].iloc[-1])
+                    runs_of_one_seed.append(run_of_one_seed)
+
+                    # interpolate
+                    x_samples = np.linspace(
+                        min(run_of_one_seed.df["global_step"]), max(run_of_one_seed.df["global_step"]), num=args.rc.nsubsamples
+                    )
+                    score_dict[runsets[0].name][seed_idx, ex_idx, :] = np.interp(
+                        x_samples, run_of_one_seed.df["global_step"], run_of_one_seed.df["charts/episodic_return"]
+                    )
+                max_global_steps[runsets[0].name] = max(max_global_steps[runsets[0].name], min_global_step)
+
+        exp_names = list(reversed(list(score_dict.keys())))
+        colors_flatten = colors_flatten_original
+        colors = dict(zip(list(score_dict.keys()), colors_flatten))
+        frames = np.linspace(0, max(max_global_steps.values()), args.rc.nsubsamples)
+        print_rich_table(
+            f"Items in the `score_dict` used for `rliable`",
+            pd.DataFrame(
+                data=[score_dict[key].shape for key in score_dict],
+                columns=["Number of Seeds", "Number of Environments", "Number of Sub-samples"],
+                index=list(score_dict.keys()),
+            )
+            .rename_axis("Experiments")
+            .reset_index(),
+            console,
+        )
+
+        # normalize scores.
+        if args.rc.score_normalization_method == "maxmin":
+            normalized_score_dict = maxmin_normalize_score(score_dict)
+        elif args.rc.score_normalization_method == "atari":
+            normalized_score_dict = atari_normalize_score(args.env_ids[0])
+        else:
+            raise NotImplementedError(f"Normalization method {args.rc.score_normalization_method} not implemented")
+        performance_profile_normalized_score_dict = {}
+        for key, value in normalized_score_dict.items():
+            performance_profile_normalized_score_dict[key] = np.nanmean(value[:, :, -1:], axis=-1)
+        metric_fns = [
+            metrics.aggregate_median,
+            metrics.aggregate_iqm,
+            metrics.aggregate_mean,
+            metrics.aggregate_optimality_gap,
+        ]
+        metric_names = ["Median", "IQM", "Mean", "Optimality Gap"]
+
+        if args.rc.sample_efficiency_plots:
+            print("plotting sample efficiency curve (this is slow and may take several minutes)")
+            fig_sample_efficiency, axes_sample_efficiency = plt.subplots(
+                ncols=2,
+                nrows=2,
+                figsize=(7 * 2, 3.4 * 2),
+                sharex=args.pc.sharex,
+            )
+            for metric_fn, ax, metric_name in zip(metric_fns, axes_sample_efficiency.flatten(), metric_names):
+                aggregate_fn = lambda scores: np.array([metric_fn(scores[..., frame]) for frame in range(scores.shape[-1])])
+                aggregate_scores, aggregate_cis = rly.get_interval_estimates(
+                    normalized_score_dict, aggregate_fn, reps=args.rc.sample_efficiency_num_bootstrap_reps
+                )
+                for exp_name in score_dict.keys():
+                    global_step = global_steps[exp_name].mean()
+                    global_step_xaxis = np.linspace(0, global_step, args.rc.nsubsamples)
+                    plot_utils.plot_sample_efficiency_curve(
+                        global_step_xaxis,
+                        {exp_name: aggregate_scores[exp_name]},
+                        {exp_name: aggregate_cis[exp_name]},
+                        algorithms=[exp_name],
+                        colors=colors,
+                        xlabel=r"Steps",
+                        ax=ax,
+                        ylabel=metric_name,
+                        labelsize="x-large",
+                        ticklabelsize="x-large",
+                    )
+                ax.set_xlabel("")
+                expt.plot.autoformat_xaxis(ax)
+
+                if metric_name == args.rc.sample_efficiency_and_walltime_efficiency_method:
+                    fig_median_sample_walltime_efficiency, axes_median_sample_walltime_efficiency = plt.subplots(
+                        ncols=2,
+                        figsize=(7 * 2, 3.4),
+                        sharey=True,
+                    )
+                    for exp_name in score_dict.keys():
+                        global_step = global_steps[exp_name].mean()
+                        global_step_xaxis = np.linspace(0, global_step, args.rc.nsubsamples)
+                        plot_utils.plot_sample_efficiency_curve(
+                            global_step_xaxis,
+                            {exp_name: aggregate_scores[exp_name]},
+                            {exp_name: aggregate_cis[exp_name]},
+                            algorithms=[exp_name],
+                            colors=colors,
+                            xlabel=r"Steps",
+                            ax=axes_median_sample_walltime_efficiency[0],
+                            ylabel=metric_name,
+                            labelsize="x-large",
+                            ticklabelsize="x-large",
+                        )
+                    expt.plot.autoformat_xaxis(axes_median_sample_walltime_efficiency[0])
+                    for exp_name in score_dict.keys():
+                        runtime = runtimes[exp_name].mean()
+                        runtime_xaxis = np.linspace(0, runtime, args.rc.nsubsamples)
+                        plot_utils.plot_sample_efficiency_curve(
+                            runtime_xaxis,
+                            {exp_name: aggregate_scores[exp_name]},
+                            {exp_name: aggregate_cis[exp_name]},
+                            algorithms=[exp_name],
+                            colors=colors,
+                            xlabel=f"Time ({args.pc.time_unit})",
+                            ax=axes_median_sample_walltime_efficiency[1],
+                            ylabel=metric_name,
+                            labelsize="x-large",
+                            ticklabelsize="x-large",
+                        )
+                    axes_median_sample_walltime_efficiency[1].set_ylabel("")
+                    h, l = axes_median_sample_walltime_efficiency[1].get_legend_handles_labels()
+                    fig_median_sample_walltime_efficiency.legend(
+                        h,
+                        l,
+                        loc="lower center",
+                        ncol=args.pc.ncols_legend,
+                        bbox_to_anchor=(0.5, 1.0),
+                        bbox_transform=fig_median_sample_walltime_efficiency.transFigure,
+                    )
+                    fig_median_sample_walltime_efficiency.tight_layout()
+                    fig_median_sample_walltime_efficiency.savefig(
+                        f"{args.output_filename}_sample_walltime_efficiency.png", bbox_inches="tight"
+                    )
+                    fig_median_sample_walltime_efficiency.savefig(
+                        f"{args.output_filename}_sample_walltime_efficiency.pdf", bbox_inches="tight"
+                    )
+
+            h, l = axes_sample_efficiency[0][0].get_legend_handles_labels()
+            fig_sample_efficiency.legend(
+                h,
+                l,
+                loc="lower center",
+                ncol=args.pc.ncols_legend,
+                bbox_to_anchor=(0.5, 1.0),
+                bbox_transform=fig_sample_efficiency.transFigure,
+            )
+            fig_sample_efficiency.supxlabel(args.pc.xlabel, fontsize="x-large")
+            fig_sample_efficiency.tight_layout()
+            fig_sample_efficiency.savefig(f"{args.output_filename}_sample_efficiency.png", bbox_inches="tight")
+            fig_sample_efficiency.savefig(f"{args.output_filename}_sample_efficiency.pdf", bbox_inches="tight")
+
+        if args.rc.performance_profile_plots:
+            print("plotting performance profiles")
+            fig_performance_profile, axes_performance_profile = plt.subplots(
+                ncols=2,
+                figsize=(7 * 2, 3.4),
+            )
+            performance_profile_thresholds = np.linspace(0.0, args.rc.normalized_score_threshold, 81)
+            score_distributions, score_distributions_cis = rly.create_performance_profile(
+                performance_profile_normalized_score_dict,
+                performance_profile_thresholds,
+                reps=args.rc.performance_profile_num_bootstrap_reps,
+            )
+            avg_score_distributions, avg_score_distributions_cis = rly.create_performance_profile(
+                performance_profile_normalized_score_dict,
+                performance_profile_thresholds,
+                reps=args.rc.performance_profile_num_bootstrap_reps,
+                use_score_distribution=False,
+            )
+            plot_utils.plot_performance_profiles(
+                score_distributions,
+                performance_profile_thresholds,
+                performance_profile_cis=score_distributions_cis,
+                colors=colors,
+                xlabel=r"Normalized Score $(\tau)$",
+                ax=axes_performance_profile[0],
+            )
+            plot_utils.plot_performance_profiles(
+                avg_score_distributions,
+                performance_profile_thresholds,
+                performance_profile_cis=avg_score_distributions_cis,
+                colors=colors,
+                xlabel=r"Normalized Score $(\tau)$",
+                ylabel=r"Fraction of tasks with score > $\tau$",
+                ax=axes_performance_profile[1],
+            )
+            h, l = axes_performance_profile[0].get_legend_handles_labels()
+            fig_performance_profile.legend(
+                h,
+                l,
+                loc="lower center",
+                ncol=args.pc.ncols_legend,
+                bbox_to_anchor=(0.5, 1.0),
+                bbox_transform=fig_performance_profile.transFigure,
+            )
+            fig_performance_profile.tight_layout()
+            fig_performance_profile.savefig(f"{args.output_filename}_performance_profile.png", bbox_inches="tight")
+            fig_performance_profile.savefig(f"{args.output_filename}_performance_profile.pdf", bbox_inches="tight")
+
+        if args.rc.aggregate_metrics_plots:
+            print("plotting aggregate metrics")
+            aggregate_func = lambda x: np.array([metric_fn(x) for metric_fn in metric_fns])
+            aggregate_scores, aggregate_score_cis = rly.get_interval_estimates(
+                performance_profile_normalized_score_dict, aggregate_func, reps=args.rc.interval_estimates_num_bootstrap_reps
+            )
+            aggregate_scores_df = pd.DataFrame.from_dict(
+                aggregate_scores, orient="index", columns=["Median", "IQM", "Mean", "Optimality Gap"]
+            )
+            print_rich_table(f"Aggregate Scores", aggregate_scores_df.reset_index(), console)
+            fig, axes = plot_utils.plot_interval_estimates(
+                aggregate_scores,
+                aggregate_score_cis,
+                metric_names=["Median", "IQM", "Mean", "Optimality Gap"],
+                algorithms=exp_names,
+                colors=colors,
+                xlabel="",
+                # xlabel='Normalized Score',
+                # xlabel_y_coordinate=-0.08, # this variable needs to be adjusted for each plot... :( so we just disable xlabel for now.
+            )
+            axes[1].set_xlabel("Normalized Score", fontsize="xx-large")
+            fig.tight_layout()
+            plt.savefig(f"{args.output_filename}_aggregate.png", bbox_inches="tight")
+            plt.savefig(f"{args.output_filename}_aggregate.pdf", bbox_inches="tight")
 
     if args.report:
         print("saving report")

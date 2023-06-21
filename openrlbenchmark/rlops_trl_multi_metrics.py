@@ -66,8 +66,6 @@ class PlotConfig:
     """the label of the y-axis"""
     sharex: bool = False
     """if toggled, we will share the x-axis across all subplots"""
-    max_steps: int = None
-    """if specified, the maximum number of steps to plot"""
     rolling: int = 100
     """the rolling window for smoothing the curves"""
     time_unit: str = "m"
@@ -88,7 +86,7 @@ class Args:
     """the filters of the experiments; see docs"""
     env_ids: tyro.conf.UseAppendAction[List[List[str]]]
     """the ids of the environment to compare"""
-    output_filename: str = "compare"
+    output_filename: str = "static/0compare"
     """the output filename of the plot, without extension"""
     metric_last_n_average_window: int = 100
     """the last n number of episodes to average metric over in the result table"""
@@ -147,10 +145,10 @@ class Runset:
         include_tag_groups = [{"tags": {"$in": [tag]}} for tag in self.tags] if len(self.tags) > 0 else []
         self.wandb_filters = {
             "$and": [
-                {f"config.{self.custom_env_id_key}.value": self.env_id},
+                {f"config.trl_ppo_trainer_config.value.{self.custom_env_id_key}": self.env_id},
                 *include_tag_groups,
                 *user,
-                {f"config.{self.custom_exp_name_key}.value": self.exp_name},
+                {f"config.trl_ppo_trainer_config.value.{self.custom_exp_name_key}": self.exp_name},
             ]
         }
 
@@ -240,6 +238,8 @@ def create_hypothesis(runset: Runset, scan_history: bool = False) -> Hypothesis:
             run_df = run.history(samples=1500)
         if "videos" in run_df:
             run_df = run_df.drop(columns=["videos"], axis=1)
+        if "global_step" not in run_df:
+            run_df["global_step"] = run_df["_step"]
         if len(runset.metrics) == 1 and len(runset.metrics[0]) == 0:
             run_df["charts/episodic_return"] = run_df[metrics]
             cleaned_df = run_df[["global_step", "_runtime", "charts/episodic_return"]].dropna()
@@ -266,7 +266,7 @@ def compare(
             metrics_over_time = []
             for i in range(len(runsetss[0][idx].metrics)):
                 metric_over_step = wb.LinePlot(
-                    x="global_step",
+                    x="_step",
                     y=list({runsets[idx].metrics[i] for runsets in runsetss}),
                     title=runsetss[0][idx].metrics[i] + " " + env_id,
                     title_x="Steps",
@@ -303,7 +303,7 @@ def compare(
                     {
                         (
                             runsets[idx].report_runset.name,
-                            runsets[idx].runs[0].config[runsets[idx].custom_exp_name_key],
+                            runsets[idx].runs[0].config['trl_ppo_trainer_config'][runsets[idx].custom_exp_name_key],
                         ): runsets[idx].color
                     }
                 )
@@ -369,7 +369,7 @@ def compare(
                 title=env_id,
                 x="global_step",
                 y=metric,
-                err_style="band",
+                err_style="unit_traces",
                 std_alpha=0.1,
                 n_samples=10000,
                 rolling=pc.rolling,
@@ -385,15 +385,13 @@ def compare(
                 ax.set_ylabel(metric_str)
             else:
                 ax.set_ylabel("")
-            if pc.max_steps is not None:
-                ax.set_xlim(0, pc.max_steps)
             ax_time = axes_time_flatten[len(env_ids) * idx_metric + idx]
             ex.plot(
                 ax=ax_time,
                 title=env_id,
                 x="_runtime",
                 y=metric,
-                err_style="band",
+                err_style="unit_traces",
                 std_alpha=0.1,
                 n_samples=10000,
                 rolling=pc.rolling,
@@ -414,7 +412,7 @@ def compare(
     print_rich_table(f"Runtime ({pc.time_unit}) (mean ± std)", runtimes.rename_axis("Environment").reset_index(), console)
 
     # create the required directory for `output_filename`
-    if os.path.dirname(output_filename) != "":
+    if len(os.path.dirname(output_filename)) > 0:
         os.makedirs(os.path.dirname(output_filename), exist_ok=True)
     print_rich_table(f"{pc.ylabel} (mean ± std)", result_table.rename_axis("Environment").reset_index(), console)
     result_table.to_markdown(open(f"{output_filename}.md", "w"))
