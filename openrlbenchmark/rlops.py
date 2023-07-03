@@ -237,7 +237,7 @@ def create_hypothesis(runset: Runset, scan_history: bool = False) -> Hypothesis:
                 offline_run.save()
             run_df = run.run_df
         else:
-            run_df = run.history(samples=1500, keys=["global_step", "_runtime", "charts/episodic_return", runset.metric])
+            run_df = run.history(samples=1500, keys=["global_step", "_runtime", runset.metric])
         if len(runset.metric) > 0:
             run_df["charts/episodic_return"] = run_df[runset.metric]
         cleaned_df = run_df[["global_step", "_runtime", "charts/episodic_return"]].dropna().sort_values(by='global_step').reset_index(drop=True)
