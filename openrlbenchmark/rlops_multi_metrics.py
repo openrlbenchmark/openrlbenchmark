@@ -237,14 +237,13 @@ def create_hypothesis(runset: Runset, scan_history: bool = False) -> Hypothesis:
                 offline_run.save()
             run_df = run.run_df
         else:
-            run_df = run.history(samples=1500)
-        if "videos" in run_df:
-            run_df = run_df.drop(columns=["videos"], axis=1)
+            run_df = run.history(samples=1500, keys=["global_step", "_runtime", *runset.metrics])
         if len(runset.metrics) == 1 and len(runset.metrics[0]) == 0:
             run_df["charts/episodic_return"] = run_df[metrics]
             cleaned_df = run_df[["global_step", "_runtime", "charts/episodic_return"]].dropna()
         else:
             cleaned_df = run_df[["global_step", "_runtime"] + runset.metrics].dropna(how="all")
+        cleaned_df = cleaned_df.sort_values(by='global_step').reset_index(drop=True)
         runs += [Run(f"seed{idx}", cleaned_df)]
     return Hypothesis(runset.name, runs)
 
@@ -348,7 +347,7 @@ def compare(
             metric_result = []
             console.print(f"{hypothesis.name} has {len(hypothesis.runs)} runs", style="bold")
             for run in hypothesis.runs:
-                # metric_result += [run.df["charts/episodic_return"].dropna()[-metric_last_n_average_window:].mean()]
+                metric_result += [run.df["charts/episodic_return"].dropna()[-metric_last_n_average_window:].mean()]
 
                 # convert time unit in place
                 if pc.time_unit == "m":
