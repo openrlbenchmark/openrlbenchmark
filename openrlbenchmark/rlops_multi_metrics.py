@@ -266,15 +266,14 @@ def create_hypothesis(runset: Runset, target_metrics, scan_history: bool = False
                 offline_run.save()
             run_df = run.run_df
         else:
-            run_df = run.history(samples=1500)
-        if "videos" in run_df:
-            run_df = run_df.drop(columns=["videos"], axis=1)
+            run_df = run.history(samples=1500, keys=[runset.custom_xaxis_key, "_runtime", *runset.metrics])
         if runset.custom_xaxis_key in run_df:
             run_df["global_step"] = run_df[runset.custom_xaxis_key]
         for source_metric, target_metric in zip(runset.metrics, target_metrics):
             if source_metric in run_df:
                 run_df[target_metric] = run_df[source_metric]
         cleaned_df = run_df[["global_step", "_runtime"] + target_metrics].dropna(how="all")
+        cleaned_df = cleaned_df.sort_values(by='global_step').reset_index(drop=True)
         runs += [Run(f"seed{idx}", cleaned_df)]
     return Hypothesis(runset.name, runs)
 
