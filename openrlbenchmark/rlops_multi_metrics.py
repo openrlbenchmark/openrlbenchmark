@@ -1,6 +1,5 @@
 import copy
 import os
-from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Dict, List, Literal, Optional
 from urllib.parse import parse_qs, urlparse
@@ -19,8 +18,7 @@ from expt import Hypothesis, Run
 from rich.console import Console
 from rich.pretty import pprint
 from rich.table import Table
-from rliable import library as rly
-from rliable import metrics, plot_utils
+from rliable import metrics
 
 import openrlbenchmark
 import openrlbenchmark.cache
@@ -147,7 +145,7 @@ class Runset:
 
         user = [{"username": self.username}] if self.username else []
         include_tag_groups = [{"tags": {"$in": [tag]}} for tag in self.tags] if len(self.tags) > 0 else []
-        
+
         # hack to deal with wandb's nested config
         # click the "View Raw Data" button of the config in
         # https://wandb.ai/costa-huang/cleanRL/runs/3nhnaboz/overview
@@ -235,7 +233,7 @@ def create_hypothesis(runset: Runset, target_metrics, scan_history: bool = False
     runs = []
     for idx, run in enumerate(runset.runs):
         print("loading", run, run.url)
-        if run.state == "running": # or run.state == "failed":
+        if run.state == "running":  # or run.state == "failed":
             print(f"Skipping running run: {run}")
             continue
         if scan_history:
@@ -321,7 +319,7 @@ def compare(
                 metric_over_time.config["aggregateMetrics"] = True
                 metrics_over_time.append(metric_over_time)
 
-            flattened_metrics = [metrics_over_step] # , metrics_over_time
+            flattened_metrics = [metrics_over_step]  # , metrics_over_time
             flattened_metrics = [item for sublist in flattened_metrics for item in sublist]
             pg = wb.PanelGrid(
                 runsets=[runsets[idx].report_runset for runsets in runsetss],
@@ -363,7 +361,7 @@ def compare(
     axes_time_flatten = axes_time.flatten()
 
     result_tables = {}
-    
+
     exs = []
     runtimes = []
     global_steps = []
@@ -379,13 +377,18 @@ def compare(
             hypothesis_metrics = []
             for run in hypothesis.runs:
                 # metric_result += [run.df["charts/episodic_return"].dropna()[-metric_last_n_average_window:].mean()]
-                hypothesis_metrics.append(run.df[runsetss[0][idx].metrics].dropna()[-metric_last_n_average_window:].mean().to_numpy())
+                hypothesis_metrics.append(
+                    run.df[runsetss[0][idx].metrics].dropna()[-metric_last_n_average_window:].mean().to_numpy()
+                )
                 # convert time unit in place
                 if pc.time_unit == "m":
                     run.df["_runtime"] /= 60
                 elif pc.time_unit == "h":
                     run.df["_runtime"] /= 3600
-            result_table.loc[hypothesis.name] = [f"{mean:.4f} ± {std:.4f}" for mean, std in zip(np.stack(hypothesis_metrics).mean(0), np.stack(hypothesis_metrics).std(0))]
+            result_table.loc[hypothesis.name] = [
+                f"{mean:.4f} ± {std:.4f}"
+                for mean, std in zip(np.stack(hypothesis_metrics).mean(0), np.stack(hypothesis_metrics).std(0))
+            ]
         result_tables[env_id] = result_table
         runtimes.append(list(ex.summary()["_runtime"]))
         global_steps.append(list(ex.summary()["global_step"]))
@@ -445,7 +448,7 @@ def compare(
     # create the required directory for `output_filename`
     if len(os.path.dirname(output_filename)) > 0:
         os.makedirs(os.path.dirname(output_filename), exist_ok=True)
-    
+
     for env_id, result_table in result_tables.items():
         os.makedirs(os.path.dirname(f"{output_filename}/{env_id}.md"), exist_ok=True)
         print_rich_table(f"{env_id} (mean ± std)", result_table.rename_axis("Experiment").reset_index(), console)
@@ -470,9 +473,9 @@ def compare(
     fig_time.tight_layout()
 
     # remove the empty axes
-    for ax in axes_flatten[len(env_ids) * len(metrics):]:
+    for ax in axes_flatten[len(env_ids) * len(metrics) :]:
         ax.remove()
-    for ax in axes_time_flatten[len(env_ids) * len(metrics):]:
+    for ax in axes_time_flatten[len(env_ids) * len(metrics) :]:
         ax.remove()
 
     print(f"saving figures and tables to {output_filename}")

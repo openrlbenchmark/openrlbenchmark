@@ -147,7 +147,7 @@ class Runset:
 
         user = [{"username": self.username}] if self.username else []
         include_tag_groups = [{"tags": {"$in": [tag]}} for tag in self.tags] if len(self.tags) > 0 else []
-        
+
         # hack to deal with wandb's nested config
         # click the "View Raw Data" button of the config in
         # https://wandb.ai/costa-huang/cleanRL/runs/3nhnaboz/overview
@@ -274,7 +274,12 @@ def create_hypothesis(runset: Runset, scan_history: bool = False) -> Hypothesis:
             continue
         if len(runset.metric) > 0:
             run_df["charts/episodic_return"] = run_df[runset.metric]
-        cleaned_df = run_df[["global_step", "_runtime", "charts/episodic_return"]].dropna().sort_values(by='global_step').reset_index(drop=True)
+        cleaned_df = (
+            run_df[["global_step", "_runtime", "charts/episodic_return"]]
+            .dropna()
+            .sort_values(by="global_step")
+            .reset_index(drop=True)
+        )
         runs += [Run(f"seed{idx}", cleaned_df)]
     return Hypothesis(runset.name, runs)
 
