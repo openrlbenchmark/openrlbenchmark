@@ -134,16 +134,41 @@ class Runset:
 
         user = [{"username": self.username}] if self.username else []
         include_tag_groups = [{"tags": {"$in": [tag]}} for tag in self.tags] if len(self.tags) > 0 else []
+
+        # hack to deal with wandb's nested config
+        # click the "View Raw Data" button of the config in
+        # https://wandb.ai/costa-huang/cleanRL/runs/3nhnaboz/overview
+        # to see how .value is added to the config
+        # it should look like this:
+        # {
+        #     ...
+        #     "env_id": { "desc": null, "value": "Pendulum-v1" },
+        # }
+        # so the correct key is `config.env_id.value`
+        # but sometimes configs are stored in a weird way like
+        # https://wandb.ai/costa-huang/trl/runs/lpwu2w4g/overview
+        # {
+        #   "trl_ppo_trainer_config": {
+        #     "desc": null,
+        #     "value": {
+        #       "lam": 0.95,
+        #       ...
+        #     }
+        #   }
+        # }
+        # so the correct key is `config.trl_ppo_trainer_config.value.lam`
+        if ".value" not in self.custom_env_id_key:
+            self.custom_env_id_key += ".value"
+        if ".value" not in self.custom_exp_name_key:
+            self.custom_exp_name_key += ".value"
+        self.query_filters = {k + ".value" if ".value" not in k else k: v for k, v in self.query_filters.items()}
         self.wandb_filters = {
             "$and": [
-                {f"config.{self.custom_env_id_key}.value": self.env_id},
-                *[
-                    {f"config.{query_item[0]}.value": {"$in": convert(query_item[1])}}
-                    for query_item in self.query_filters.items()
-                ],
+                {f"config.{self.custom_env_id_key}": self.env_id},
+                *[{f"config.{k}": {"$in": convert(v)}} for k, v in self.query_filters.items()],
                 *include_tag_groups,
                 *user,
-                {f"config.{self.custom_exp_name_key}.value": self.exp_name},
+                {f"config.{self.custom_exp_name_key}": self.exp_name},
             ]
         }
 

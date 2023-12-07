@@ -186,13 +186,11 @@ class Runset:
             self.custom_env_id_key += ".value"
         if ".value" not in self.custom_exp_name_key:
             self.custom_exp_name_key += ".value"
+        self.query_filters = {k + ".value" if ".value" not in k else k: v for k, v in self.query_filters.items()}
         self.wandb_filters = {
             "$and": [
                 {f"config.{self.custom_env_id_key}": self.env_id},
-                *[
-                    {f"config.{query_item[0]}.value": {"$in": convert(query_item[1])}}
-                    for query_item in self.query_filters.items()
-                ],
+                *[{f"config.{k}": {"$in": convert(v)}} for k, v in self.query_filters.items()],
                 *include_tag_groups,
                 *user,
                 {f"config.{self.custom_exp_name_key}": self.exp_name},
