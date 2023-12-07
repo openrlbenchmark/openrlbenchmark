@@ -1,9 +1,10 @@
+import ast
 import copy
 import os
 import pickle
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import List, cast
+from typing import Any, Dict, List, Union, cast
 from urllib.parse import parse_qs, urlparse
 
 import expt
@@ -27,6 +28,17 @@ import openrlbenchmark
 import openrlbenchmark.cache
 from openrlbenchmark.hns import atari_human_normalized_scores as atari_hns
 from openrlbenchmark.offline_db import OfflineRun, OfflineRunTag, Tag, database_proxy
+
+
+def convert(values: Union[List[str], str]) -> Union[List[Any], Any]:
+    if isinstance(values, list):
+        values = [convert(v) for v in values]
+    else:
+        try:
+            values = ast.literal_eval(values)
+        except (ValueError, SyntaxError):
+            pass
+    return values
 
 
 @dataclass
@@ -102,6 +114,7 @@ class Runset:
         color: str = "#000000",
         offline_db: pw.Database = None,
         offline: bool = False,
+        query_filters: Dict[str, List[str]] = {},
     ):
         self.name = name
         self.entity = entity
@@ -117,12 +130,17 @@ class Runset:
         self.username = username
         self.offline_db = offline_db
         self.offline = offline
+        self.query_filters = query_filters
 
         user = [{"username": self.username}] if self.username else []
         include_tag_groups = [{"tags": {"$in": [tag]}} for tag in self.tags] if len(self.tags) > 0 else []
         self.wandb_filters = {
             "$and": [
                 {f"config.{self.custom_env_id_key}.value": self.env_id},
+                *[
+                    {f"config.{query_item[0]}.value": {"$in": convert(query_item[1])}}
+                    for query_item in self.query_filters.items()
+                ],
                 *include_tag_groups,
                 *user,
                 {f"config.{self.custom_exp_name_key}.value": self.exp_name},
@@ -214,7 +232,12 @@ def create_hypothesis(runset: Runset, scan_history: bool = False) -> Hypothesis:
             run_df = run.history(samples=1500, keys=["global_step", "_runtime", runset.metric])
         if len(runset.metric) > 0:
             run_df["charts/episodic_return"] = run_df[runset.metric]
-        cleaned_df = run_df[["global_step", "_runtime", "charts/episodic_return"]].dropna().sort_values(by='global_step').reset_index(drop=True)
+        cleaned_df = (
+            run_df[["global_step", "_runtime", "charts/episodic_return"]]
+            .dropna()
+            .sort_values(by="global_step")
+            .reset_index(drop=True)
+        )
         runs += [Run(f"seed{idx}", cleaned_df)]
     return Hypothesis(runset.name, runs)
 
@@ -604,6 +627,7 @@ if __name__ == "__main__":
             custom_legend = query["cl"][0] if "cl" in query else ""
             # HACK unescape
             custom_legend = custom_legend.replace("\\n", "\n")
+            query_filters = {k: v for k, v in query.items() if k not in {"user", "tag", "cl"}}
 
             runsets = []
             for env_id in args.env_ids[filters_idx]:
@@ -625,6 +649,7 @@ if __name__ == "__main__":
                         color=color,
                         offline_db=offline_dbs[f"{wandb_entity}/{wandb_project_name}"],
                         offline=args.offline,
+                        query_filters=query_filters,
                     )
                 )
                 if args.check_empty_runs:
