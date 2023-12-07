@@ -235,7 +235,7 @@ def create_hypothesis(runset: Runset, target_metrics, scan_history: bool = False
     runs = []
     for idx, run in enumerate(runset.runs):
         print("loading", run, run.url)
-        if run.state == "running":
+        if run.state == "running": # or run.state == "failed":
             print(f"Skipping running run: {run}")
             continue
         if scan_history:
@@ -266,14 +266,15 @@ def create_hypothesis(runset: Runset, target_metrics, scan_history: bool = False
                 offline_run.save()
             run_df = run.run_df
         else:
-            run_df = run.history(samples=1500, keys=[runset.custom_xaxis_key, "_runtime", *runset.metrics])
+            run_df = run.history(samples=1500)
+        if "videos" in run_df:
+            run_df = run_df.drop(columns=["videos"], axis=1)
         if runset.custom_xaxis_key in run_df:
             run_df["global_step"] = run_df[runset.custom_xaxis_key]
         for source_metric, target_metric in zip(runset.metrics, target_metrics):
             if source_metric in run_df:
                 run_df[target_metric] = run_df[source_metric]
         cleaned_df = run_df[["global_step", "_runtime"] + target_metrics].dropna(how="all")
-        cleaned_df = cleaned_df.sort_values(by='global_step').reset_index(drop=True)
         runs += [Run(f"seed{idx}", cleaned_df)]
     return Hypothesis(runset.name, runs)
 
@@ -320,7 +321,7 @@ def compare(
                 metric_over_time.config["aggregateMetrics"] = True
                 metrics_over_time.append(metric_over_time)
 
-            flattened_metrics = [metrics_over_step, metrics_over_time]
+            flattened_metrics = [metrics_over_step] # , metrics_over_time
             flattened_metrics = [item for sublist in flattened_metrics for item in sublist]
             pg = wb.PanelGrid(
                 runsets=[runsets[idx].report_runset for runsets in runsetss],
@@ -361,33 +362,31 @@ def compare(
     axes_flatten = axes.flatten()
     axes_time_flatten = axes_time.flatten()
 
-    result_table = pd.DataFrame(index=env_ids, columns=[runsets[0].name for runsets in runsetss])
+    result_tables = {}
+    
     exs = []
     runtimes = []
     global_steps = []
     for idx, env_id in enumerate(env_ids):
+        result_table = pd.DataFrame(index=[runsets[0].name for runsets in runsetss], columns=runsetss[0][idx].metrics)
         print(f"collecting runs for {env_id}")
         hypotheses = [create_hypothesis(runsets[idx], runsetss[0][idx].metrics, scan_history) for runsets in runsetss]
         ex = expt.Experiment("Comparison", hypotheses)
         exs.append(ex)
 
-        # for each run `i` get the average of the last `rolling` episodes as r_i
-        # then take the average and std of r_i as the results.
-        result = []
         for hypothesis in ex.hypotheses:
-            metric_result = []
             console.print(f"{hypothesis.name} has {len(hypothesis.runs)} runs", style="bold")
+            hypothesis_metrics = []
             for run in hypothesis.runs:
                 # metric_result += [run.df["charts/episodic_return"].dropna()[-metric_last_n_average_window:].mean()]
-
+                hypothesis_metrics.append(run.df[runsetss[0][idx].metrics].dropna()[-metric_last_n_average_window:].mean().to_numpy())
                 # convert time unit in place
                 if pc.time_unit == "m":
                     run.df["_runtime"] /= 60
                 elif pc.time_unit == "h":
                     run.df["_runtime"] /= 3600
-            metric_result = np.array(metric_result)
-            result += [f"{metric_result.mean():.2f} ± {metric_result.std():.2f}"]
-        result_table.loc[env_id] = result
+            result_table.loc[hypothesis.name] = [f"{mean:.4f} ± {std:.4f}" for mean, std in zip(np.stack(hypothesis_metrics).mean(0), np.stack(hypothesis_metrics).std(0))]
+        result_tables[env_id] = result_table
         runtimes.append(list(ex.summary()["_runtime"]))
         global_steps.append(list(ex.summary()["global_step"]))
 
@@ -399,14 +398,13 @@ def compare(
                 title=env_id,
                 x="global_step",
                 y=metric,
-                err_style="unit_traces",
+                err_style="band",
                 std_alpha=0.1,
                 n_samples=10000,
                 rolling=pc.rolling,
                 colors=[runsets[idx].color for runsets in runsetss],
                 legend=False,
             )
-            # breakpoint()
             ax.set_xlabel("")
             if idx_metric == 0:
                 ax.set_title(env_id)
@@ -447,9 +445,12 @@ def compare(
     # create the required directory for `output_filename`
     if len(os.path.dirname(output_filename)) > 0:
         os.makedirs(os.path.dirname(output_filename), exist_ok=True)
-    print_rich_table(f"{pc.ylabel} (mean ± std)", result_table.rename_axis("Environment").reset_index(), console)
-    result_table.to_markdown(open(f"{output_filename}.md", "w"))
-    result_table.to_csv(open(f"{output_filename}.csv", "w"))
+    
+    for env_id, result_table in result_tables.items():
+        os.makedirs(os.path.dirname(f"{output_filename}/{env_id}.md"), exist_ok=True)
+        print_rich_table(f"{env_id} (mean ± std)", result_table.rename_axis("Experiment").reset_index(), console)
+        result_table.to_markdown(open(f"{output_filename}/{env_id}.md", "w"))
+        result_table.to_csv(open(f"{output_filename}/{env_id}.csv", "w"))
     runtimes.to_markdown(open(f"{output_filename}_runtimes.md", "w"))
     runtimes.to_csv(open(f"{output_filename}_runtimes.csv", "w"))
     average_runtime = pd.DataFrame(runtimes.mean(axis=0)).reset_index()
