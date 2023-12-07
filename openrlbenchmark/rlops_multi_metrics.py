@@ -129,6 +129,7 @@ class Runset:
         metrics: List[str] = ["charts/episodic_return"],
         groupby: str = "",
         custom_exp_name_key: str = "exp_name",
+        custom_xaxis_key: str = "global_step",
         exp_name: str = "",
         custom_env_id_key: str = "env_id",
         env_id: str = "",
@@ -145,6 +146,7 @@ class Runset:
         self.metrics = metrics
         self.groupby = groupby
         self.custom_exp_name_key = custom_exp_name_key
+        self.custom_xaxis_key = custom_xaxis_key
         self.exp_name = exp_name
         self.custom_env_id_key = custom_env_id_key
         self.env_id = env_id
@@ -157,16 +159,43 @@ class Runset:
 
         user = [{"username": self.username}] if self.username else []
         include_tag_groups = [{"tags": {"$in": [tag]}} for tag in self.tags] if len(self.tags) > 0 else []
+
+        # hack to deal with wandb's nested config
+        # click the "View Raw Data" button of the config in
+        # https://wandb.ai/costa-huang/cleanRL/runs/3nhnaboz/overview
+        # to see how .value is added to the config
+        # it should look like this:
+        # {
+        #     ...
+        #     "env_id": { "desc": null, "value": "Pendulum-v1" },
+        # }
+        # so the correct key is `config.env_id.value`
+        # but sometimes configs are stored in a weird way like
+        # https://wandb.ai/costa-huang/trl/runs/lpwu2w4g/overview
+        # {
+        #   "trl_ppo_trainer_config": {
+        #     "desc": null,
+        #     "value": {
+        #       "lam": 0.95,
+        #       ...
+        #     }
+        #   }
+        # }
+        # so the correct key is `config.trl_ppo_trainer_config.value.lam`
+        if ".value" not in self.custom_env_id_key:
+            self.custom_env_id_key += ".value"
+        if ".value" not in self.custom_exp_name_key:
+            self.custom_exp_name_key += ".value"
         self.wandb_filters = {
             "$and": [
-                {f"config.{self.custom_env_id_key}.value": self.env_id},
+                {f"config.{self.custom_env_id_key}": self.env_id},
                 *[
                     {f"config.{query_item[0]}.value": {"$in": convert(query_item[1])}}
                     for query_item in self.query_filters.items()
                 ],
                 *include_tag_groups,
                 *user,
-                {f"config.{self.custom_exp_name_key}.value": self.exp_name},
+                {f"config.{self.custom_exp_name_key}": self.exp_name},
             ]
         }
 
@@ -218,11 +247,11 @@ def print_rich_table(title: str, df: pd.DataFrame, console: Console) -> Table:
     console.print(table)
 
 
-def create_hypothesis(runset: Runset, scan_history: bool = False) -> Hypothesis:
+def create_hypothesis(runset: Runset, target_metrics, scan_history: bool = False) -> Hypothesis:
     runs = []
     for idx, run in enumerate(runset.runs):
         print("loading", run, run.url)
-        if run.state == "running":
+        if run.state == "running":  # or run.state == "failed":
             print(f"Skipping running run: {run}")
             continue
         if scan_history:
@@ -253,13 +282,15 @@ def create_hypothesis(runset: Runset, scan_history: bool = False) -> Hypothesis:
                 offline_run.save()
             run_df = run.run_df
         else:
-            run_df = run.history(samples=1500, keys=["global_step", "_runtime", *runset.metrics])
-        if len(runset.metrics) == 1 and len(runset.metrics[0]) == 0:
-            run_df["charts/episodic_return"] = run_df[metrics]
-            cleaned_df = run_df[["global_step", "_runtime", "charts/episodic_return"]].dropna()
-        else:
-            cleaned_df = run_df[["global_step", "_runtime"] + runset.metrics].dropna(how="all")
-        cleaned_df = cleaned_df.sort_values(by="global_step").reset_index(drop=True)
+            run_df = run.history(samples=1500)
+        if "videos" in run_df:
+            run_df = run_df.drop(columns=["videos"], axis=1)
+        if runset.custom_xaxis_key in run_df:
+            run_df["global_step"] = run_df[runset.custom_xaxis_key]
+        for source_metric, target_metric in zip(runset.metrics, target_metrics):
+            if source_metric in run_df:
+                run_df[target_metric] = run_df[source_metric]
+        cleaned_df = run_df[["global_step", "_runtime"] + target_metrics].dropna(how="all")
         runs += [Run(f"seed{idx}", cleaned_df)]
     return Hypothesis(runset.name, runs)
 
@@ -281,7 +312,7 @@ def compare(
             metrics_over_time = []
             for i in range(len(runsetss[0][idx].metrics)):
                 metric_over_step = wb.LinePlot(
-                    x="global_step",
+                    x=runsetss[0][idx].custom_xaxis_key,
                     y=list({runsets[idx].metrics[i] for runsets in runsetss}),
                     title=runsetss[0][idx].metrics[i] + " " + env_id,
                     title_x="Steps",
@@ -306,22 +337,23 @@ def compare(
                 metric_over_time.config["aggregateMetrics"] = True
                 metrics_over_time.append(metric_over_time)
 
-            flattened_metrics = [metrics_over_step, metrics_over_time]
+            flattened_metrics = [metrics_over_step]  # , metrics_over_time
             flattened_metrics = [item for sublist in flattened_metrics for item in sublist]
             pg = wb.PanelGrid(
                 runsets=[runsets[idx].report_runset for runsets in runsetss],
                 panels=flattened_metrics,
             )
             custom_run_colors = {}
-            for runsets in runsetss:
-                custom_run_colors.update(
-                    {
-                        (
-                            runsets[idx].report_runset.name,
-                            runsets[idx].runs[0].config[runsets[idx].custom_exp_name_key],
-                        ): runsets[idx].color
-                    }
-                )
+            # TODO: color stuff doesn't work because of the filter syntax
+            # for runsets in runsetss:
+            #     custom_run_colors.update(
+            #         {
+            #             (
+            #                 runsets[idx].report_runset.name,
+            #                 runsets[idx].runs[0].config[runsets[idx].custom_exp_name_key],
+            #             ): runsets[idx].color
+            #         }
+            #     )
             pg.custom_run_colors = custom_run_colors  # IMPORTANT: custom_run_colors is implemented as a custom `setter` that needs to be overwritten unlike regular dictionaries
             blocks += [pg]
 
@@ -346,33 +378,36 @@ def compare(
     axes_flatten = axes.flatten()
     axes_time_flatten = axes_time.flatten()
 
-    result_table = pd.DataFrame(index=env_ids, columns=[runsets[0].name for runsets in runsetss])
+    result_tables = {}
+
     exs = []
     runtimes = []
     global_steps = []
     for idx, env_id in enumerate(env_ids):
+        result_table = pd.DataFrame(index=[runsets[0].name for runsets in runsetss], columns=runsetss[0][idx].metrics)
         print(f"collecting runs for {env_id}")
-        hypotheses = [create_hypothesis(runsets[idx], scan_history) for runsets in runsetss]
+        hypotheses = [create_hypothesis(runsets[idx], runsetss[0][idx].metrics, scan_history) for runsets in runsetss]
         ex = expt.Experiment("Comparison", hypotheses)
         exs.append(ex)
 
-        # for each run `i` get the average of the last `rolling` episodes as r_i
-        # then take the average and std of r_i as the results.
-        result = []
         for hypothesis in ex.hypotheses:
-            metric_result = []
             console.print(f"{hypothesis.name} has {len(hypothesis.runs)} runs", style="bold")
+            hypothesis_metrics = []
             for run in hypothesis.runs:
-                metric_result += [run.df["charts/episodic_return"].dropna()[-metric_last_n_average_window:].mean()]
-
+                # metric_result += [run.df["charts/episodic_return"].dropna()[-metric_last_n_average_window:].mean()]
+                hypothesis_metrics.append(
+                    run.df[runsetss[0][idx].metrics].dropna()[-metric_last_n_average_window:].mean().to_numpy()
+                )
                 # convert time unit in place
                 if pc.time_unit == "m":
                     run.df["_runtime"] /= 60
                 elif pc.time_unit == "h":
                     run.df["_runtime"] /= 3600
-            metric_result = np.array(metric_result)
-            result += [f"{metric_result.mean():.2f} ± {metric_result.std():.2f}"]
-        result_table.loc[env_id] = result
+            result_table.loc[hypothesis.name] = [
+                f"{mean:.4f} ± {std:.4f}"
+                for mean, std in zip(np.stack(hypothesis_metrics).mean(0), np.stack(hypothesis_metrics).std(0))
+            ]
+        result_tables[env_id] = result_table
         runtimes.append(list(ex.summary()["_runtime"]))
         global_steps.append(list(ex.summary()["global_step"]))
 
@@ -429,11 +464,14 @@ def compare(
     print_rich_table(f"Runtime ({pc.time_unit}) (mean ± std)", runtimes.rename_axis("Environment").reset_index(), console)
 
     # create the required directory for `output_filename`
-    if os.path.dirname(output_filename) != "":
+    if len(os.path.dirname(output_filename)) > 0:
         os.makedirs(os.path.dirname(output_filename), exist_ok=True)
-    print_rich_table(f"{pc.ylabel} (mean ± std)", result_table.rename_axis("Environment").reset_index(), console)
-    result_table.to_markdown(open(f"{output_filename}.md", "w"))
-    result_table.to_csv(open(f"{output_filename}.csv", "w"))
+
+    for env_id, result_table in result_tables.items():
+        os.makedirs(os.path.dirname(f"{output_filename}/{env_id}.md"), exist_ok=True)
+        print_rich_table(f"{env_id} (mean ± std)", result_table.rename_axis("Experiment").reset_index(), console)
+        result_table.to_markdown(open(f"{output_filename}/{env_id}.md", "w"))
+        result_table.to_csv(open(f"{output_filename}/{env_id}.csv", "w"))
     runtimes.to_markdown(open(f"{output_filename}_runtimes.md", "w"))
     runtimes.to_csv(open(f"{output_filename}_runtimes.csv", "w"))
     average_runtime = pd.DataFrame(runtimes.mean(axis=0)).reset_index()
@@ -491,7 +529,7 @@ def maxmin_normalize_score(score_dict: Dict[str, np.ndarray]):
     return normalize_score(score_dict, max_scores, min_scores)
 
 
-def atari_normalize_score(original_env_ids):
+def atari_normalize_score(score_dict, original_env_ids):
     env_ids = []
     for env_id in original_env_ids:
         if env_id.endswith("NoFrameskip-v4"):
@@ -508,12 +546,6 @@ if __name__ == "__main__":
     if len(args.filters) > 1 and len(args.env_ids) == 1:
         args.env_ids = args.env_ids * len(args.filters)
 
-    parse_result = urlparse(args.filters[0][0])
-    query = parse_qs(parse_result.query)
-    metrics = query["metrics"] if "metrics" in query else ["charts/episodic_return"]
-    # calculate the number of rows
-    args.pc.nrows = np.ceil(len(args.env_ids[0]) * len(metrics) / args.pc.ncols).astype(int)
-
     console = Console()
     blocks = []
     runsetss = []
@@ -527,16 +559,23 @@ if __name__ == "__main__":
         colors_flatten = colors_flatten[len(filters) - 1 :]
 
     for filters_idx, filters in enumerate(args.filters):
+        parse_result = urlparse(filters[0])
+        query = parse_qs(parse_result.query)
+        metrics = query["metrics"] if "metrics" in query else ["charts/episodic_return"]
+        # calculate the number of rows
+        args.pc.nrows = np.ceil(len(args.env_ids[0]) * len(metrics) / args.pc.ncols).astype(int)
         wandb_project_name = query["wpn"][0] if "wpn" in query else args.wandb_project_name
         wandb_entity = query["we"][0] if "we" in query else args.wandb_entity
         custom_env_id_key = query["ceik"][0] if "ceik" in query else "env_id"
         custom_exp_name_key = query["cen"][0] if "cen" in query else "exp_name"
+        custom_xaxis_key = query["xaxis"][0] if "xaxis" in query else "global_step"
         pprint(
             {
                 "wandb_project_name": wandb_project_name,
                 "wandb_entity": wandb_entity,
                 "custom_env_id_key": custom_env_id_key,
                 "custom_exp_name_key": custom_exp_name_key,
+                "custom_xaxis_key": custom_xaxis_key,
                 "metrics": metrics,
             },
             expand_all=True,
@@ -577,6 +616,7 @@ if __name__ == "__main__":
                         metrics=metrics,
                         groupby=custom_exp_name_key,
                         custom_exp_name_key=custom_exp_name_key,
+                        custom_xaxis_key=custom_xaxis_key,
                         exp_name=exp_name,
                         custom_env_id_key=custom_env_id_key,
                         env_id=env_id,
@@ -592,6 +632,7 @@ if __name__ == "__main__":
                     console.print(f"{exp_name} [green]({query})[/] in [purple]{env_id}[/] has {len(runsets[-1].runs)} runs")
                     for run in runsets[-1].runs:
                         console.print(f"┣━━ [link={run.url}]{run.name}[/link] with tags = {run.tags}")
+                    print(runsets[0].wandb_filters)
                     assert len(runsets[0].runs) > 0, f"{exp_name} ({query}) in {env_id} has no runs"
             runsetss.append(runsets)
 

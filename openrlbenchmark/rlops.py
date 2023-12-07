@@ -131,6 +131,7 @@ class Runset:
         metric: str = "charts/episodic_return",
         groupby: str = "",
         custom_exp_name_key: str = "exp_name",
+        custom_xaxis_key: str = "global_step",
         exp_name: str = "",
         custom_env_id_key: str = "env_id",
         env_id: str = "",
@@ -147,6 +148,7 @@ class Runset:
         self.metric = metric
         self.groupby = groupby
         self.custom_exp_name_key = custom_exp_name_key
+        self.custom_xaxis_key = custom_xaxis_key
         self.exp_name = exp_name
         self.custom_env_id_key = custom_env_id_key
         self.env_id = env_id
@@ -159,16 +161,43 @@ class Runset:
 
         user = [{"username": self.username}] if self.username else []
         include_tag_groups = [{"tags": {"$in": [tag]}} for tag in self.tags] if len(self.tags) > 0 else []
+
+        # hack to deal with wandb's nested config
+        # click the "View Raw Data" button of the config in
+        # https://wandb.ai/costa-huang/cleanRL/runs/3nhnaboz/overview
+        # to see how .value is added to the config
+        # it should look like this:
+        # {
+        #     ...
+        #     "env_id": { "desc": null, "value": "Pendulum-v1" },
+        # }
+        # so the correct key is `config.env_id.value`
+        # but sometimes configs are stored in a weird way like
+        # https://wandb.ai/costa-huang/trl/runs/lpwu2w4g/overview
+        # {
+        #   "trl_ppo_trainer_config": {
+        #     "desc": null,
+        #     "value": {
+        #       "lam": 0.95,
+        #       ...
+        #     }
+        #   }
+        # }
+        # so the correct key is `config.trl_ppo_trainer_config.value.lam`
+        if ".value" not in self.custom_env_id_key:
+            self.custom_env_id_key += ".value"
+        if ".value" not in self.custom_exp_name_key:
+            self.custom_exp_name_key += ".value"
         self.wandb_filters = {
             "$and": [
-                {f"config.{self.custom_env_id_key}.value": self.env_id},
+                {f"config.{self.custom_env_id_key}": self.env_id},
                 *[
                     {f"config.{query_item[0]}.value": {"$in": convert(query_item[1])}}
                     for query_item in self.query_filters.items()
                 ],
                 *include_tag_groups,
                 *user,
-                {f"config.{self.custom_exp_name_key}.value": self.exp_name},
+                {f"config.{self.custom_exp_name_key}": self.exp_name},
             ]
         }
 
@@ -255,7 +284,12 @@ def create_hypothesis(runset: Runset, scan_history: bool = False) -> Hypothesis:
                 offline_run.save()
             run_df = run.run_df
         else:
-            run_df = run.history(samples=1500, keys=["global_step", "_runtime", runset.metric])
+            run_df = run.history(samples=1500, keys=[runset.custom_xaxis_key, "_runtime", runset.metric])
+        if runset.custom_xaxis_key in run_df:
+            run_df["global_step"] = run_df[runset.custom_xaxis_key]
+        if runset.metric not in run_df:
+            print(f"Skipping run {run} because metric {runset.metric} not found")
+            continue
         if len(runset.metric) > 0:
             run_df["charts/episodic_return"] = run_df[runset.metric]
         cleaned_df = (
@@ -282,7 +316,7 @@ def compare(
     if report:
         for idx, env_id in enumerate(env_ids):
             metric_over_step = wb.LinePlot(
-                x="global_step",
+                x=runsets[idx].custom_xaxis_key,
                 y=list({runsets[idx].metric for runsets in runsetss}),
                 title=env_id,
                 title_x="Steps",
@@ -479,7 +513,7 @@ def maxmin_normalize_score(score_dict: Dict[str, np.ndarray]):
     return normalize_score(score_dict, max_scores, min_scores)
 
 
-def atari_normalize_score(original_env_ids):
+def atari_normalize_score(score_dict, original_env_ids):
     env_ids = []
     for env_id in original_env_ids:
         if env_id.endswith("NoFrameskip-v4"):
@@ -518,12 +552,14 @@ if __name__ == "__main__":
         wandb_entity = query["we"][0] if "we" in query else args.wandb_entity
         custom_env_id_key = query["ceik"][0] if "ceik" in query else "env_id"
         custom_exp_name_key = query["cen"][0] if "cen" in query else "exp_name"
+        custom_xaxis_key = query["xaxis"][0] if "xaxis" in query else "global_step"
         pprint(
             {
                 "wandb_project_name": wandb_project_name,
                 "wandb_entity": wandb_entity,
                 "custom_env_id_key": custom_env_id_key,
                 "custom_exp_name_key": custom_exp_name_key,
+                "custom_xaxis_key": custom_xaxis_key,
                 "metric": metric,
             },
             expand_all=True,
@@ -564,6 +600,7 @@ if __name__ == "__main__":
                         metric=metric,
                         groupby=custom_exp_name_key,
                         custom_exp_name_key=custom_exp_name_key,
+                        custom_xaxis_key=custom_xaxis_key,
                         exp_name=exp_name,
                         custom_env_id_key=custom_env_id_key,
                         env_id=env_id,
@@ -579,6 +616,7 @@ if __name__ == "__main__":
                     console.print(f"{exp_name} [green]({query})[/] in [purple]{env_id}[/] has {len(runsets[-1].runs)} runs")
                     for run in runsets[-1].runs:
                         console.print(f"┣━━ [link={run.url}]{run.name}[/link] with tags = {run.tags}")
+                    print(runsets[0].wandb_filters)
                     assert len(runsets[0].runs) > 0, f"{exp_name} ({query}) in {env_id} has no runs"
             runsetss.append(runsets)
 
@@ -652,7 +690,7 @@ if __name__ == "__main__":
         if args.rc.score_normalization_method == "maxmin":
             normalized_score_dict = maxmin_normalize_score(score_dict)
         elif args.rc.score_normalization_method == "atari":
-            normalized_score_dict = atari_normalize_score(args.env_ids[0])
+            normalized_score_dict = atari_normalize_score(score_dict, args.env_ids[0])
         else:
             raise NotImplementedError(f"Normalization method {args.rc.score_normalization_method} not implemented")
         performance_profile_normalized_score_dict = {}
