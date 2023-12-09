@@ -97,3 +97,23 @@ python -i -m openrlbenchmark.rlops_hns \
         shell=True,
         check=True,
     )
+
+
+def test_params_filter():
+    """
+    test params filter
+    """
+    subprocess.run(
+        """
+python -m openrlbenchmark.rlops \
+    --filters '?we=openrlbenchmark&wpn=cleanrl&ceik=env_id&cen=exp_name&metric=charts/episodic_return' \
+        'ppo_continuous_action?tag=v1.0.0-27-gde3f410&seed=1&seed=2' \
+    --env-ids HalfCheetah-v2 Walker2d-v2 Hopper-v2 \
+    --no-check-empty-runs \
+    --pc.ncols 3 \
+    --pc.ncols-legend 3 \
+    --output-filename static/0compare
+""",
+        shell=True,
+        check=True,
+    )
