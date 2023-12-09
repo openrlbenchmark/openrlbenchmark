@@ -46,7 +46,7 @@ Open RL Benchmark provides an RLops CLI to pull and compare metrics from Weights
 ```shell
 python -m openrlbenchmark.rlops \
     --filters '?we=openrlbenchmark&wpn=cleanrl&ceik=env_id&cen=exp_name&metric=charts/episodic_return' \
-        'ppo_continuous_action?tag=v1.0.0-27-gde3f410&cl=CleanRL PPO' \
+        'ppo_continuous_action?tag=v1.0.0-27-gde3f410&seed=1&seed=2&seed=3&cl=CleanRL PPO' \
     --filters '?we=openrlbenchmark&wpn=baselines&ceik=env&cen=exp_name&metric=charts/episodic_return' \
         'baselines-ppo2-mlp?cl=openai/baselines PPO2' \
     --env-ids HalfCheetah-v2 Hopper-v2 Walker2d-v2 \
@@ -64,17 +64,25 @@ python -m openrlbenchmark.rlops \
     --rc.sample_efficiency_num_bootstrap_reps 10 \
     --rc.performance_profile_num_bootstrap_reps 10 \
     --rc.interval_estimates_num_bootstrap_reps 10 \
-    --output-filename compare \
+    --output-filename static/0compare \
     --scan-history
 ```
 
-Here, we created multiple filters. The first string in the first filter is `'?we=openrlbenchmark&wpn=baselines&ceik=env&cen=exp_name&metric=charts/episodic_return'`, which is a query string that specifies the following:
+Here, we created multiple filters. The first string in the first filter is `'?we=openrlbenchmark&wpn=cleanrl&ceik=env_id&cen=exp_name&metric=charts/episodic_return'`, which is a query string that specifies the following:
 
 * `we`: the W&B entity name
 * `wpn`: the W&B project name
 * `ceik`: the custom key for the environment id
 * `cen`: the custom key for the experiment name
 * `metric`: the metric we are interested in
+
+The second string in the first filter is `'ppo_continuous_action?tag=v1.0.0-27-gde3f410&seed=1&seed=2&seed=3&cl=CleanRL PPO'`, which is a query string that specifies the following:
+
+* `exp_name`: the experiment name we are interested in, such as `ppo_continuous_action` in this case
+* `tag`: the tag we are interested in
+* `params`: the parameters or configurations of interest, such as `seed` in this case
+  * Due to W&B's handling of nested configuration data, the exact key for a parameter might vary. In most cases, parameters can be index directly with their names and accessed via `.value` (e.g., `config.seed.value` in [https://wandb.ai/openrlbenchmark/cleanrl/runs/1bvy71i6/overview](https://wandb.ai/openrlbenchmark/cleanrl/runs/1bvy71i6/overview)). However, in some instances, settings are nested within other configurations. For example, to access the `lam` parameter in a nested config, the correct key would be `config.trl_ppo_trainer_config.value.lam`. You can view the full configuration details for an experiment by clicking on the "View Raw Data" button of the config on the W&B experiment overview page, such as [https://wandb.ai/costa-huang/cleanRL/runs/3nhnaboz/overview](https://wandb.ai/costa-huang/cleanRL/runs/3nhnaboz/overview).
+  * The custom keys for referencing specific configurations, such as the environment id (`ceik`) and the experiment name (`cen`), follow the same indexing convention as the parameters.
 
 So we are fetching metrics from [https://wandb.ai/openrlbenchmark/baselines](https://wandb.ai/openrlbenchmark/baselines). The environment id is stored in the `env` key, and the experiment name is stored in the `exp_name` key. The metric we are interested in is `charts/episodic_return`.
 
