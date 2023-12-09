@@ -1,9 +1,10 @@
+import ast
 import copy
 import os
 import pickle
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import List, cast
+from typing import Any, Dict, List, Union, cast
 from urllib.parse import parse_qs, urlparse
 
 import expt
@@ -27,6 +28,17 @@ import openrlbenchmark
 import openrlbenchmark.cache
 from openrlbenchmark.hns import atari_human_normalized_scores as atari_hns
 from openrlbenchmark.offline_db import OfflineRun, OfflineRunTag, Tag, database_proxy
+
+
+def convert(values: Union[List[str], str]) -> Union[List[Any], Any]:
+    if isinstance(values, list):
+        values = [convert(v) for v in values]
+    else:
+        try:
+            values = ast.literal_eval(values)
+        except (ValueError, SyntaxError):
+            pass
+    return values
 
 
 @dataclass
@@ -102,6 +114,7 @@ class Runset:
         color: str = "#000000",
         offline_db: pw.Database = None,
         offline: bool = False,
+        query_filters: Dict[str, List[str]] = {},
     ):
         self.name = name
         self.entity = entity
@@ -117,15 +130,45 @@ class Runset:
         self.username = username
         self.offline_db = offline_db
         self.offline = offline
+        self.query_filters = query_filters
 
         user = [{"username": self.username}] if self.username else []
         include_tag_groups = [{"tags": {"$in": [tag]}} for tag in self.tags] if len(self.tags) > 0 else []
+
+        # hack to deal with wandb's nested config
+        # click the "View Raw Data" button of the config in
+        # https://wandb.ai/costa-huang/cleanRL/runs/3nhnaboz/overview
+        # to see how .value is added to the config
+        # it should look like this:
+        # {
+        #     ...
+        #     "env_id": { "desc": null, "value": "Pendulum-v1" },
+        # }
+        # so the correct key is `config.env_id.value`
+        # but sometimes configs are stored in a weird way like
+        # https://wandb.ai/costa-huang/trl/runs/lpwu2w4g/overview
+        # {
+        #   "trl_ppo_trainer_config": {
+        #     "desc": null,
+        #     "value": {
+        #       "lam": 0.95,
+        #       ...
+        #     }
+        #   }
+        # }
+        # so the correct key is `config.trl_ppo_trainer_config.value.lam`
+        if ".value" not in self.custom_env_id_key:
+            self.custom_env_id_key += ".value"
+        if ".value" not in self.custom_exp_name_key:
+            self.custom_exp_name_key += ".value"
+        self.query_filters = {k + ".value" if ".value" not in k else k: v for k, v in self.query_filters.items()}
         self.wandb_filters = {
             "$and": [
-                {f"config.{self.custom_env_id_key}.value": self.env_id},
+                {f"config.{self.custom_env_id_key}": self.env_id},
+                *[{f"config.{k}": {"$in": convert(v)}} for k, v in self.query_filters.items()],
                 *include_tag_groups,
                 *user,
-                {f"config.{self.custom_exp_name_key}.value": self.exp_name},
+                {f"config.{self.custom_exp_name_key}": self.exp_name},
             ]
         }
 
@@ -609,6 +652,7 @@ if __name__ == "__main__":
             custom_legend = query["cl"][0] if "cl" in query else ""
             # HACK unescape
             custom_legend = custom_legend.replace("\\n", "\n")
+            query_filters = {k: v for k, v in query.items() if k not in {"user", "tag", "cl"}}
 
             runsets = []
             for env_id in args.env_ids[filters_idx]:
@@ -630,6 +674,7 @@ if __name__ == "__main__":
                         color=color,
                         offline_db=offline_dbs[f"{wandb_entity}/{wandb_project_name}"],
                         offline=args.offline,
+                        query_filters=query_filters,
                     )
                 )
                 if args.check_empty_runs:

@@ -46,7 +46,7 @@ Open RL Benchmark provides an RLops CLI to pull and compare metrics from Weights
 ```shell
 python -m openrlbenchmark.rlops \
     --filters '?we=openrlbenchmark&wpn=cleanrl&ceik=env_id&cen=exp_name&metric=charts/episodic_return' \
-        'ppo_continuous_action?tag=v1.0.0-27-gde3f410&cl=CleanRL PPO' \
+        'ppo_continuous_action?tag=v1.0.0-27-gde3f410&seed=1&seed=2&seed=3&cl=CleanRL PPO' \
     --filters '?we=openrlbenchmark&wpn=baselines&ceik=env&cen=exp_name&metric=charts/episodic_return' \
         'baselines-ppo2-mlp?cl=openai/baselines PPO2' \
     --env-ids HalfCheetah-v2 Hopper-v2 Walker2d-v2 \
@@ -64,11 +64,11 @@ python -m openrlbenchmark.rlops \
     --rc.sample_efficiency_num_bootstrap_reps 10 \
     --rc.performance_profile_num_bootstrap_reps 10 \
     --rc.interval_estimates_num_bootstrap_reps 10 \
-    --output-filename compare \
+    --output-filename static/0compare \
     --scan-history
 ```
 
-Here, we created multiple filters. The first string in the first filter is `'?we=openrlbenchmark&wpn=baselines&ceik=env&cen=exp_name&metric=charts/episodic_return'`, which is a query string that specifies the following:
+Here, we created multiple filters. The first string in the first filter is `'?we=openrlbenchmark&wpn=cleanrl&ceik=env_id&cen=exp_name&metric=charts/episodic_return'`, which is a query string that specifies the following:
 
 * `we`: the W&B entity name
 * `wpn`: the W&B project name
@@ -76,9 +76,17 @@ Here, we created multiple filters. The first string in the first filter is `'?we
 * `cen`: the custom key for the experiment name
 * `metric`: the metric we are interested in
 
-So we are fetching metrics from [https://wandb.ai/openrlbenchmark/baselines](https://wandb.ai/openrlbenchmark/baselines). The environment id is stored in the `env` key, and the experiment name is stored in the `exp_name` key. The metric we are interested in is `charts/episodic_return`.
+The second string in the first filter is `'ppo_continuous_action?tag=v1.0.0-27-gde3f410&seed=1&seed=2&seed=3&cl=CleanRL PPO'`, which is a query string that specifies the following:
 
-Similarly, we are fetching metrics from [https://wandb.ai/openrlbenchmark/cleanrl](https://wandb.ai/openrlbenchmark/cleanrl). The environment id is stored in the `env_id` key, and the experiment name is stored in the `exp_name` key. The metric we are interested in is `charts/episodic_return`. You can also customize the legend with the `cl` query string, such as `baselines-ppo2-mlp?cl=openai/baselines PPO2`.
+* `exp_name`: the experiment name we are interested in, such as `ppo_continuous_action` in this case
+* `tag`: the tag we are interested in
+* `params`: the parameters or configurations of interest, such as `seed`
+  * Due to W&B's handling of nested configuration data, the exact key for a parameter might vary. In most cases, parameters can be index directly by their `key` or `key.value`. Hence, `seed` or `seed.value` could be the correct key when trying to index this parameter in [https://wandb.ai/openrlbenchmark/cleanrl/runs/1bvy71i6/overview](https://wandb.ai/openrlbenchmark/cleanrl/runs/1bvy71i6/overview). Nonetheless, for nested configurations, the correct reference must navigate through the structure, such as `trl_ppo_trainer_config.value.lam` to index the `lam` parameter. To see the complete config in its entirety, click on the "View Raw Data" button available on the config section of a W&B experiment overview page, like what is available at [https://wandb.ai/costa-huang/cleanRL/runs/3nhnaboz/overview](https://wandb.ai/costa-huang/cleanRL/runs/3nhnaboz/overview).
+  * The custom keys for referencing specific configurations, such as the environment id (`ceik`) and the experiment name (`cen`), follow the same indexing convention as the parameters.
+
+So we are fetching metrics from [https://wandb.ai/openrlbenchmark/cleanrl](https://wandb.ai/openrlbenchmark/cleanrl). The environment id is stored in the `env_id` key, and the experiment name is stored in the `exp_name` key. The metric we are interested in is `charts/episodic_return`.
+
+Similarly, we are fetching metrics from [https://wandb.ai/openrlbenchmark/baselines](https://wandb.ai/openrlbenchmark/baselines). The environment id is stored in the `env` key, and the experiment name is stored in the `exp_name` key. The metric we are interested in is `charts/episodic_return`. You can also customize the legend with the `cl` query string, such as `baselines-ppo2-mlp?cl=openai/baselines PPO2`.
 
 The labels of the figure can be customized with the `--pc.xlabel` and `--pc.ylabel` flags. You can also specify the maximum number of timesteps to plot with `--pc.max_steps`. The `--pc.ncols` flag specifies the number of columns in the figure. The `--pc.ncols-legend` flag specifies the number of columns in the legend. The `--output-filename` flag specifies the filename of the output figure
 
