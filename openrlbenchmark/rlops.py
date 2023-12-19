@@ -3,7 +3,7 @@ import copy
 import os
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union, Tuple
 from urllib.parse import parse_qs, urlparse
 
 import expt
@@ -50,6 +50,8 @@ class RliableConfig:
     """the threshold for the normalized score for the performance profile"""
     sample_efficiency_plots: bool = True
     """if toggled, we will generate sample efficiency plots"""
+    sample_efficiency_figsize: Tuple[float, float] = (7 * 2, 3.4 * 2)
+    """figure size of the sample efficiency plots"""
     sample_efficiency_and_walltime_efficiency_method: Optional[Literal["Median", "IQM", "Mean", "Optimality Gap"]] = "Median"
     """the method to compute the sample efficiency and walltime efficiency"""
     performance_profile_plots: bool = True
@@ -707,7 +709,7 @@ if __name__ == "__main__":
             fig_sample_efficiency, axes_sample_efficiency = plt.subplots(
                 ncols=2,
                 nrows=2,
-                figsize=(7 * 2, 3.4 * 2),
+                figsize=args.rc.sample_efficiency_figsize,
                 sharex=args.pc.sharex,
             )
             for metric_fn, ax, metric_name in zip(metric_fns, axes_sample_efficiency.flatten(), metric_names):
