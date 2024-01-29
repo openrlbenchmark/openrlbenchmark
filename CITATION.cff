@@ -34,7 +34,7 @@ authors:
 - family-names: "Chen" # for contributing SB3 experiments https://github.com/openrlbenchmark/openrlbenchmark/issues/7 @ChufanSuki
   given-names: "Chufan"
 - family-names: "Rahman" # for contributing RPO runs to https://docs.cleanrl.dev/rl-algorithms/rpo/
-  given-names: "Masudur"
+  given-names: "Md Masudur"
 - family-names: "M. Araújo" # for contributing CleanRL's TD3 and DDPG experiments https://github.com/vwxyzjn/cleanrl/pull/298 @joaogui1
   given-names: "João G."
 - family-names: "Quan" # for contributing CleanRL's PPO experiments # https://github.com/vwxyzjn/cleanrl/pull/355 @quangr
