@@ -41,9 +41,9 @@ authors:
   given-names: "Guorui"
 - family-names: "Tan" # for contributing CleanRL's gymnasium experiments https://github.com/vwxyzjn/cleanrl/pull/320 @dtch1997
   given-names: "Daniel"
-- family-names: "Klein" # for contributing CleanRL's SAC discrete experiments https://github.com/vwxyzjn/cleanrl/pull/270 @timoklein 
+- family-names: "Klein" # for contributing CleanRL's SAC discrete experiments https://github.com/vwxyzjn/cleanrl/pull/270 @timoklein
   given-names: "Timo"
-- family-names: "Charakorn" # for contributing CleanRL's PPO XLA experiments https://github.com/vwxyzjn/cleanrl/pull/328 @timoklein 
+- family-names: "Charakorn" # for contributing CleanRL's PPO XLA experiments https://github.com/vwxyzjn/cleanrl/pull/328 @51616
   given-names: "Rujikorn"
 - family-names: "Towers" # for contributing CleanRL's gymnasium experiments https://github.com/vwxyzjn/cleanrl/pull/377 @pseudo-rnd-thoughts
   given-names: "Mark"
