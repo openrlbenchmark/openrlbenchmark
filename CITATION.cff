@@ -25,6 +25,8 @@ authors:
   given-names: "Viktor"
 - family-names: "Makoviichuk" # for contributing `rl_games` experiments @ViktorM @Denys88
   given-names: "Denys"
+- family-names: "Danesh" # for contributing PPO case study https://api.wandb.ai/links/modanesh/izf4yje4 @modanesh
+  given-names: "Mohamad H."
 - family-names: "Roumégous" # for contributing SB3 experiments https://github.com/openrlbenchmark/openrlbenchmark/issues/7 @croumegous
   given-names: "Cyril"
 - family-names: "Weng" # for contributing Tianshou experiments https://wandb.ai/tianshou/atari.benchmark @Trinkle23897
@@ -61,6 +63,12 @@ authors:
   given-names: "Zichen"
 - family-names: "Alegre" # for contributing MORL baselines results https://wandb.ai/openrlbenchmark/morl-baselines @lnalegre
   given-names: "Lucas N."
+- family-names: "Nikulin" # for contributing CleanRL's APO experiments https://github.com/vwxyzjn/cleanrl/pull/212 @Howuhh
+  given-names: "Alexander"
+- family-names: "Hu" # for contributing SimpleSAC experiments @young-geng
+  given-names: "Xiao"
+- family-names: "Liu" # for contributing RLHF experiments @liutianlin0121
+  given-names: "Tianlin"
 # tooling contributors
 - family-names: "Choi" # for creating https://github.com/wookayin/expt that underpins this project @wookayin
   given-names: "Jongwook"
