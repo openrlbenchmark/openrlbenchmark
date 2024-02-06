@@ -364,12 +364,11 @@ This is a project we are slowly working on. There is no specific timeline or roa
 If you have used this software in your work, please use the following citation.
 
 ```bibtex
-@software{
-    Huang_openrlbenchmark_2023,
-    author = {Huang, Shengyi and Gallouédec, Quentin and Felten, Florian and Raffin, Antonin and Dossa, Rousslan Fernand Julien and Zhao, Yanxiao and Sullivan, Ryan and Makoviychuk, Viktor and Makoviichuk, Denys and Roumégous, Cyril and Weng, Jiayi and Chen, Chufan and Rahman, Masudur and M. Araújo, João G. and Quan, Guorui and Tan, Daniel and Klein, Timo and Charakorn, Rujikorn and Towers, Mark and Berthelot, Yann and Mehta, Kinal and Chakraborty, Dipam and KG, Arjun and Charraut, Valentin and Ye, Chang and Liu, Zichen and Alegre, Lucas N. and Choi, Jongwook and Yi, Brent},
-    month = may,
-    title = {{openrlbenchmark}},
-    url = {https://github.com/openrlbenchmark/openrlbenchmark},
-    year = {2023}
+@article{Huang_Open_RL_Benchmark_2024,
+    author = {Huang, Shengyi and Gallouédec, Quentin and Felten, Florian and Raffin, Antonin and Dossa, Rousslan Fernand Julien and Zhao, Yanxiao and Sullivan, Ryan and Makoviychuk, Viktor and Makoviichuk, Denys and Danesh, Mohamad H. and Roumégous, Cyril and Weng, Jiayi and Chen, Chufan and Rahman, Md Masudur and M. Araújo, João G. and Quan, Guorui and Tan, Daniel and Klein, Timo and Charakorn, Rujikorn and Towers, Mark and Berthelot, Yann and Mehta, Kinal and Chakraborty, Dipam and KG, Arjun and Charraut, Valentin and Ye, Chang and Liu, Zichen and Alegre, Lucas N. and Nikulin, Alexander and Hu, Xiao and Liu, Tianlin and Choi, Jongwook and Yi, Brent},
+    journal = {arXiv preprint arXiv:2402.03046},
+    title = {{Open RL Benchmark: Comprehensive Tracked Experiments for Reinforcement Learning}},
+    url = {https://arxiv.org/abs/2402.03046},
+    year = {2024}
 }
 ```
