@@ -14,10 +14,10 @@ authors:
 # data contributors and other maintainers
 - family-names: "Raffin" # for contributing SB3's experiments
   given-names: "Antonin"
-- family-names: "Dossa" # for general contribution of runs from `vwxyzjn/cleanrl`
+- family-names: "Dossa" # for general contribution of runs from `vwxyzjn/cleanrl` @dosssman
   given-names: "Rousslan Fernand Julien"
   orcid: "0000-0003-0572-692X"
-- family-names: "Zhao" # for contributing experiments to `sdpkjc/abcdrl`
+- family-names: "Zhao" # for contributing experiments to `sdpkjc/abcdrl` @sdpkjc
   given-names: "Yanxiao"
 - family-names: "Sullivan" # for contributing SB3 and CleanRL + Dreamerv3 tricks experiments @RyanNavillus
   given-names: "Ryan"
@@ -25,6 +25,8 @@ authors:
   given-names: "Viktor"
 - family-names: "Makoviichuk" # for contributing `rl_games` experiments @ViktorM @Denys88
   given-names: "Denys"
+- family-names: "Danesh" # for contributing PPO case study https://api.wandb.ai/links/modanesh/izf4yje4 @modanesh
+  given-names: "Mohamad H."
 - family-names: "Roumégous" # for contributing SB3 experiments https://github.com/openrlbenchmark/openrlbenchmark/issues/7 @croumegous
   given-names: "Cyril"
 - family-names: "Weng" # for contributing Tianshou experiments https://wandb.ai/tianshou/atari.benchmark @Trinkle23897
@@ -32,16 +34,16 @@ authors:
 - family-names: "Chen" # for contributing SB3 experiments https://github.com/openrlbenchmark/openrlbenchmark/issues/7 @ChufanSuki
   given-names: "Chufan"
 - family-names: "Rahman" # for contributing RPO runs to https://docs.cleanrl.dev/rl-algorithms/rpo/
-  given-names: "Masudur"
+  given-names: "Md Masudur"
 - family-names: "M. Araújo" # for contributing CleanRL's TD3 and DDPG experiments https://github.com/vwxyzjn/cleanrl/pull/298 @joaogui1
   given-names: "João G."
 - family-names: "Quan" # for contributing CleanRL's PPO experiments # https://github.com/vwxyzjn/cleanrl/pull/355 @quangr
   given-names: "Guorui"
 - family-names: "Tan" # for contributing CleanRL's gymnasium experiments https://github.com/vwxyzjn/cleanrl/pull/320 @dtch1997
   given-names: "Daniel"
-- family-names: "Klein" # for contributing CleanRL's SAC discrete experiments https://github.com/vwxyzjn/cleanrl/pull/270 @timoklein 
+- family-names: "Klein" # for contributing CleanRL's SAC discrete experiments https://github.com/vwxyzjn/cleanrl/pull/270 @timoklein
   given-names: "Timo"
-- family-names: "Charakorn" # for contributing CleanRL's PPO XLA experiments https://github.com/vwxyzjn/cleanrl/pull/328 @timoklein 
+- family-names: "Charakorn" # for contributing CleanRL's PPO XLA experiments https://github.com/vwxyzjn/cleanrl/pull/328 @51616
   given-names: "Rujikorn"
 - family-names: "Towers" # for contributing CleanRL's gymnasium experiments https://github.com/vwxyzjn/cleanrl/pull/377 @pseudo-rnd-thoughts
   given-names: "Mark"
@@ -61,13 +63,90 @@ authors:
   given-names: "Zichen"
 - family-names: "Alegre" # for contributing MORL baselines results https://wandb.ai/openrlbenchmark/morl-baselines @lnalegre
   given-names: "Lucas N."
+- family-names: "Nikulin" # for contributing CleanRL's APO experiments https://github.com/vwxyzjn/cleanrl/pull/212 @Howuhh
+  given-names: "Alexander"
+- family-names: "Hu" # for contributing SimpleSAC experiments @young-geng
+  given-names: "Xiao"
+- family-names: "Liu" # for contributing RLHF experiments @liutianlin0121
+  given-names: "Tianlin"
 # tooling contributors
 - family-names: "Choi" # for creating https://github.com/wookayin/expt that underpins this project @wookayin
   given-names: "Jongwook"
 - family-names: "Yi" # for offering help using `tyro` (https://github.com/openrlbenchmark/openrlbenchmark/issues/15) @brentyi
   given-names: "Brent"
-
-
 title: "openrlbenchmark"
 date-released: 2023-05-13
 url: "https://github.com/openrlbenchmark/openrlbenchmark"
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Huang"
+    given-names: "Shengyi"
+  - family-names: "Gallouédec"
+    given-names: "Quentin"
+  - family-names: "Felten"
+    given-names: "Florian"
+  - family-names: "Raffin"
+    given-names: "Antonin"
+  - family-names: "Dossa"
+    given-names: "Rousslan Fernand Julien"
+  - family-names: "Zhao"
+    given-names: "Yanxiao"
+  - family-names: "Sullivan"
+    given-names: "Ryan"
+  - family-names: "Makoviychuk"
+    given-names: "Viktor"
+  - family-names: "Makoviichuk"
+    given-names: "Denys"
+  - family-names: "Danesh"
+    given-names: "Mohamad H."
+  - family-names: "Roumégous"
+    given-names: "Cyril"
+  - family-names: "Weng"
+    given-names: "Jiayi"
+  - family-names: "Chen"
+    given-names: "Chufan"
+  - family-names: "Rahman"
+    given-names: "Md Masudur"
+  - family-names: "M. Araújo"
+    given-names: "João G."
+  - family-names: "Quan"
+    given-names: "Guorui"
+  - family-names: "Tan"
+    given-names: "Daniel"
+  - family-names: "Klein"
+    given-names: "Timo"
+  - family-names: "Charakorn"
+    given-names: "Rujikorn"
+  - family-names: "Towers"
+    given-names: "Mark"
+  - family-names: "Berthelot"
+    given-names: "Yann"
+  - family-names: "Mehta"
+    given-names: "Kinal"
+  - family-names: "Chakraborty"
+    given-names: "Dipam"
+  - family-names: "KG"
+    given-names: "Arjun"
+  - family-names: "Charraut"
+    given-names: "Valentin"
+  - family-names: "Ye"
+    given-names: "Chang"
+  - family-names: "Liu"
+    given-names: "Zichen"
+  - family-names: "Alegre"
+    given-names: "Lucas N."
+  - family-names: "Nikulin"
+    given-names: "Alexander"
+  - family-names: "Hu"
+    given-names: "Xiao"
+  - family-names: "Liu"
+    given-names: "Tianlin"
+  - family-names: "Choi"
+    given-names: "Jongwook"
+  - family-names: "Yi"
+    given-names: "Brent"
+  journal: "arXiv preprint arXiv:2402.03046"
+  title: "Open RL Benchmark: Comprehensive Tracked Experiments for Reinforcement Learning"
+  year: 2024
+  url: "https://arxiv.org/abs/2402.03046"
