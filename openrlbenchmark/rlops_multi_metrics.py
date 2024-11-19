@@ -68,6 +68,10 @@ class PlotConfig:
     """the number of columns in the chart"""
     nrows: tyro.conf.Suppress[int] = None
     """(TO BE FILLED in runtime) the number of rows in the chart"""
+    figlegend: bool = True
+    """whether to plot figlegend"""
+    supxlabel: bool = True
+    """whether to plot supxlabel"""
     ncols_legend: int = 2
     """the number of legend columns in the chart"""
     xlabel: str = "Steps"
@@ -90,6 +94,8 @@ class PlotConfig:
     """the height space between subplots"""
     wspace: float = None
     """the width space between subplots"""
+    colors: Optional[List[str]] = None
+    """the colors of the lines in the chart"""
 
 
 @dataclass
@@ -98,6 +104,8 @@ class Args:
     """the filters of the experiments; see docs"""
     env_ids: tyro.conf.UseAppendAction[List[List[str]]]
     """the ids of the environment to compare"""
+    env_ids_str: tyro.conf.UseAppendAction[List[List[str]]]
+    """the string of the ids of the environment to plot"""
     output_filename: str = "compare"
     """the output filename of the plot, without extension"""
     metric_last_n_average_window: int = 100
@@ -127,6 +135,7 @@ class Runset:
         entity: str,
         project: str,
         metrics: List[str] = ["charts/episodic_return"],
+        metric_names: Optional[List[str]] = None,
         groupby: str = "",
         custom_exp_name_key: str = "exp_name",
         custom_xaxis_key: str = "global_step",
@@ -144,6 +153,7 @@ class Runset:
         self.entity = entity
         self.project = project
         self.metrics = metrics
+        self.metric_names = metric_names if metric_names else metrics
         self.groupby = groupby
         self.custom_exp_name_key = custom_exp_name_key
         self.custom_xaxis_key = custom_xaxis_key
@@ -297,6 +307,7 @@ def compare(
     console: Console,
     runsetss: List[List[Runset]],
     env_ids: List[str],
+    env_ids_str: List[str],
     metric_last_n_average_window: int,
     scan_history: bool = False,
     output_filename: str = "compare",
@@ -305,14 +316,14 @@ def compare(
 ):
     blocks = []
     if report:
-        for idx, env_id in enumerate(env_ids):
+        for idx, (env_id, env_id_str) in enumerate(zip(env_ids, env_ids_str)):
             metrics_over_step = []
             metrics_over_time = []
             for i in range(len(runsetss[0][idx].metrics)):
                 metric_over_step = wb.LinePlot(
                     x=runsetss[0][idx].custom_xaxis_key,
                     y=list({runsets[idx].metrics[i] for runsets in runsetss}),
-                    title=runsetss[0][idx].metrics[i] + " " + env_id,
+                    title=runsetss[0][idx].metrics[i] + " " + env_id_str,
                     title_x="Steps",
                     title_y="Episodic Return",
                     max_runs_to_show=100,
@@ -325,7 +336,7 @@ def compare(
                 metric_over_time = wb.LinePlot(
                     x="_runtime",
                     y=list({runsets[idx].metrics[i] for runsets in runsetss}),
-                    title=runsetss[0][idx].metrics[i] + " " + env_id,
+                    title=runsetss[0][idx].metrics[i] + " " + env_id_str,
                     title_y="Episodic Return",
                     max_runs_to_show=100,
                     smoothing_factor=0.8,
@@ -381,7 +392,7 @@ def compare(
     exs = []
     runtimes = []
     global_steps = []
-    for idx, env_id in enumerate(env_ids):
+    for idx, (env_id, env_id_str) in enumerate(zip(env_ids, env_ids_str)):
         result_table = pd.DataFrame(index=[runsets[0].name for runsets in runsetss], columns=runsetss[0][idx].metrics)
         print(f"collecting runs for {env_id}")
         hypotheses = [create_hypothesis(runsets[idx], runsetss[0][idx].metrics, scan_history) for runsets in runsetss]
@@ -409,12 +420,12 @@ def compare(
         runtimes.append(list(ex.summary()["_runtime"]))
         global_steps.append(list(ex.summary()["global_step"]))
 
-        for idx_metric, metric in enumerate(runsetss[0][0].metrics):
-            metric_str = metric.replace("eval/", "")
+        for idx_metric, (metric, metric_name) in enumerate(zip(runsetss[0][0].metrics, runsetss[0][0].metric_names)):
             ax = axes_flatten[len(env_ids) * idx_metric + idx]
+            print([runsets[idx].color for runsets in runsetss])
             ex.plot(
                 ax=ax,
-                title=env_id,
+                title=env_id_str,
                 x="global_step",
                 y=metric,
                 err_style="band",
@@ -426,11 +437,11 @@ def compare(
             )
             ax.set_xlabel("")
             if idx_metric == 0:
-                ax.set_title(env_id)
+                ax.set_title(env_id_str)
             else:
                 ax.set_title("")
             if idx == 0:
-                ax.set_ylabel(metric_str)
+                ax.set_ylabel(metric_name)
             else:
                 ax.set_ylabel("")
             if pc.max_steps is not None:
@@ -438,7 +449,7 @@ def compare(
             ax_time = axes_time_flatten[len(env_ids) * idx_metric + idx]
             ex.plot(
                 ax=ax_time,
-                title=env_id,
+                title=env_id_str,
                 x="_runtime",
                 y=metric,
                 err_style="band",
@@ -450,11 +461,11 @@ def compare(
             )
             ax_time.set_xlabel("")
             if idx_metric == 0:
-                ax_time.set_title(env_id)
+                ax_time.set_title(env_id_str)
             else:
                 ax_time.set_title("")
             if idx == 0:
-                ax_time.set_ylabel(metric_str)
+                ax_time.set_ylabel(metric_name)
             else:
                 ax_time.set_ylabel("")
     runtimes = pd.DataFrame(np.array(runtimes), index=env_ids, columns=list(ex.summary()["name"]))
@@ -477,15 +488,17 @@ def compare(
     print_rich_table(f"Runtime ({pc.time_unit}) Average", average_runtime, console)
 
     # add legend
-    h, l = axes_flatten[0].get_legend_handles_labels()
-    fig.legend(h, l, loc="lower center", ncol=pc.ncols_legend, bbox_to_anchor=(0.5, 1.0), bbox_transform=fig.transFigure)
-    fig.supxlabel(pc.xlabel)
+    if pc.figlegend:
+        h, l = axes_flatten[0].get_legend_handles_labels()
+        fig.legend(h, l, loc="lower center", ncol=pc.ncols_legend, bbox_to_anchor=(0.5, 1.0), bbox_transform=fig.transFigure, prop={'size': 14})
+        h, l = axes_time_flatten[0].get_legend_handles_labels()
+        fig_time.legend(
+            h, l, loc="lower center", ncol=pc.ncols_legend, bbox_to_anchor=(0.5, 1.0), bbox_transform=fig_time.transFigure, prop={'size': 14}
+        )
+    if pc.supxlabel:
+        fig.supxlabel(pc.xlabel)
+        fig_time.supxlabel(f"Time ({pc.time_unit})")
     fig.tight_layout()
-    h, l = axes_time_flatten[0].get_legend_handles_labels()
-    fig_time.legend(
-        h, l, loc="lower center", ncol=pc.ncols_legend, bbox_to_anchor=(0.5, 1.0), bbox_transform=fig_time.transFigure
-    )
-    fig_time.supxlabel(f"Time ({pc.time_unit})")
     fig_time.tight_layout()
 
     # remove the empty axes
@@ -548,18 +561,23 @@ if __name__ == "__main__":
     blocks = []
     runsetss = []
     offline_dbs = {}
-    colors_flatten_original = [c for item in ["deep", "dark", "bright"] for c in sns.color_palette(item).as_hex()]
-    plt.rcParams["axes.prop_cycle"] = plt.cycler("color", colors_flatten_original)
-    colors_flatten = copy.deepcopy(colors_flatten_original)
-    colors = []
-    for filters in args.filters:
-        colors += [colors_flatten[: len(filters) - 1]]
-        colors_flatten = colors_flatten[len(filters) - 1 :]
+    colors = args.pc.colors
+    if colors is None:
+        colors_flatten_original = [c for item in ["deep", "dark", "bright"] for c in sns.color_palette(item).as_hex()]
+        plt.rcParams["axes.prop_cycle"] = plt.cycler("color", colors_flatten_original)
+        colors_flatten = copy.deepcopy(colors_flatten_original)
+        colors = []
+        for filters in args.filters:
+            colors += [colors_flatten[: len(filters) - 1]]
+            colors_flatten = colors_flatten[len(filters) - 1 :]
+    else:
+        colors = [args.pc.colors] * len(args.filters)
 
     for filters_idx, filters in enumerate(args.filters):
         parse_result = urlparse(filters[0])
         query = parse_qs(parse_result.query)
         metrics = query["metrics"] if "metrics" in query else ["charts/episodic_return"]
+        metric_names = query["metric_names"] if "metric_names" in query else metrics
         # calculate the number of rows
         args.pc.nrows = np.ceil(len(args.env_ids[0]) * len(metrics) / args.pc.ncols).astype(int)
         wandb_project_name = query["wpn"][0] if "wpn" in query else args.wandb_project_name
@@ -612,6 +630,7 @@ if __name__ == "__main__":
                         entity=wandb_entity,
                         project=wandb_project_name,
                         metrics=metrics,
+                        metric_names=metric_names,
                         groupby=custom_exp_name_key,
                         custom_exp_name_key=custom_exp_name_key,
                         custom_xaxis_key=custom_xaxis_key,
@@ -638,6 +657,7 @@ if __name__ == "__main__":
         console,
         runsetss,
         args.env_ids[0],
+        args.env_ids_str[0],
         output_filename=args.output_filename,
         metric_last_n_average_window=args.metric_last_n_average_window,
         scan_history=args.scan_history,
