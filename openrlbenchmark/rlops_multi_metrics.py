@@ -292,7 +292,7 @@ def create_hypothesis(runset: Runset, target_metrics, scan_history: bool = False
             run_df = run_df.drop(columns=["videos"], axis=1)
         if runset.custom_xaxis_key in run_df:
             run_df["global_step"] = run_df[runset.custom_xaxis_key]
-        for source_metric, target_metric in zip(runset.metrics, target_metrics):
+        for source_metric, target_metric in zip(runset.metrics, target_metrics, strict=True):
             if source_metric in run_df:
                 run_df[target_metric] = run_df[source_metric]
         cleaned_df = run_df[["global_step", "_runtime", *target_metrics]].dropna(how="all")
@@ -412,7 +412,7 @@ def compare(
                     run.df["_runtime"] /= 3600
             result_table.loc[hypothesis.name] = [
                 f"{mean:.4f} ± {std:.4f}"
-                for mean, std in zip(np.stack(hypothesis_metrics).mean(0), np.stack(hypothesis_metrics).std(0))
+                for mean, std in zip(np.stack(hypothesis_metrics).mean(0), np.stack(hypothesis_metrics).std(0), strict=True)
             ]
         result_tables[env_id] = result_table
         runtimes.append(list(ex.summary()["_runtime"]))
@@ -610,7 +610,7 @@ if __name__ == "__main__":
             offline_db.create_tables([OfflineRun, Tag, OfflineRunTag])
             offline_dbs[f"{wandb_entity}/{wandb_project_name}"] = offline_db
 
-        for filter_str, color in zip(filters[1:], colors[filters_idx]):
+        for filter_str, color in zip(filters[1:], colors[filters_idx], strict=True):
             print("=========", filter_str)
             # parse filter string
             parse_result = urlparse(filter_str)

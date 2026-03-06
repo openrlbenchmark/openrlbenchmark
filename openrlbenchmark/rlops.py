@@ -594,7 +594,7 @@ if __name__ == "__main__":
             offline_db.create_tables([OfflineRun, Tag, OfflineRunTag])
             offline_dbs[f"{wandb_entity}/{wandb_project_name}"] = offline_db
 
-        for filter_str, color in zip(filters[1:], colors[filters_idx]):
+        for filter_str, color in zip(filters[1:], colors[filters_idx], strict=True):
             print("=========", filter_str)
             # parse filter string
             parse_result = urlparse(filter_str)
@@ -691,7 +691,7 @@ if __name__ == "__main__":
 
         exp_names = list(reversed(list(score_dict.keys())))
         colors_flatten = colors_flatten_original
-        colors = dict(zip(list(score_dict.keys()), colors_flatten))
+        colors = dict(zip(list(score_dict.keys()), colors_flatten, strict=True))
         frames = np.linspace(0, max(max_global_steps.values()), args.rc.nsubsamples)
         print_rich_table(
             "Items in the `score_dict` used for `rliable`",
@@ -731,7 +731,7 @@ if __name__ == "__main__":
                 figsize=args.rc.sample_efficiency_figsize,
                 sharex=args.pc.sharex,
             )
-            for metric_fn, ax, metric_name in zip(metric_fns, axes_sample_efficiency.flatten(), metric_names):
+            for metric_fn, ax, metric_name in zip(metric_fns, axes_sample_efficiency.flatten(), metric_names, strict=True):
 
                 def aggregate_fn(scores):
                     return np.array([metric_fn(scores[..., frame]) for frame in range(scores.shape[-1])])

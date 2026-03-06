@@ -665,7 +665,7 @@ if __name__ == "__main__":
             offline_db.create_tables([OfflineRun, Tag, OfflineRunTag])
             offline_dbs[f"{wandb_entity}/{wandb_project_name}"] = offline_db
 
-        for filter_str, color in zip(filters[1:], colors[filters_idx]):
+        for filter_str, color in zip(filters[1:], colors[filters_idx], strict=True):
             print("=========", filter_str)
             # parse filter string
             parse_result = urlparse(filter_str)
@@ -722,7 +722,7 @@ if __name__ == "__main__":
         print("plotting sample efficiency curve")
         exp_names = list(reversed(list(hns_dict.keys())))
         colors_flatten = colors_flatten_original
-        colors = dict(zip(list(hns_dict.keys()), colors_flatten))
+        colors = dict(zip(list(hns_dict.keys()), colors_flatten, strict=True))
         frames = np.linspace(0, max(max_global_steps.values()), args.pc.nsubsamples)
         fig_rly_hns, axes_rly_hns = plt.subplots(ncols=2, figsize=(7 * 2, 3.4))
 
