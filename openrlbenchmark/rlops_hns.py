@@ -558,7 +558,7 @@ def compare(
     result_table.to_markdown(open(f"{output_filename}.md", "w"))
     result_table.to_csv(open(f"{output_filename}.csv", "w"))
 
-    console.rule("[bold red]Human-noramlized Score (mean ± std)")
+    console.rule("[bold red]Human-normalized Score (mean ± std)")
     console.print(to_rich_table(hns_result_table.rename_axis("Environment").reset_index()))
     hns_result_table.to_markdown(open(f"{output_filename}_hns.md", "w"))
     hns_result_table.to_csv(open(f"{output_filename}_hns.csv", "w"))

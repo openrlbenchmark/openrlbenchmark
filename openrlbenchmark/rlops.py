@@ -141,7 +141,7 @@ class Runset:
         tags: list[str] | None = None,
         username: str = "",
         color: str = "#000000",
-        offline_db: pw.Database = None,
+        offline_db: pw.Database | None = None,
         offline: bool = False,
         query_filters: dict[str, list[str]] | None = None,
     ):
