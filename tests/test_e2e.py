@@ -74,20 +74,19 @@ python -m openrlbenchmark.rlops \
 def test_rliable_hns():
     """
     test rliable hns integration
-    openrlbenchmark&wpn=sb3&ceik=env&cen=algo&metric=rollout/ep_rew_mean
     """
     subprocess.run(
         """
 python -i -m openrlbenchmark.rlops_hns \
-    --filters '?we=openrlbenchmark&wpn=sbx&ceik=env_id&cen=algo&metric=eval/mean_reward' \
-        'sample_dqn?tag=sample-dqn-cem-triple-q&cl=SampleDQN ()' \
-        'ddpg?tag=ddpg-normalize&cl=DDPG (with normalization)' \
-    --env-ids HalfCheetah-v4 \
+    --filters '?we=openrlbenchmark&wpn=sb3&ceik=env&cen=algo&metric=eval/mean_reward' \
+        'dqn?tag=v1.8.0a3&cl=DQN' \
+        'a2c?tag=v1.8.0a3&cl=A2C' \
+    --env-ids PongNoFrameskip-v4 BreakoutNoFrameskip-v4 \
     --no-check-empty-runs \
-    --pc.ncols 2 \
+    --pc.ncols 1 \
     --pc.ncols-legend 2 \
     --output-filename static/0compare \
-    --scan-history --offline --rliable
+    --scan-history --rliable
 """,
         shell=True,
         check=True,

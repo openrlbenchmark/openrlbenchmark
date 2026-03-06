@@ -594,7 +594,7 @@ if __name__ == "__main__":
             offline_db.create_tables([OfflineRun, Tag, OfflineRunTag])
             offline_dbs[f"{wandb_entity}/{wandb_project_name}"] = offline_db
 
-        for filter_str, color in zip(filters[1:], colors[filters_idx], strict=True):
+        for filter_str, color in zip(filters[1:], colors[filters_idx], strict=False):
             print("=========", filter_str)
             # parse filter string
             parse_result = urlparse(filter_str)
@@ -691,7 +691,7 @@ if __name__ == "__main__":
 
         exp_names = list(reversed(list(score_dict.keys())))
         colors_flatten = colors_flatten_original
-        colors = dict(zip(list(score_dict.keys()), colors_flatten, strict=True))
+        colors = dict(zip(list(score_dict.keys()), colors_flatten, strict=False))
         frames = np.linspace(0, max(max_global_steps.values()), args.rc.nsubsamples)
         print_rich_table(
             "Items in the `score_dict` used for `rliable`",
@@ -733,8 +733,8 @@ if __name__ == "__main__":
             )
             for metric_fn, ax, metric_name in zip(metric_fns, axes_sample_efficiency.flatten(), metric_names, strict=True):
 
-                def aggregate_fn(scores):
-                    return np.array([metric_fn(scores[..., frame]) for frame in range(scores.shape[-1])])
+                def aggregate_fn(scores, metric_function=metric_fn):
+                    return np.array([metric_function(scores[..., frame]) for frame in range(scores.shape[-1])])
 
                 aggregate_scores, aggregate_cis = rly.get_interval_estimates(
                     normalized_score_dict, aggregate_fn, reps=args.rc.sample_efficiency_num_bootstrap_reps
