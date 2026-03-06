@@ -82,7 +82,8 @@ class Args:
     metric_last_n_average_window: int = 100
     """the last n number of episodes to average metric over in the result table"""
     scan_history: bool = False
-    """if toggled, we will pull the complete metrics from wandb instead of sampling 500 data points (recommended for generating tables)"""
+    """if toggled, we will pull the complete metrics from wandb
+    instead of sampling 500 data points (recommended for generating tables)"""
     check_empty_runs: bool = True
     """if toggled, we will check for empty wandb runs"""
     report: bool = False
@@ -324,7 +325,9 @@ def compare(
                         ): runsets[idx].color
                     }
                 )
-            pg.custom_run_colors = custom_run_colors  # IMPORTANT: custom_run_colors is implemented as a custom `setter` that needs to be overwritten unlike regular dictionaries
+            # IMPORTANT: custom_run_colors is implemented as a custom `setter`
+            # that needs to be overwritten unlike regular dictionaries
+            pg.custom_run_colors = custom_run_colors
             blocks += [pg]
 
     figsize = (pc.ncols * pc.cm, pc.nrows * pc.rm)
@@ -531,9 +534,14 @@ def compare(
         legend=False,
     )
     axes_median_hns[1].set_xlabel(f"Time ({pc.time_unit})")
-    h, l = axes_median_hns[0].get_legend_handles_labels()
+    handles, labels = axes_median_hns[0].get_legend_handles_labels()
     fig_median_hns.legend(
-        h, l, loc="lower center", ncol=pc.ncols_legend, bbox_to_anchor=(0.5, 0.9), bbox_transform=fig_median_hns.transFigure
+        handles,
+        labels,
+        loc="lower center",
+        ncol=pc.ncols_legend,
+        bbox_to_anchor=(0.5, 0.9),
+        bbox_transform=fig_median_hns.transFigure,
     )
     fig_median_hns.savefig(f"{output_filename}_hns_median.png", bbox_inches="tight")
     fig_median_hns.savefig(f"{output_filename}_hns_median.pdf", bbox_inches="tight")
@@ -558,15 +566,27 @@ def compare(
     console.print(to_rich_table(average_runtime))
 
     # add legend
-    h, l = axes_flatten[0].get_legend_handles_labels()
-    fig.legend(h, l, loc="lower center", ncol=pc.ncols_legend, bbox_to_anchor=(0.5, 1.0), bbox_transform=fig.transFigure)
+    handles, labels = axes_flatten[0].get_legend_handles_labels()
+    fig.legend(
+        handles,
+        labels,
+        loc="lower center",
+        ncol=pc.ncols_legend,
+        bbox_to_anchor=(0.5, 1.0),
+        bbox_transform=fig.transFigure,
+    )
     fig.supxlabel(pc.xlabel)
     fig.supylabel(pc.ylabel)
     fig.text(0.99, 0.5, "Human-Normalized Score", va="center", rotation=-90)
     fig.tight_layout()
-    h, l = axes_time_flatten[0].get_legend_handles_labels()
+    handles, labels = axes_time_flatten[0].get_legend_handles_labels()
     fig_time.legend(
-        h, l, loc="lower center", ncol=pc.ncols_legend, bbox_to_anchor=(0.5, 1.0), bbox_transform=fig_time.transFigure
+        handles,
+        labels,
+        loc="lower center",
+        ncol=pc.ncols_legend,
+        bbox_to_anchor=(0.5, 1.0),
+        bbox_transform=fig_time.transFigure,
     )
     fig_time.supxlabel(f"Time ({pc.time_unit})")
     fig_time.supylabel(pc.ylabel)
@@ -701,8 +721,10 @@ if __name__ == "__main__":
         colors = dict(zip(list(hns_dict.keys()), colors_flatten))
         frames = np.linspace(0, max(max_global_steps.values()), args.pc.nsubsamples)
         fig_rly_hns, axes_rly_hns = plt.subplots(ncols=2, figsize=(7 * 2, 3.4))
+
         def iqm(scores):
             return np.array([metrics.aggregate_iqm(scores[..., frame]) for frame in range(scores.shape[-1])])
+
         iqm_scores, iqm_cis = rly.get_interval_estimates(hns_dict, iqm, reps=50000)
         plot_utils.plot_sample_efficiency_curve(
             frames + 1,
@@ -738,15 +760,17 @@ if __name__ == "__main__":
         fig_rly_hns.savefig(f"{args.output_filename}_iqm_profile.pdf", bbox_inches="tight")
 
         print("plotting aggregate metrics")
+
         def aggregate_func(x):
             return np.array(
-                    [
-                        metrics.aggregate_median(x),
-                        metrics.aggregate_iqm(x),
-                        metrics.aggregate_mean(x),
-                        metrics.aggregate_optimality_gap(x),
-                    ]
-                )
+                [
+                    metrics.aggregate_median(x),
+                    metrics.aggregate_iqm(x),
+                    metrics.aggregate_mean(x),
+                    metrics.aggregate_optimality_gap(x),
+                ]
+            )
+
         aggregate_scores, aggregate_score_cis = rly.get_interval_estimates(
             atari_200m_normalized_score_dict, aggregate_func, reps=50000
         )

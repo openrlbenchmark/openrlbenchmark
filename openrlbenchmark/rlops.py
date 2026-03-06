@@ -107,7 +107,8 @@ class Args:
     metric_last_n_average_window: int = 100
     """the last n number of episodes to average metric over in the result table"""
     scan_history: bool = False
-    """if toggled, we will pull the complete metrics from wandb instead of sampling 500 data points (recommended for generating tables)"""
+    """if toggled, we will pull the complete metrics from wandb
+    instead of sampling 500 data points (recommended for generating tables)"""
     check_empty_runs: bool = True
     """if toggled, we will check for empty wandb runs"""
     report: bool = False
@@ -316,7 +317,7 @@ def compare(
     if report:
         for idx, env_id in enumerate(env_ids):
             metric_over_step = wb.LinePlot(
-                x=runsets[idx].custom_xaxis_key,
+                x=runsetss[0][idx].custom_xaxis_key,
                 y=list({runsets[idx].metric for runsets in runsetss}),
                 title=env_id,
                 title_x="Steps",
@@ -359,7 +360,9 @@ def compare(
                         ): runsets[idx].color
                     }
                 )
-            pg.custom_run_colors = custom_run_colors  # IMPORTANT: custom_run_colors is implemented as a custom `setter` that needs to be overwritten unlike regular dictionaries
+            # IMPORTANT: custom_run_colors is implemented as a custom `setter`
+            # that needs to be overwritten unlike regular dictionaries
+            pg.custom_run_colors = custom_run_colors
             blocks += [pg]
 
     figsize = (pc.ncols * pc.cm, pc.nrows * pc.rm)
@@ -461,14 +464,26 @@ def compare(
     print_rich_table(f"Runtime ({pc.time_unit}) Average", average_runtime, console)
 
     # add legend
-    h, l = axes_flatten[0].get_legend_handles_labels()
-    fig.legend(h, l, loc="lower center", ncol=pc.ncols_legend, bbox_to_anchor=(0.5, 1.0), bbox_transform=fig.transFigure)
+    handles, labels = axes_flatten[0].get_legend_handles_labels()
+    fig.legend(
+        handles,
+        labels,
+        loc="lower center",
+        ncol=pc.ncols_legend,
+        bbox_to_anchor=(0.5, 1.0),
+        bbox_transform=fig.transFigure,
+    )
     fig.supxlabel(pc.xlabel)
     fig.supylabel(pc.ylabel)
     fig.tight_layout()
-    h, l = axes_time_flatten[0].get_legend_handles_labels()
+    handles, labels = axes_time_flatten[0].get_legend_handles_labels()
     fig_time.legend(
-        h, l, loc="lower center", ncol=pc.ncols_legend, bbox_to_anchor=(0.5, 1.0), bbox_transform=fig_time.transFigure
+        handles,
+        labels,
+        loc="lower center",
+        ncol=pc.ncols_legend,
+        bbox_to_anchor=(0.5, 1.0),
+        bbox_transform=fig_time.transFigure,
     )
     fig_time.supxlabel(f"Time ({pc.time_unit})")
     fig_time.supylabel(pc.ylabel)
@@ -713,8 +728,10 @@ if __name__ == "__main__":
                 sharex=args.pc.sharex,
             )
             for metric_fn, ax, metric_name in zip(metric_fns, axes_sample_efficiency.flatten(), metric_names):
+
                 def aggregate_fn(scores):
                     return np.array([metric_fn(scores[..., frame]) for frame in range(scores.shape[-1])])
+
                 aggregate_scores, aggregate_cis = rly.get_interval_estimates(
                     normalized_score_dict, aggregate_fn, reps=args.rc.sample_efficiency_num_bootstrap_reps
                 )
@@ -774,10 +791,10 @@ if __name__ == "__main__":
                             ticklabelsize="x-large",
                         )
                     axes_median_sample_walltime_efficiency[1].set_ylabel("")
-                    h, l = axes_median_sample_walltime_efficiency[1].get_legend_handles_labels()
+                    handles, labels = axes_median_sample_walltime_efficiency[1].get_legend_handles_labels()
                     fig_median_sample_walltime_efficiency.legend(
-                        h,
-                        l,
+                        handles,
+                        labels,
                         loc="lower center",
                         ncol=args.pc.ncols_legend,
                         bbox_to_anchor=(0.5, 1.0),
@@ -791,10 +808,10 @@ if __name__ == "__main__":
                         f"{args.output_filename}_sample_walltime_efficiency.pdf", bbox_inches="tight"
                     )
 
-            h, l = axes_sample_efficiency[0][0].get_legend_handles_labels()
+            handles, labels = axes_sample_efficiency[0][0].get_legend_handles_labels()
             fig_sample_efficiency.legend(
-                h,
-                l,
+                handles,
+                labels,
                 loc="lower center",
                 ncol=args.pc.ncols_legend,
                 bbox_to_anchor=(0.5, 1.0),
@@ -840,10 +857,10 @@ if __name__ == "__main__":
                 ylabel=r"Fraction of tasks with score > $\tau$",
                 ax=axes_performance_profile[1],
             )
-            h, l = axes_performance_profile[0].get_legend_handles_labels()
+            handles, labels = axes_performance_profile[0].get_legend_handles_labels()
             fig_performance_profile.legend(
-                h,
-                l,
+                handles,
+                labels,
                 loc="lower center",
                 ncol=args.pc.ncols_legend,
                 bbox_to_anchor=(0.5, 1.0),
@@ -855,8 +872,10 @@ if __name__ == "__main__":
 
         if args.rc.aggregate_metrics_plots:
             print("plotting aggregate metrics")
+
             def aggregate_func(x):
                 return np.array([metric_fn(x) for metric_fn in metric_fns])
+
             aggregate_scores, aggregate_score_cis = rly.get_interval_estimates(
                 performance_profile_normalized_score_dict, aggregate_func, reps=args.rc.interval_estimates_num_bootstrap_reps
             )
@@ -872,7 +891,9 @@ if __name__ == "__main__":
                 colors=colors,
                 xlabel="",
                 # xlabel='Normalized Score',
-                # xlabel_y_coordinate=-0.08, # this variable needs to be adjusted for each plot... :( so we just disable xlabel for now.
+                # xlabel_y_coordinate=-0.08,
+                # this variable needs to be adjusted for each plot
+                # so we just disable xlabel for now.
             )
             axes[1].set_xlabel("Normalized Score", fontsize="xx-large")
             fig.tight_layout()

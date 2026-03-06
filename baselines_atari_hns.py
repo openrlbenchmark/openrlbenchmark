@@ -1,4 +1,4 @@
-import wandb.apis.reports as wb  # noqa
+import wandb.apis.reports as wb
 
 from openrlbenchmark import Runset, plot_atari
 
