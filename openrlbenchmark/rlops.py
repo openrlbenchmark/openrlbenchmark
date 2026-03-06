@@ -191,11 +191,11 @@ class Runset:
         #   }
         # }
         # so the correct key is `config.trl_ppo_trainer_config.value.lam`
-        if ".value" not in self.custom_env_id_key:
-            self.custom_env_id_key += ".value"
-        if ".value" not in self.custom_exp_name_key:
-            self.custom_exp_name_key += ".value"
-        self.query_filters = {k + ".value" if ".value" not in k else k: v for k, v in self.query_filters.items()}
+        # if ".value" not in self.custom_env_id_key:
+        #     self.custom_env_id_key += ".value"
+        # if ".value" not in self.custom_exp_name_key:
+        #     self.custom_exp_name_key += ".value"
+        # self.query_filters = {k + ".value" if ".value" not in k else k: v for k, v in self.query_filters.items()}
         self.wandb_filters = {
             "$and": [
                 {f"config.{self.custom_env_id_key}": self.env_id},
