@@ -138,13 +138,17 @@ class Runset:
         exp_name: str = "",
         custom_env_id_key: str = "env_id",
         env_id: str = "",
-        tags: list[str] = [],
+        tags: list[str] | None = None,
         username: str = "",
         color: str = "#000000",
         offline_db: pw.Database = None,
         offline: bool = False,
-        query_filters: dict[str, list[str]] = {},
+        query_filters: dict[str, list[str]] | None = None,
     ):
+        if query_filters is None:
+            query_filters = {}
+        if tags is None:
+            tags = []
         self.name = name
         self.entity = entity
         self.project = project

@@ -127,20 +127,26 @@ class Runset:
         name: str,
         entity: str,
         project: str,
-        metrics: list[str] = ["charts/episodic_return"],
+        metrics: list[str] | None = None,
         groupby: str = "",
         custom_exp_name_key: str = "exp_name",
         custom_xaxis_key: str = "global_step",
         exp_name: str = "",
         custom_env_id_key: str = "env_id",
         env_id: str = "",
-        tags: list[str] = [],
+        tags: list[str] | None = None,
         username: str = "",
         color: str = "#000000",
         offline_db: pw.Database = None,
         offline: bool = False,
-        query_filters: dict[str, list[str]] = {},
+        query_filters: dict[str, list[str]] | None = None,
     ):
+        if query_filters is None:
+            query_filters = {}
+        if tags is None:
+            tags = []
+        if metrics is None:
+            metrics = ["charts/episodic_return"]
         self.name = name
         self.entity = entity
         self.project = project
