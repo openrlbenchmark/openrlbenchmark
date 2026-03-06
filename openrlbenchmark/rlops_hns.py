@@ -701,7 +701,8 @@ if __name__ == "__main__":
         colors = dict(zip(list(hns_dict.keys()), colors_flatten))
         frames = np.linspace(0, max(max_global_steps.values()), args.pc.nsubsamples)
         fig_rly_hns, axes_rly_hns = plt.subplots(ncols=2, figsize=(7 * 2, 3.4))
-        iqm = lambda scores: np.array([metrics.aggregate_iqm(scores[..., frame]) for frame in range(scores.shape[-1])])
+        def iqm(scores):
+            return np.array([metrics.aggregate_iqm(scores[..., frame]) for frame in range(scores.shape[-1])])
         iqm_scores, iqm_cis = rly.get_interval_estimates(hns_dict, iqm, reps=50000)
         plot_utils.plot_sample_efficiency_curve(
             frames + 1,
@@ -737,14 +738,15 @@ if __name__ == "__main__":
         fig_rly_hns.savefig(f"{args.output_filename}_iqm_profile.pdf", bbox_inches="tight")
 
         print("plotting aggregate metrics")
-        aggregate_func = lambda x: np.array(
-            [
-                metrics.aggregate_median(x),
-                metrics.aggregate_iqm(x),
-                metrics.aggregate_mean(x),
-                metrics.aggregate_optimality_gap(x),
-            ]
-        )
+        def aggregate_func(x):
+            return np.array(
+                    [
+                        metrics.aggregate_median(x),
+                        metrics.aggregate_iqm(x),
+                        metrics.aggregate_mean(x),
+                        metrics.aggregate_optimality_gap(x),
+                    ]
+                )
         aggregate_scores, aggregate_score_cis = rly.get_interval_estimates(
             atari_200m_normalized_score_dict, aggregate_func, reps=50000
         )

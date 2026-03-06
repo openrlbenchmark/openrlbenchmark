@@ -8,7 +8,7 @@ from dotmap import DotMap
 
 
 class CachedRun:
-    def __init__(self, run: wandb.apis.public.Run, cache_dir: str = None):
+    def __init__(self, run: wandb.apis.public.Run, cache_dir: str | None = None):
         self.run = run
         if cache_dir is not None:
             self.dir = os.path.join(cache_dir, *[run.entity, run.project, run.id])

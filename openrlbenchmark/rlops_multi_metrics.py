@@ -288,7 +288,7 @@ def create_hypothesis(runset: Runset, target_metrics, scan_history: bool = False
         for source_metric, target_metric in zip(runset.metrics, target_metrics):
             if source_metric in run_df:
                 run_df[target_metric] = run_df[source_metric]
-        cleaned_df = run_df[["global_step", "_runtime"] + target_metrics].dropna(how="all")
+        cleaned_df = run_df[["global_step", "_runtime", *target_metrics]].dropna(how="all")
         runs += [Run(f"seed{idx}", cleaned_df)]
     return Hypothesis(runset.name, runs)
 

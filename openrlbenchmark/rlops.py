@@ -713,7 +713,8 @@ if __name__ == "__main__":
                 sharex=args.pc.sharex,
             )
             for metric_fn, ax, metric_name in zip(metric_fns, axes_sample_efficiency.flatten(), metric_names):
-                aggregate_fn = lambda scores: np.array([metric_fn(scores[..., frame]) for frame in range(scores.shape[-1])])
+                def aggregate_fn(scores):
+                    return np.array([metric_fn(scores[..., frame]) for frame in range(scores.shape[-1])])
                 aggregate_scores, aggregate_cis = rly.get_interval_estimates(
                     normalized_score_dict, aggregate_fn, reps=args.rc.sample_efficiency_num_bootstrap_reps
                 )
@@ -854,7 +855,8 @@ if __name__ == "__main__":
 
         if args.rc.aggregate_metrics_plots:
             print("plotting aggregate metrics")
-            aggregate_func = lambda x: np.array([metric_fn(x) for metric_fn in metric_fns])
+            def aggregate_func(x):
+                return np.array([metric_fn(x) for metric_fn in metric_fns])
             aggregate_scores, aggregate_score_cis = rly.get_interval_estimates(
                 performance_profile_normalized_score_dict, aggregate_func, reps=args.rc.interval_estimates_num_bootstrap_reps
             )
