@@ -1,7 +1,7 @@
 import subprocess
 
 
-def test_plot_different_libraries_scan_hisotry():
+def test_plot_different_libraries_scan_history():
     """
     same as above but with scan history, which caches runs
     """
@@ -74,20 +74,15 @@ python -m openrlbenchmark.rlops \
 def test_rliable_hns():
     """
     test rliable hns integration
+    openrlbenchmark&wpn=sb3&ceik=env&cen=algo&metric=rollout/ep_rew_mean
     """
     subprocess.run(
         """
 python -i -m openrlbenchmark.rlops_hns \
-    --filters '?we=costa-huang&wpn=moolib-atari-2&ceik=env_id&cen=exp_name&metric=global/mean_episode_return' \
-        'moolib_impala_envpool_machado?cl=Moolib (Resnet CNN) 1 A100, 10 CPU' \
-    --filters '?we=openrlbenchmark&wpn=moolib-atari&ceik=env_id&cen=exp_name&metric=global/mean_episode_return' \
-        'moolib_impala_envpool_machado_8gpu_actor_batch_size16?cl=Moolib (Resnet CNN) 8 A100, 80 CPU'  \
-    --filters '?we=openrlbenchmark&wpn=cleanba&ceik=env_id&cen=exp_name&metric=charts/avg_episodic_return' \
-        'cleanba_impala_envpool_machado_atari_wrapper_a0_l0_d1_nmb4?tag=v0.0.1-28-gdc44d45&cl=Cleanba IMPALA (Resnet CNN), 1 A100, 10 CPU' \
-        'cleanba_impala_envpool_machado_atari_wrapper_a0_l1_d4?tag=v0.0.1-31-gb5e05f8&cl=Cleanba IMPALA (Resnet CNN) 8 A100, 50 CPU' \
-        'cleanba_ppo_envpool_machado_atari_wrapper_a0_l0_d1_cpu10?tag=v0.0.1-28-gdc44d45&cl=Cleanba PPO (Resnet CNN), 1 A100, 10 CPU' \
-        'cleanba_ppo_envpool_machado_atari_wrapper?tag=v0.0.1-16-g32dbf31&cl=Cleanba PPO (Resnet CNN) 8 A100, 50 CPU' \
-    --env-ids Alien-v5 Amidar-v5 \
+    --filters '?we=openrlbenchmark&wpn=sbx&ceik=env_id&cen=algo&metric=eval/mean_reward' \
+        'sample_dqn?tag=sample-dqn-cem-triple-q&cl=SampleDQN ()' \
+        'ddpg?tag=ddpg-normalize&cl=DDPG (with normalization)' \
+    --env-ids HalfCheetah-v4 \
     --no-check-empty-runs \
     --pc.ncols 2 \
     --pc.ncols-legend 2 \

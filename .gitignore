@@ -10,6 +10,7 @@ compare.md
 .vscode
 seed_r2d2_atari_graphs.csv
 data
+static/0*
 
 debug.sh.docker.sh
 docker_cache
