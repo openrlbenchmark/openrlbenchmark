@@ -70,7 +70,7 @@ class RliableConfig:
 class PlotConfig:
     ncols: int = 2
     """the number of columns in the chart"""
-    nrows: tyro.conf.Suppress[int] = None
+    nrows: tyro.conf.Suppress[int | None] = None
     """(TO BE FILLED in runtime) the number of rows in the chart"""
     ncols_legend: int = 2
     """the number of legend columns in the chart"""
@@ -80,7 +80,7 @@ class PlotConfig:
     """the label of the y-axis"""
     sharex: bool = False
     """if toggled, we will share the x-axis across all subplots"""
-    max_steps: int = None
+    max_steps: int | None = None
     """if specified, the maximum number of steps to plot"""
     rolling: int = 100
     """the rolling window for smoothing the curves"""
@@ -90,9 +90,9 @@ class PlotConfig:
     """the multiplier for the column width"""
     rm: float = 3.0
     """the multiplier for the row height"""
-    hspace: float = None
+    hspace: float | None = None
     """the height space between subplots"""
-    wspace: float = None
+    wspace: float | None = None
     """the width space between subplots"""
 
 

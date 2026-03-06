@@ -45,7 +45,7 @@ def convert(values: list[str] | str) -> list[Any] | Any:
 class PlotConfig:
     ncols: int = 2
     """the number of columns in the chart"""
-    nrows: tyro.conf.Suppress[int] = None
+    nrows: tyro.conf.Suppress[int | None] = None
     """(TO BE FILLED in runtime) the number of rows in the chart"""
     ncols_legend: int = 2
     """the number of legend columns in the chart"""
@@ -63,9 +63,9 @@ class PlotConfig:
     """the multiplier for the column width"""
     rm: float = 3.0
     """the multiplier for the row height"""
-    hspace: float = None
+    hspace: float | None = None
     """the height space between subplots"""
-    wspace: float = None
+    wspace: float | None = None
     """the width space between subplots"""
     nsubsamples: int = 20
     """the number of subsamples to take from the wandb runs for IQM"""
