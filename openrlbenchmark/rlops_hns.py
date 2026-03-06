@@ -4,7 +4,7 @@ import os
 import pickle
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Union, cast
+from typing import Any, cast
 from urllib.parse import parse_qs, urlparse
 
 import expt
@@ -15,7 +15,7 @@ import peewee as pw
 import seaborn as sns
 import tyro
 import wandb
-import wandb.apis.reports as wb  # noqa
+import wandb.apis.reports as wb
 from dotmap import DotMap
 from expt import Hypothesis, Run
 from rich.console import Console
@@ -30,7 +30,7 @@ from openrlbenchmark.hns import atari_human_normalized_scores as atari_hns
 from openrlbenchmark.offline_db import OfflineRun, OfflineRunTag, Tag, database_proxy
 
 
-def convert(values: Union[List[str], str]) -> Union[List[Any], Any]:
+def convert(values: list[str] | str) -> list[Any] | Any:
     if isinstance(values, list):
         values = [convert(v) for v in values]
     else:
@@ -73,9 +73,9 @@ class PlotConfig:
 
 @dataclass
 class Args:
-    filters: tyro.conf.UseAppendAction[List[List[str]]]
+    filters: tyro.conf.UseAppendAction[list[list[str]]]
     """the filters of the experiments; see docs"""
-    env_ids: tyro.conf.UseAppendAction[List[List[str]]]
+    env_ids: tyro.conf.UseAppendAction[list[list[str]]]
     """the ids of the environment to compare"""
     output_filename: str = "compare"
     """the output filename of the plot, without extension"""
@@ -109,12 +109,12 @@ class Runset:
         exp_name: str = "",
         custom_env_id_key: str = "env_id",
         env_id: str = "",
-        tags: List[str] = [],
+        tags: list[str] = [],
         username: str = "",
         color: str = "#000000",
         offline_db: pw.Database = None,
         offline: bool = False,
-        query_filters: Dict[str, List[str]] = {},
+        query_filters: dict[str, list[str]] = {},
     ):
         self.name = name
         self.entity = entity
@@ -269,8 +269,8 @@ def create_hypothesis(runset: Runset, scan_history: bool = False) -> Hypothesis:
 
 def compare(
     console: Console,
-    runsetss: List[List[Runset]],
-    env_ids: List[str],
+    runsetss: list[list[Runset]],
+    env_ids: list[str],
     metric_last_n_average_window: int,
     scan_history: bool = False,
     output_filename: str = "compare",
@@ -517,7 +517,7 @@ def compare(
             )
 
     axes_median_hns[0].set_ylabel("Median Human Normalized Score")
-    axes_median_hns[0].set_xlabel(f"Steps")
+    axes_median_hns[0].set_xlabel("Steps")
     hns_ex_time.plot(
         title=" ",
         ax=axes_median_hns[1],
@@ -546,7 +546,7 @@ def compare(
     result_table.to_markdown(open(f"{output_filename}.md", "w"))
     result_table.to_csv(open(f"{output_filename}.csv", "w"))
 
-    console.rule(f"[bold red]Human-noramlized Score (mean ± std)")
+    console.rule("[bold red]Human-noramlized Score (mean ± std)")
     console.print(to_rich_table(hns_result_table.rename_axis("Environment").reset_index()))
     hns_result_table.to_markdown(open(f"{output_filename}_hns.md", "w"))
     hns_result_table.to_csv(open(f"{output_filename}_hns.csv", "w"))

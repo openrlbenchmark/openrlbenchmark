@@ -3,7 +3,7 @@ import copy
 import os
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Literal, Optional, Union, Tuple
+from typing import Any, Literal
 from urllib.parse import parse_qs, urlparse
 
 import expt
@@ -14,7 +14,7 @@ import peewee as pw
 import seaborn as sns
 import tyro
 import wandb
-import wandb.apis.reports as wb  # noqa
+import wandb.apis.reports as wb
 from dotmap import DotMap
 from expt import Hypothesis, Run
 from rich.console import Console
@@ -29,7 +29,7 @@ from openrlbenchmark.hns import atari_human_normalized_scores as atari_hns
 from openrlbenchmark.offline_db import OfflineRun, OfflineRunTag, Tag, database_proxy
 
 
-def convert(values: Union[List[str], str]) -> Union[List[Any], Any]:
+def convert(values: list[str] | str) -> list[Any] | Any:
     if isinstance(values, list):
         values = [convert(v) for v in values]
     else:
@@ -50,9 +50,9 @@ class RliableConfig:
     """the threshold for the normalized score for the performance profile"""
     sample_efficiency_plots: bool = True
     """if toggled, we will generate sample efficiency plots"""
-    sample_efficiency_figsize: Tuple[float, float] = (7 * 2, 3.4 * 2)
+    sample_efficiency_figsize: tuple[float, float] = (7 * 2, 3.4 * 2)
     """figure size of the sample efficiency plots"""
-    sample_efficiency_and_walltime_efficiency_method: Optional[Literal["Median", "IQM", "Mean", "Optimality Gap"]] = "Median"
+    sample_efficiency_and_walltime_efficiency_method: Literal["Median", "IQM", "Mean", "Optimality Gap"] | None = "Median"
     """the method to compute the sample efficiency and walltime efficiency"""
     performance_profile_plots: bool = True
     """if toggled, we will generate performance profile plots"""
@@ -98,9 +98,9 @@ class PlotConfig:
 
 @dataclass
 class Args:
-    filters: tyro.conf.UseAppendAction[List[List[str]]]
+    filters: tyro.conf.UseAppendAction[list[list[str]]]
     """the filters of the experiments; see docs"""
-    env_ids: tyro.conf.UseAppendAction[List[List[str]]]
+    env_ids: tyro.conf.UseAppendAction[list[list[str]]]
     """the ids of the environment to compare"""
     output_filename: str = "compare"
     """the output filename of the plot, without extension"""
@@ -137,12 +137,12 @@ class Runset:
         exp_name: str = "",
         custom_env_id_key: str = "env_id",
         env_id: str = "",
-        tags: List[str] = [],
+        tags: list[str] = [],
         username: str = "",
         color: str = "#000000",
         offline_db: pw.Database = None,
         offline: bool = False,
-        query_filters: Dict[str, List[str]] = {},
+        query_filters: dict[str, list[str]] = {},
     ):
         self.name = name
         self.entity = entity
@@ -304,8 +304,8 @@ def create_hypothesis(runset: Runset, scan_history: bool = False) -> Hypothesis:
 
 def compare(
     console: Console,
-    runsetss: List[List[Runset]],
-    env_ids: List[str],
+    runsetss: list[list[Runset]],
+    env_ids: list[str],
     metric_last_n_average_window: int,
     scan_history: bool = False,
     output_filename: str = "compare",
@@ -492,7 +492,7 @@ def compare(
     return blocks, runtimes, global_steps, exs
 
 
-def normalize_score(score_dict: Dict[str, np.ndarray], max_scores: np.ndarray, min_scores: np.ndarray):
+def normalize_score(score_dict: dict[str, np.ndarray], max_scores: np.ndarray, min_scores: np.ndarray):
     """
     Each item in `score_dict` has shape (num_seeds, num_envs, num_subsamples)
     `max_scores` has shape (num_envs)
@@ -506,7 +506,7 @@ def normalize_score(score_dict: Dict[str, np.ndarray], max_scores: np.ndarray, m
     return normalized_score_dict
 
 
-def maxmin_normalize_score(score_dict: Dict[str, np.ndarray]):
+def maxmin_normalize_score(score_dict: dict[str, np.ndarray]):
     all_scores = np.concatenate([score_dict[key] for key in score_dict], axis=0)
     max_scores = all_scores.max(0).max(1)  # 1) max over all experiments and seds 2) max over all steps
     min_scores = all_scores.min(0).min(1)  # 1) min over all experiments and seds 2) min over all steps
@@ -675,7 +675,7 @@ if __name__ == "__main__":
         colors = dict(zip(list(score_dict.keys()), colors_flatten))
         frames = np.linspace(0, max(max_global_steps.values()), args.rc.nsubsamples)
         print_rich_table(
-            f"Items in the `score_dict` used for `rliable`",
+            "Items in the `score_dict` used for `rliable`",
             pd.DataFrame(
                 data=[score_dict[key].shape for key in score_dict],
                 columns=["Number of Seeds", "Number of Environments", "Number of Sub-samples"],
@@ -861,7 +861,7 @@ if __name__ == "__main__":
             aggregate_scores_df = pd.DataFrame.from_dict(
                 aggregate_scores, orient="index", columns=["Median", "IQM", "Mean", "Optimality Gap"]
             )
-            print_rich_table(f"Aggregate Scores", aggregate_scores_df.reset_index(), console)
+            print_rich_table("Aggregate Scores", aggregate_scores_df.reset_index(), console)
             fig, axes = plot_utils.plot_interval_estimates(
                 aggregate_scores,
                 aggregate_score_cis,
