@@ -96,6 +96,24 @@ atari_human_normalized_scores = {
     "YarsRevenge-v5": (3092.9, 54576.9),  ## TODO: where is YarsRevenge in the original DQN paper?
     "Zaxxon-v5": (32.5, 9173.3),
 }
+
+# Using random agent and TD3 as rough references
+# TODO(antonin): use more accurate estimates
+mujoco_normalized_score = {
+    "HalfCheetah-v4": (0.0, 10000.0),
+    "Ant-v4": (1000.0, 4000.0),
+    "Hopper-v4": (110.0, 3000.0),
+    "Walker2d-v4": (100.0, 4000.0),
+    "Swimmer-v4": (0.0, 350.0),
+    "Humanoid-v4": (200.0, 6000.0),
+    "HalfCheetahBulletEnv-v0": (-1400, 3000),
+    "AntBulletEnv-v0": (300, 3500),
+    "HopperBulletEnv-v0": (20, 2500),
+    "Walker2DBulletEnv-v0": (200, 2500),
+    "LunarLanderContinuous-v3": (-200, 250),
+    "BipedalWalker-v3": (-100, 300),
+}
+
 if __name__ == "__main__":
     args = parse_args()
     runset_names = set()

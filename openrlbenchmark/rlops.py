@@ -26,6 +26,7 @@ from rliable import metrics, plot_utils
 import openrlbenchmark
 import openrlbenchmark.cache
 from openrlbenchmark.hns import atari_human_normalized_scores as atari_hns
+from openrlbenchmark.hns import mujoco_normalized_score
 from openrlbenchmark.offline_db import OfflineRun, OfflineRunTag, Tag, database_proxy
 
 
@@ -44,7 +45,7 @@ def convert(values: list[str] | str) -> list[Any] | Any:
 class RliableConfig:
     nsubsamples: int = 20
     """the number of subsamples for rliable"""
-    score_normalization_method: Literal["maxmin", "atari"] = "maxmin"
+    score_normalization_method: Literal["maxmin", "atari", "mujoco"] = "maxmin"
     """the method to normalize the scores"""
     normalized_score_threshold: float = 8.0
     """the threshold for the normalized score for the performance profile"""
@@ -545,6 +546,19 @@ def atari_normalize_score(score_dict, original_env_ids):
     return normalize_score(score_dict, max_scores, min_scores)
 
 
+def mujoco_normalize_score(score_dict, original_env_ids):
+    env_ids = []
+    for env_id in original_env_ids:
+        if env_id.endswith("-v3"):
+            env_id = env_id.replace("-v3", "-v4")
+        # if env_id.endswith("-v4"):
+        #     env_id = env_id.replace("-v4", "-v5")
+        env_ids.append(env_id)
+    max_scores = np.array([mujoco_normalized_score[env_id][1] for env_id in env_ids])
+    min_scores = np.array([mujoco_normalized_score[env_id][0] for env_id in env_ids])
+    return normalize_score(score_dict, max_scores, min_scores)
+
+
 if __name__ == "__main__":
     args = tyro.cli(Args)
     # by default assume all the env_ids are the same
@@ -712,6 +726,8 @@ if __name__ == "__main__":
             normalized_score_dict = maxmin_normalize_score(score_dict)
         elif args.rc.score_normalization_method == "atari":
             normalized_score_dict = atari_normalize_score(score_dict, args.env_ids[0])
+        elif args.rc.score_normalization_method == "mujoco":
+            normalized_score_dict = mujoco_normalize_score(score_dict, args.env_ids[0])
         else:
             raise NotImplementedError(f"Normalization method {args.rc.score_normalization_method} not implemented")
         performance_profile_normalized_score_dict = {}
