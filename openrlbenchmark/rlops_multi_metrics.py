@@ -2,7 +2,7 @@ import ast
 import copy
 import os
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Literal
 from urllib.parse import parse_qs, urlparse
 
 import expt
@@ -13,7 +13,7 @@ import peewee as pw
 import seaborn as sns
 import tyro
 import wandb
-import wandb.apis.reports as wb  # noqa
+import wandb.apis.reports as wb
 from dotmap import DotMap
 from expt import Hypothesis, Run
 from rich.console import Console
@@ -27,7 +27,7 @@ from openrlbenchmark.hns import atari_human_normalized_scores as atari_hns
 from openrlbenchmark.offline_db import OfflineRun, OfflineRunTag, Tag, database_proxy
 
 
-def convert(values: Union[List[str], str]) -> Union[List[Any], Any]:
+def convert(values: list[str] | str) -> list[Any] | Any:
     if isinstance(values, list):
         values = [convert(v) for v in values]
     else:
@@ -48,7 +48,7 @@ class RliableConfig:
     """the threshold for the normalized score for the performance profile"""
     sample_efficiency_plots: bool = True
     """if toggled, we will generate sample efficiency plots"""
-    sample_efficiency_and_walltime_efficiency_method: Optional[Literal["Median", "IQM", "Mean", "Optimality Gap"]] = "Median"
+    sample_efficiency_and_walltime_efficiency_method: Literal["Median", "IQM", "Mean", "Optimality Gap"] | None = "Median"
     """the method to compute the sample efficiency and walltime efficiency"""
     performance_profile_plots: bool = True
     """if toggled, we will generate performance profile plots"""
@@ -66,7 +66,7 @@ class RliableConfig:
 class PlotConfig:
     ncols: int = 2
     """the number of columns in the chart"""
-    nrows: tyro.conf.Suppress[int] = None
+    nrows: tyro.conf.Suppress[int | None] = None
     """(TO BE FILLED in runtime) the number of rows in the chart"""
     ncols_legend: int = 2
     """the number of legend columns in the chart"""
@@ -76,7 +76,7 @@ class PlotConfig:
     """the label of the y-axis"""
     sharex: bool = False
     """if toggled, we will share the x-axis across all subplots"""
-    max_steps: int = None
+    max_steps: int | None = None
     """if specified, the maximum number of steps to plot"""
     rolling: int = 100
     """the rolling window for smoothing the curves"""
@@ -86,24 +86,25 @@ class PlotConfig:
     """the multiplier for the column width"""
     rm: float = 3.0
     """the multiplier for the row height"""
-    hspace: float = None
+    hspace: float | None = None
     """the height space between subplots"""
-    wspace: float = None
+    wspace: float | None = None
     """the width space between subplots"""
 
 
 @dataclass
 class Args:
-    filters: tyro.conf.UseAppendAction[List[List[str]]]
+    filters: tyro.conf.UseAppendAction[list[list[str]]]
     """the filters of the experiments; see docs"""
-    env_ids: tyro.conf.UseAppendAction[List[List[str]]]
+    env_ids: tyro.conf.UseAppendAction[list[list[str]]]
     """the ids of the environment to compare"""
     output_filename: str = "compare"
     """the output filename of the plot, without extension"""
     metric_last_n_average_window: int = 100
     """the last n number of episodes to average metric over in the result table"""
     scan_history: bool = False
-    """if toggled, we will pull the complete metrics from wandb instead of sampling 500 data points (recommended for generating tables)"""
+    """if toggled, we will pull the complete metrics from wandb
+    instead of sampling 500 data points (recommended for generating tables)"""
     check_empty_runs: bool = True
     """if toggled, we will check for empty wandb runs"""
     report: bool = False
@@ -126,20 +127,26 @@ class Runset:
         name: str,
         entity: str,
         project: str,
-        metrics: List[str] = ["charts/episodic_return"],
+        metrics: list[str] | None = None,
         groupby: str = "",
         custom_exp_name_key: str = "exp_name",
         custom_xaxis_key: str = "global_step",
         exp_name: str = "",
         custom_env_id_key: str = "env_id",
         env_id: str = "",
-        tags: List[str] = [],
+        tags: list[str] | None = None,
         username: str = "",
         color: str = "#000000",
         offline_db: pw.Database = None,
         offline: bool = False,
-        query_filters: Dict[str, List[str]] = {},
+        query_filters: dict[str, list[str]] | None = None,
     ):
+        if query_filters is None:
+            query_filters = {}
+        if tags is None:
+            tags = []
+        if metrics is None:
+            metrics = ["charts/episodic_return"]
         self.name = name
         self.entity = entity
         self.project = project
@@ -285,18 +292,18 @@ def create_hypothesis(runset: Runset, target_metrics, scan_history: bool = False
             run_df = run_df.drop(columns=["videos"], axis=1)
         if runset.custom_xaxis_key in run_df:
             run_df["global_step"] = run_df[runset.custom_xaxis_key]
-        for source_metric, target_metric in zip(runset.metrics, target_metrics):
+        for source_metric, target_metric in zip(runset.metrics, target_metrics, strict=False):
             if source_metric in run_df:
                 run_df[target_metric] = run_df[source_metric]
-        cleaned_df = run_df[["global_step", "_runtime"] + target_metrics].dropna(how="all")
+        cleaned_df = run_df[["global_step", "_runtime", *target_metrics]].dropna(how="all")
         runs += [Run(f"seed{idx}", cleaned_df)]
     return Hypothesis(runset.name, runs)
 
 
 def compare(
     console: Console,
-    runsetss: List[List[Runset]],
-    env_ids: List[str],
+    runsetss: list[list[Runset]],
+    env_ids: list[str],
     metric_last_n_average_window: int,
     scan_history: bool = False,
     output_filename: str = "compare",
@@ -352,7 +359,9 @@ def compare(
             #             ): runsets[idx].color
             #         }
             #     )
-            pg.custom_run_colors = custom_run_colors  # IMPORTANT: custom_run_colors is implemented as a custom `setter` that needs to be overwritten unlike regular dictionaries
+            # IMPORTANT: custom_run_colors is implemented as a custom `setter`
+            # that needs to be overwritten unlike regular dictionaries
+            pg.custom_run_colors = custom_run_colors
             blocks += [pg]
 
     figsize = (pc.ncols * pc.cm, pc.nrows * pc.rm)
@@ -403,7 +412,7 @@ def compare(
                     run.df["_runtime"] /= 3600
             result_table.loc[hypothesis.name] = [
                 f"{mean:.4f} ± {std:.4f}"
-                for mean, std in zip(np.stack(hypothesis_metrics).mean(0), np.stack(hypothesis_metrics).std(0))
+                for mean, std in zip(np.stack(hypothesis_metrics).mean(0), np.stack(hypothesis_metrics).std(0), strict=True)
             ]
         result_tables[env_id] = result_table
         runtimes.append(list(ex.summary()["_runtime"]))
@@ -477,13 +486,25 @@ def compare(
     print_rich_table(f"Runtime ({pc.time_unit}) Average", average_runtime, console)
 
     # add legend
-    h, l = axes_flatten[0].get_legend_handles_labels()
-    fig.legend(h, l, loc="lower center", ncol=pc.ncols_legend, bbox_to_anchor=(0.5, 1.0), bbox_transform=fig.transFigure)
+    handles, labels = axes_flatten[0].get_legend_handles_labels()
+    fig.legend(
+        handles,
+        labels,
+        loc="lower center",
+        ncol=pc.ncols_legend,
+        bbox_to_anchor=(0.5, 1.0),
+        bbox_transform=fig.transFigure,
+    )
     fig.supxlabel(pc.xlabel)
     fig.tight_layout()
-    h, l = axes_time_flatten[0].get_legend_handles_labels()
+    handles, labels = axes_time_flatten[0].get_legend_handles_labels()
     fig_time.legend(
-        h, l, loc="lower center", ncol=pc.ncols_legend, bbox_to_anchor=(0.5, 1.0), bbox_transform=fig_time.transFigure
+        handles,
+        labels,
+        loc="lower center",
+        ncol=pc.ncols_legend,
+        bbox_to_anchor=(0.5, 1.0),
+        bbox_transform=fig_time.transFigure,
     )
     fig_time.supxlabel(f"Time ({pc.time_unit})")
     fig_time.tight_layout()
@@ -506,7 +527,7 @@ def compare(
     return blocks, runtimes, global_steps, exs
 
 
-def normalize_score(score_dict: Dict[str, np.ndarray], max_scores: np.ndarray, min_scores: np.ndarray):
+def normalize_score(score_dict: dict[str, np.ndarray], max_scores: np.ndarray, min_scores: np.ndarray):
     """
     Each item in `score_dict` has shape (num_seeds, num_envs, num_subsamples)
     `max_scores` has shape (num_envs)
@@ -520,7 +541,7 @@ def normalize_score(score_dict: Dict[str, np.ndarray], max_scores: np.ndarray, m
     return normalized_score_dict
 
 
-def maxmin_normalize_score(score_dict: Dict[str, np.ndarray]):
+def maxmin_normalize_score(score_dict: dict[str, np.ndarray]):
     all_scores = np.concatenate([score_dict[key] for key in score_dict], axis=0)
     max_scores = all_scores.max(0).max(1)  # 1) max over all experiments and seds 2) max over all steps
     min_scores = all_scores.min(0).min(1)  # 1) min over all experiments and seds 2) min over all steps
@@ -589,7 +610,7 @@ if __name__ == "__main__":
             offline_db.create_tables([OfflineRun, Tag, OfflineRunTag])
             offline_dbs[f"{wandb_entity}/{wandb_project_name}"] = offline_db
 
-        for filter_str, color in zip(filters[1:], colors[filters_idx]):
+        for filter_str, color in zip(filters[1:], colors[filters_idx], strict=False):
             print("=========", filter_str)
             # parse filter string
             parse_result = urlparse(filter_str)

@@ -3,7 +3,7 @@ import copy
 import os
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Literal, Optional, Union, Tuple
+from typing import Any, Literal
 from urllib.parse import parse_qs, urlparse
 
 import expt
@@ -14,7 +14,7 @@ import peewee as pw
 import seaborn as sns
 import tyro
 import wandb
-import wandb.apis.reports as wb  # noqa
+import wandb.apis.reports as wb
 from dotmap import DotMap
 from expt import Hypothesis, Run
 from rich.console import Console
@@ -29,7 +29,7 @@ from openrlbenchmark.hns import atari_human_normalized_scores as atari_hns
 from openrlbenchmark.offline_db import OfflineRun, OfflineRunTag, Tag, database_proxy
 
 
-def convert(values: Union[List[str], str]) -> Union[List[Any], Any]:
+def convert(values: list[str] | str) -> list[Any] | Any:
     if isinstance(values, list):
         values = [convert(v) for v in values]
     else:
@@ -50,9 +50,9 @@ class RliableConfig:
     """the threshold for the normalized score for the performance profile"""
     sample_efficiency_plots: bool = True
     """if toggled, we will generate sample efficiency plots"""
-    sample_efficiency_figsize: Tuple[float, float] = (7 * 2, 3.4 * 2)
+    sample_efficiency_figsize: tuple[float, float] = (7 * 2, 3.4 * 2)
     """figure size of the sample efficiency plots"""
-    sample_efficiency_and_walltime_efficiency_method: Optional[Literal["Median", "IQM", "Mean", "Optimality Gap"]] = "Median"
+    sample_efficiency_and_walltime_efficiency_method: Literal["Median", "IQM", "Mean", "Optimality Gap"] | None = "Median"
     """the method to compute the sample efficiency and walltime efficiency"""
     performance_profile_plots: bool = True
     """if toggled, we will generate performance profile plots"""
@@ -70,7 +70,7 @@ class RliableConfig:
 class PlotConfig:
     ncols: int = 2
     """the number of columns in the chart"""
-    nrows: tyro.conf.Suppress[int] = None
+    nrows: tyro.conf.Suppress[int | None] = None
     """(TO BE FILLED in runtime) the number of rows in the chart"""
     ncols_legend: int = 2
     """the number of legend columns in the chart"""
@@ -80,7 +80,7 @@ class PlotConfig:
     """the label of the y-axis"""
     sharex: bool = False
     """if toggled, we will share the x-axis across all subplots"""
-    max_steps: int = None
+    max_steps: int | None = None
     """if specified, the maximum number of steps to plot"""
     rolling: int = 100
     """the rolling window for smoothing the curves"""
@@ -90,24 +90,25 @@ class PlotConfig:
     """the multiplier for the column width"""
     rm: float = 3.0
     """the multiplier for the row height"""
-    hspace: float = None
+    hspace: float | None = None
     """the height space between subplots"""
-    wspace: float = None
+    wspace: float | None = None
     """the width space between subplots"""
 
 
 @dataclass
 class Args:
-    filters: tyro.conf.UseAppendAction[List[List[str]]]
+    filters: tyro.conf.UseAppendAction[list[list[str]]]
     """the filters of the experiments; see docs"""
-    env_ids: tyro.conf.UseAppendAction[List[List[str]]]
+    env_ids: tyro.conf.UseAppendAction[list[list[str]]]
     """the ids of the environment to compare"""
     output_filename: str = "compare"
     """the output filename of the plot, without extension"""
     metric_last_n_average_window: int = 100
     """the last n number of episodes to average metric over in the result table"""
     scan_history: bool = False
-    """if toggled, we will pull the complete metrics from wandb instead of sampling 500 data points (recommended for generating tables)"""
+    """if toggled, we will pull the complete metrics from wandb
+    instead of sampling 500 data points (recommended for generating tables)"""
     check_empty_runs: bool = True
     """if toggled, we will check for empty wandb runs"""
     report: bool = False
@@ -137,13 +138,17 @@ class Runset:
         exp_name: str = "",
         custom_env_id_key: str = "env_id",
         env_id: str = "",
-        tags: List[str] = [],
+        tags: list[str] | None = None,
         username: str = "",
         color: str = "#000000",
-        offline_db: pw.Database = None,
+        offline_db: pw.Database | None = None,
         offline: bool = False,
-        query_filters: Dict[str, List[str]] = {},
+        query_filters: dict[str, list[str]] | None = None,
     ):
+        if query_filters is None:
+            query_filters = {}
+        if tags is None:
+            tags = []
         self.name = name
         self.entity = entity
         self.project = project
@@ -186,11 +191,11 @@ class Runset:
         #   }
         # }
         # so the correct key is `config.trl_ppo_trainer_config.value.lam`
-        if ".value" not in self.custom_env_id_key:
-            self.custom_env_id_key += ".value"
-        if ".value" not in self.custom_exp_name_key:
-            self.custom_exp_name_key += ".value"
-        self.query_filters = {k + ".value" if ".value" not in k else k: v for k, v in self.query_filters.items()}
+        # if ".value" not in self.custom_env_id_key:
+        #     self.custom_env_id_key += ".value"
+        # if ".value" not in self.custom_exp_name_key:
+        #     self.custom_exp_name_key += ".value"
+        # self.query_filters = {k + ".value" if ".value" not in k else k: v for k, v in self.query_filters.items()}
         self.wandb_filters = {
             "$and": [
                 {f"config.{self.custom_env_id_key}": self.env_id},
@@ -304,8 +309,8 @@ def create_hypothesis(runset: Runset, scan_history: bool = False) -> Hypothesis:
 
 def compare(
     console: Console,
-    runsetss: List[List[Runset]],
-    env_ids: List[str],
+    runsetss: list[list[Runset]],
+    env_ids: list[str],
     metric_last_n_average_window: int,
     scan_history: bool = False,
     output_filename: str = "compare",
@@ -316,7 +321,7 @@ def compare(
     if report:
         for idx, env_id in enumerate(env_ids):
             metric_over_step = wb.LinePlot(
-                x=runsets[idx].custom_xaxis_key,
+                x=runsetss[0][idx].custom_xaxis_key,
                 y=list({runsets[idx].metric for runsets in runsetss}),
                 title=env_id,
                 title_x="Steps",
@@ -359,7 +364,9 @@ def compare(
                         ): runsets[idx].color
                     }
                 )
-            pg.custom_run_colors = custom_run_colors  # IMPORTANT: custom_run_colors is implemented as a custom `setter` that needs to be overwritten unlike regular dictionaries
+            # IMPORTANT: custom_run_colors is implemented as a custom `setter`
+            # that needs to be overwritten unlike regular dictionaries
+            pg.custom_run_colors = custom_run_colors
             blocks += [pg]
 
     figsize = (pc.ncols * pc.cm, pc.nrows * pc.rm)
@@ -461,14 +468,26 @@ def compare(
     print_rich_table(f"Runtime ({pc.time_unit}) Average", average_runtime, console)
 
     # add legend
-    h, l = axes_flatten[0].get_legend_handles_labels()
-    fig.legend(h, l, loc="lower center", ncol=pc.ncols_legend, bbox_to_anchor=(0.5, 1.0), bbox_transform=fig.transFigure)
+    handles, labels = axes_flatten[0].get_legend_handles_labels()
+    fig.legend(
+        handles,
+        labels,
+        loc="lower center",
+        ncol=pc.ncols_legend,
+        bbox_to_anchor=(0.5, 1.0),
+        bbox_transform=fig.transFigure,
+    )
     fig.supxlabel(pc.xlabel)
     fig.supylabel(pc.ylabel)
     fig.tight_layout()
-    h, l = axes_time_flatten[0].get_legend_handles_labels()
+    handles, labels = axes_time_flatten[0].get_legend_handles_labels()
     fig_time.legend(
-        h, l, loc="lower center", ncol=pc.ncols_legend, bbox_to_anchor=(0.5, 1.0), bbox_transform=fig_time.transFigure
+        handles,
+        labels,
+        loc="lower center",
+        ncol=pc.ncols_legend,
+        bbox_to_anchor=(0.5, 1.0),
+        bbox_transform=fig_time.transFigure,
     )
     fig_time.supxlabel(f"Time ({pc.time_unit})")
     fig_time.supylabel(pc.ylabel)
@@ -492,7 +511,7 @@ def compare(
     return blocks, runtimes, global_steps, exs
 
 
-def normalize_score(score_dict: Dict[str, np.ndarray], max_scores: np.ndarray, min_scores: np.ndarray):
+def normalize_score(score_dict: dict[str, np.ndarray], max_scores: np.ndarray, min_scores: np.ndarray):
     """
     Each item in `score_dict` has shape (num_seeds, num_envs, num_subsamples)
     `max_scores` has shape (num_envs)
@@ -506,7 +525,7 @@ def normalize_score(score_dict: Dict[str, np.ndarray], max_scores: np.ndarray, m
     return normalized_score_dict
 
 
-def maxmin_normalize_score(score_dict: Dict[str, np.ndarray]):
+def maxmin_normalize_score(score_dict: dict[str, np.ndarray]):
     all_scores = np.concatenate([score_dict[key] for key in score_dict], axis=0)
     max_scores = all_scores.max(0).max(1)  # 1) max over all experiments and seds 2) max over all steps
     min_scores = all_scores.min(0).min(1)  # 1) min over all experiments and seds 2) min over all steps
@@ -575,7 +594,7 @@ if __name__ == "__main__":
             offline_db.create_tables([OfflineRun, Tag, OfflineRunTag])
             offline_dbs[f"{wandb_entity}/{wandb_project_name}"] = offline_db
 
-        for filter_str, color in zip(filters[1:], colors[filters_idx]):
+        for filter_str, color in zip(filters[1:], colors[filters_idx], strict=False):
             print("=========", filter_str)
             # parse filter string
             parse_result = urlparse(filter_str)
@@ -672,10 +691,10 @@ if __name__ == "__main__":
 
         exp_names = list(reversed(list(score_dict.keys())))
         colors_flatten = colors_flatten_original
-        colors = dict(zip(list(score_dict.keys()), colors_flatten))
+        colors = dict(zip(list(score_dict.keys()), colors_flatten, strict=False))
         frames = np.linspace(0, max(max_global_steps.values()), args.rc.nsubsamples)
         print_rich_table(
-            f"Items in the `score_dict` used for `rliable`",
+            "Items in the `score_dict` used for `rliable`",
             pd.DataFrame(
                 data=[score_dict[key].shape for key in score_dict],
                 columns=["Number of Seeds", "Number of Environments", "Number of Sub-samples"],
@@ -712,8 +731,11 @@ if __name__ == "__main__":
                 figsize=args.rc.sample_efficiency_figsize,
                 sharex=args.pc.sharex,
             )
-            for metric_fn, ax, metric_name in zip(metric_fns, axes_sample_efficiency.flatten(), metric_names):
-                aggregate_fn = lambda scores: np.array([metric_fn(scores[..., frame]) for frame in range(scores.shape[-1])])
+            for metric_fn, ax, metric_name in zip(metric_fns, axes_sample_efficiency.flatten(), metric_names, strict=True):
+
+                def aggregate_fn(scores, metric_function=metric_fn):
+                    return np.array([metric_function(scores[..., frame]) for frame in range(scores.shape[-1])])
+
                 aggregate_scores, aggregate_cis = rly.get_interval_estimates(
                     normalized_score_dict, aggregate_fn, reps=args.rc.sample_efficiency_num_bootstrap_reps
                 )
@@ -773,10 +795,10 @@ if __name__ == "__main__":
                             ticklabelsize="x-large",
                         )
                     axes_median_sample_walltime_efficiency[1].set_ylabel("")
-                    h, l = axes_median_sample_walltime_efficiency[1].get_legend_handles_labels()
+                    handles, labels = axes_median_sample_walltime_efficiency[1].get_legend_handles_labels()
                     fig_median_sample_walltime_efficiency.legend(
-                        h,
-                        l,
+                        handles,
+                        labels,
                         loc="lower center",
                         ncol=args.pc.ncols_legend,
                         bbox_to_anchor=(0.5, 1.0),
@@ -790,10 +812,10 @@ if __name__ == "__main__":
                         f"{args.output_filename}_sample_walltime_efficiency.pdf", bbox_inches="tight"
                     )
 
-            h, l = axes_sample_efficiency[0][0].get_legend_handles_labels()
+            handles, labels = axes_sample_efficiency[0][0].get_legend_handles_labels()
             fig_sample_efficiency.legend(
-                h,
-                l,
+                handles,
+                labels,
                 loc="lower center",
                 ncol=args.pc.ncols_legend,
                 bbox_to_anchor=(0.5, 1.0),
@@ -839,10 +861,10 @@ if __name__ == "__main__":
                 ylabel=r"Fraction of tasks with score > $\tau$",
                 ax=axes_performance_profile[1],
             )
-            h, l = axes_performance_profile[0].get_legend_handles_labels()
+            handles, labels = axes_performance_profile[0].get_legend_handles_labels()
             fig_performance_profile.legend(
-                h,
-                l,
+                handles,
+                labels,
                 loc="lower center",
                 ncol=args.pc.ncols_legend,
                 bbox_to_anchor=(0.5, 1.0),
@@ -854,14 +876,17 @@ if __name__ == "__main__":
 
         if args.rc.aggregate_metrics_plots:
             print("plotting aggregate metrics")
-            aggregate_func = lambda x: np.array([metric_fn(x) for metric_fn in metric_fns])
+
+            def aggregate_func(x):
+                return np.array([metric_fn(x) for metric_fn in metric_fns])
+
             aggregate_scores, aggregate_score_cis = rly.get_interval_estimates(
                 performance_profile_normalized_score_dict, aggregate_func, reps=args.rc.interval_estimates_num_bootstrap_reps
             )
             aggregate_scores_df = pd.DataFrame.from_dict(
                 aggregate_scores, orient="index", columns=["Median", "IQM", "Mean", "Optimality Gap"]
             )
-            print_rich_table(f"Aggregate Scores", aggregate_scores_df.reset_index(), console)
+            print_rich_table("Aggregate Scores", aggregate_scores_df.reset_index(), console)
             fig, axes = plot_utils.plot_interval_estimates(
                 aggregate_scores,
                 aggregate_score_cis,
@@ -870,7 +895,9 @@ if __name__ == "__main__":
                 colors=colors,
                 xlabel="",
                 # xlabel='Normalized Score',
-                # xlabel_y_coordinate=-0.08, # this variable needs to be adjusted for each plot... :( so we just disable xlabel for now.
+                # xlabel_y_coordinate=-0.08,
+                # this variable needs to be adjusted for each plot
+                # so we just disable xlabel for now.
             )
             axes[1].set_xlabel("Normalized Score", fontsize="xx-large")
             fig.tight_layout()

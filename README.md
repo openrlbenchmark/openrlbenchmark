@@ -29,13 +29,13 @@ pip install openrlbenchmark --upgrade
 ### Dev Setup
 
 Prerequisites:
-* Python >=3.7.1,<3.10 (not yet 3.10)
-* [Poetry 1.2.1+](https://python-poetry.org)
+* Python >=3.10
+* [uv](https://docs.astral.sh/uv/)
 
 ```shell
 git clone https://github.com/openrlbenchmark/openrlbenchmark.git
 cd openrlbenchmark
-poetry install
+uv sync
 ```
 
 
@@ -44,7 +44,7 @@ poetry install
 Open RL Benchmark provides an RLops CLI to pull and compare metrics from Weights and Biases. The following example shows how to compare the performance of SB3's ppo, a2c, ddpg, ppo_lstm, sac, td3, ppo, trpo, CleanRL's sac on `HalfCheetahBulletEnv-v0`.
 
 ```shell
-python -m openrlbenchmark.rlops \
+uv run python -m openrlbenchmark.rlops \
     --filters '?we=openrlbenchmark&wpn=cleanrl&ceik=env_id&cen=exp_name&metric=charts/episodic_return' \
         'ppo_continuous_action?tag=v1.0.0-27-gde3f410&seed=1&seed=2&seed=3&cl=CleanRL PPO' \
     --filters '?we=openrlbenchmark&wpn=baselines&ceik=env&cen=exp_name&metric=charts/episodic_return' \
