@@ -64,6 +64,8 @@ class RliableConfig:
     """the number of bootstrap replications in `rliable` to use for computing the performance profile"""
     interval_estimates_num_bootstrap_reps: int = 10  # 2000
     """the number of bootstrap replications in `rliable` to use for computing the the interval estimates"""
+    confidence_interval_size: float = 0.95
+    """the coverage of confidence interval. Defaults to 95% (0.95)."""
 
 
 @dataclass
@@ -737,7 +739,10 @@ if __name__ == "__main__":
                     return np.array([metric_function(scores[..., frame]) for frame in range(scores.shape[-1])])
 
                 aggregate_scores, aggregate_cis = rly.get_interval_estimates(
-                    normalized_score_dict, aggregate_fn, reps=args.rc.sample_efficiency_num_bootstrap_reps
+                    normalized_score_dict,
+                    aggregate_fn,
+                    reps=args.rc.sample_efficiency_num_bootstrap_reps,
+                    confidence_interval_size=args.rc.confidence_interval_size,
                 )
                 for exp_name in score_dict.keys():
                     global_step = global_steps[exp_name].mean()
