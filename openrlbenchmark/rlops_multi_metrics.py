@@ -14,6 +14,7 @@ import seaborn as sns
 import tyro
 import wandb
 import wandb.apis.reports as wb
+import wandb_workspaces.expr as wbexpr
 from dotmap import DotMap
 from expt import Hypothesis, Run
 from rich.console import Console
@@ -233,12 +234,25 @@ class Runset:
 
     @property
     def report_runset(self):
+        filters: list[wbexpr.FilterExpr] = [
+            wbexpr.Config(self.custom_env_id_key) == self.env_id,
+            wbexpr.Config(self.custom_exp_name_key) == self.exp_name,
+        ]
+        for k, v in self.query_filters.items():
+            values = convert(v)
+            if not isinstance(values, list):
+                values = [values]
+            filters.append(wbexpr.Config(k).isin(values))
+        for tag in self.tags:
+            filters.append(wbexpr.Tags().isin([tag]))
+        if self.username:
+            filters.append(wbexpr.Metric("User") == self.username)
         return wb.Runset(
             name=self.name,
             entity=self.entity,
             project=self.project,
-            filters={"$or": [self.wandb_filters]},
-            groupby=[self.groupby] if len(self.groupby) > 0 else None,
+            filters=filters,
+            groupby=[self.groupby] if len(self.groupby) > 0 else [],
         )
 
 
@@ -326,8 +340,8 @@ def compare(
                     smoothing_factor=0.8,
                     groupby_rangefunc="stderr",
                     legend_template="${runsetName}",
+                    aggregate=True,
                 )
-                metric_over_step.config["aggregateMetrics"] = True
                 metrics_over_step.append(metric_over_step)
                 metric_over_time = wb.LinePlot(
                     x="_runtime",
@@ -338,8 +352,8 @@ def compare(
                     smoothing_factor=0.8,
                     groupby_rangefunc="stderr",
                     legend_template="${runsetName}",
+                    aggregate=True,
                 )
-                metric_over_time.config["aggregateMetrics"] = True
                 metrics_over_time.append(metric_over_time)
 
             flattened_metrics = [metrics_over_step]  # , metrics_over_time
