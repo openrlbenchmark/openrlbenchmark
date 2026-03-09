@@ -11,6 +11,7 @@ compare.md
 seed_r2d2_atari_graphs.csv
 data
 static/0*
+static/sample_dqn/
 
 debug.sh.docker.sh
 docker_cache
