@@ -708,6 +708,7 @@ if __name__ == "__main__":
         exp_names = list(reversed(list(score_dict.keys())))
         colors_flatten = colors_flatten_original
         colors = dict(zip(list(score_dict.keys()), colors_flatten, strict=False))
+        # TODO(antonin): limit scores when comparing
         frames = np.linspace(0, max(max_global_steps.values()), args.rc.nsubsamples)
         print_rich_table(
             "Items in the `score_dict` used for `rliable`",
@@ -915,6 +916,7 @@ if __name__ == "__main__":
                 algorithms=exp_names,
                 colors=colors,
                 xlabel="",
+                row_height=0.6,
                 # xlabel='Normalized Score',
                 # xlabel_y_coordinate=-0.08,
                 # this variable needs to be adjusted for each plot
