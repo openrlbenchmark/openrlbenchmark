@@ -16,6 +16,7 @@ import seaborn as sns
 import tyro
 import wandb
 import wandb.apis.reports as wb
+from wandb.apis.reports import Config as WBConfig, RunsetGroup, RunsetGroupKey
 import wandb_workspaces.expr as wbexpr
 from dotmap import DotMap
 from expt import Hypothesis, Run
@@ -337,9 +338,14 @@ def compare(
             for runsets in runsetss:
                 custom_run_colors.update(
                     {
-                        (
-                            runsets[idx].report_runset.name,
-                            runsets[idx].runs[0].config[runsets[idx].custom_exp_name_key],
+                        RunsetGroup(
+                            runset_name=runsets[idx].report_runset.name,
+                            keys=(
+                                RunsetGroupKey(
+                                    key=WBConfig(name=runsets[idx].custom_exp_name_key),
+                                    value=runsets[idx].runs[0].config[runsets[idx].custom_exp_name_key],
+                                ),
+                            ),
                         ): runsets[idx].color
                     }
                 )

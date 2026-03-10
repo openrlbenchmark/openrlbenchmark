@@ -77,7 +77,7 @@ def test_rliable_hns():
     """
     subprocess.run(
         """
-python -i -m openrlbenchmark.rlops_hns \
+python -m openrlbenchmark.rlops_hns \
     --filters '?we=openrlbenchmark&wpn=sb3&ceik=env&cen=algo&metric=eval/mean_reward' \
         'dqn?tag=v1.8.0a3&cl=DQN' \
         'a2c?tag=v1.8.0a3&cl=A2C' \
