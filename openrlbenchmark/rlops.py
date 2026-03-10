@@ -349,6 +349,7 @@ def compare(
                 groupby_rangefunc="stderr",
                 legend_template="${runsetName}",
                 aggregate=True,
+                point_visualization_method="sampling",
             )
             metric_over_time = wb.LinePlot(
                 x="_runtime",
@@ -360,17 +361,7 @@ def compare(
                 groupby_rangefunc="stderr",
                 legend_template="${runsetName}",
                 aggregate=True,
-            )
-            pg = wb.PanelGrid(
-                runsets=[runsets[idx].report_runset for runsets in runsetss],
-                panels=[
-                    metric_over_step,
-                    metric_over_time,
-                    # wb.MediaBrowser(
-                    #     num_columns=2,
-                    #     media_keys="videos",
-                    # ),
-                ],
+                point_visualization_method="sampling",
             )
             custom_run_colors = {}
             for runsets in runsetss:
@@ -387,9 +378,19 @@ def compare(
                         ): runsets[idx].color
                     }
                 )
-            # IMPORTANT: custom_run_colors is implemented as a custom `setter`
-            # that needs to be overwritten unlike regular dictionaries
-            pg.custom_run_colors = custom_run_colors
+
+            pg = wb.PanelGrid(
+                runsets=[runsets[idx].report_runset for runsets in runsetss],
+                panels=[
+                    metric_over_step,
+                    metric_over_time,
+                    # wb.MediaBrowser(
+                    #     num_columns=2,
+                    #     media_keys="videos",
+                    # ),
+                ],
+                custom_run_colors=custom_run_colors,
+            )
             blocks += [pg]
 
     figsize = (pc.ncols * pc.cm, pc.nrows * pc.rm)
@@ -934,6 +935,7 @@ if __name__ == "__main__":
             title=f"Regression Report: {exp_name}",
             description=str(args.filters),
             blocks=blocks,
+            width="fixed",
         )
         report.save()
         print(f"view the generated report at {report.url}")

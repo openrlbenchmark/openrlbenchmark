@@ -343,6 +343,7 @@ def compare(
                     groupby_rangefunc="stderr",
                     legend_template="${runsetName}",
                     aggregate=True,
+                    point_visualization_method="sampling",
                 )
                 metrics_over_step.append(metric_over_step)
                 metric_over_time = wb.LinePlot(
@@ -355,16 +356,13 @@ def compare(
                     groupby_rangefunc="stderr",
                     legend_template="${runsetName}",
                     aggregate=True,
+                    point_visualization_method="sampling",
                 )
                 metrics_over_time.append(metric_over_time)
 
             flattened_metrics = [metrics_over_step]  # , metrics_over_time
             flattened_metrics = [item for sublist in flattened_metrics for item in sublist]
-            pg = wb.PanelGrid(
-                runsets=[runsets[idx].report_runset for runsets in runsetss],
-                panels=flattened_metrics,
-            )
-            custom_run_colors = {}
+            # custom_run_colors = {}
             # TODO: color stuff doesn't work because of the filter syntax
             # for runsets in runsetss:
             #     custom_run_colors.update(
@@ -375,9 +373,10 @@ def compare(
             #             ): runsets[idx].color
             #         }
             #     )
-            # IMPORTANT: custom_run_colors is implemented as a custom `setter`
-            # that needs to be overwritten unlike regular dictionaries
-            pg.custom_run_colors = custom_run_colors
+            pg = wb.PanelGrid(
+                runsets=[runsets[idx].report_runset for runsets in runsetss],
+                panels=flattened_metrics,
+            )
             blocks += [pg]
 
     figsize = (pc.ncols * pc.cm, pc.nrows * pc.rm)
@@ -689,6 +688,7 @@ if __name__ == "__main__":
             title=f"Regression Report: {exp_name}",
             description=str(args.filters),
             blocks=blocks,
+            width="fixed",
         )
         report.save()
         print(f"view the generated report at {report.url}")
