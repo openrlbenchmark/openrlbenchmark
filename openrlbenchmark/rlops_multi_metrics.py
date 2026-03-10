@@ -30,7 +30,7 @@ from openrlbenchmark.offline_db import OfflineRun, OfflineRunTag, Tag, database_
 
 def convert(values: list[str] | str) -> list[Any] | Any:
     if isinstance(values, list):
-        values = [convert(v) for v in values]
+        return [convert(value) for value in values]
     else:
         try:
             values = ast.literal_eval(values)
@@ -136,9 +136,9 @@ class Runset:
         custom_env_id_key: str = "env_id",
         env_id: str = "",
         tags: list[str] | None = None,
-        username: str = "",
+        username: str | None = "",
         color: str = "#000000",
-        offline_db: pw.Database = None,
+        offline_db: pw.Database | None = None,
         offline: bool = False,
         query_filters: dict[str, list[str]] | None = None,
     ):
@@ -213,6 +213,7 @@ class Runset:
                 filters=self.wandb_filters,
             )
         else:
+            assert self.offline_db is not None
             with self.offline_db.bind_ctx([OfflineRun, OfflineRunTag, Tag]):
                 cond = (
                     (OfflineRun.project == self.project)
@@ -275,6 +276,7 @@ def create_hypothesis(runset: Runset, target_metrics, scan_history: bool = False
             continue
         if scan_history:
             run = openrlbenchmark.cache.CachedRun(run, cache_dir=os.path.join(openrlbenchmark.__path__[0], "dataset"))
+            assert runset.offline_db is not None
             with runset.offline_db.bind_ctx([OfflineRun, OfflineRunTag, Tag]):
                 tags = []
                 for tag_str in run.run.tags:

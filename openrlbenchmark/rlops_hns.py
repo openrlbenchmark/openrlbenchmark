@@ -16,7 +16,6 @@ import seaborn as sns
 import tyro
 import wandb
 import wandb.apis.reports as wb
-from wandb.apis.reports import Config as WBConfig, RunsetGroup, RunsetGroupKey
 import wandb_workspaces.expr as wbexpr
 from dotmap import DotMap
 from expt import Hypothesis, Run
@@ -25,6 +24,8 @@ from rich.pretty import pprint
 from rich.table import Table
 from rliable import library as rly
 from rliable import metrics, plot_utils
+from wandb.apis.reports import Config as WBConfig
+from wandb.apis.reports import RunsetGroup, RunsetGroupKey
 
 import openrlbenchmark
 import openrlbenchmark.cache
@@ -34,7 +35,7 @@ from openrlbenchmark.offline_db import OfflineRun, OfflineRunTag, Tag, database_
 
 def convert(values: list[str] | str) -> list[Any] | Any:
     if isinstance(values, list):
-        values = [convert(v) for v in values]
+        return [convert(value) for value in values]
     else:
         try:
             values = ast.literal_eval(values)
@@ -113,9 +114,9 @@ class Runset:
         custom_env_id_key: str = "env_id",
         env_id: str = "",
         tags: list[str] | None = None,
-        username: str = "",
+        username: str | None = "",
         color: str = "#000000",
-        offline_db: pw.Database = None,
+        offline_db: pw.Database | None = None,
         offline: bool = False,
         query_filters: dict[str, list[str]] | None = None,
     ):
