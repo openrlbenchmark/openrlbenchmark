@@ -119,7 +119,7 @@ class Args:
     """if toggled, we will check for empty wandb runs"""
     report: bool = False
     """if toggled, a wandb report will be created"""
-    wandb_project_name: str = "cleanrl"
+    wandb_project_name: str = "sbx"
     """the wandb project name for the report creation"""
     offline: bool = False
     """if toggled, we will use the offline database instead of wandb"""
@@ -955,6 +955,7 @@ if __name__ == "__main__":
         print("saving report")
         report = wb.Report(
             project=args.wandb_project_name,
+            entity="openrlbenchmark",
             title=f"Regression Report: {exp_name}",
             description=str(args.filters),
             blocks=blocks,
