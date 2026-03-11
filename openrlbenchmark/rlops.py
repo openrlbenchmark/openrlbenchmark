@@ -15,6 +15,7 @@ import seaborn as sns
 import tyro
 import wandb
 import wandb.apis.reports as wb
+import wandb_workspaces.expr as wbexpr
 from dotmap import DotMap
 from expt import Hypothesis, Run
 from rich.console import Console
@@ -22,6 +23,8 @@ from rich.pretty import pprint
 from rich.table import Table
 from rliable import library as rly
 from rliable import metrics, plot_utils
+from wandb.apis.reports import Config as WBConfig
+from wandb.apis.reports import RunsetGroup, RunsetGroupKey
 
 import openrlbenchmark
 import openrlbenchmark.cache
@@ -31,7 +34,7 @@ from openrlbenchmark.offline_db import OfflineRun, OfflineRunTag, Tag, database_
 
 def convert(values: list[str] | str) -> list[Any] | Any:
     if isinstance(values, list):
-        values = [convert(v) for v in values]
+        return [convert(value) for value in values]
     else:
         try:
             values = ast.literal_eval(values)
@@ -139,7 +142,7 @@ class Runset:
         custom_env_id_key: str = "env_id",
         env_id: str = "",
         tags: list[str] | None = None,
-        username: str = "",
+        username: str | None = "",
         color: str = "#000000",
         offline_db: pw.Database | None = None,
         offline: bool = False,
@@ -214,6 +217,7 @@ class Runset:
                 filters=self.wandb_filters,
             )
         else:
+            assert self.offline_db is not None
             with self.offline_db.bind_ctx([OfflineRun, OfflineRunTag, Tag]):
                 cond = (
                     (OfflineRun.project == self.project)
@@ -235,12 +239,25 @@ class Runset:
 
     @property
     def report_runset(self):
+        filters: list[wbexpr.FilterExpr] = [
+            wbexpr.Config(self.custom_env_id_key) == self.env_id,
+            wbexpr.Config(self.custom_exp_name_key) == self.exp_name,
+        ]
+        for k, v in self.query_filters.items():
+            values = convert(v)
+            if not isinstance(values, list):
+                values = [values]
+            filters.append(wbexpr.Config(k).isin(values))
+        for tag in self.tags:
+            filters.append(wbexpr.Tags().isin([tag]))
+        if self.username:
+            filters.append(wbexpr.Metric("User") == self.username)
         return wb.Runset(
             name=self.name,
             entity=self.entity,
             project=self.project,
-            filters={"$or": [self.wandb_filters]},
-            groupby=[self.groupby] if len(self.groupby) > 0 else None,
+            filters=filters,
+            groupby=[self.groupby] if len(self.groupby) > 0 else [],
         )
 
 
@@ -263,6 +280,7 @@ def create_hypothesis(runset: Runset, scan_history: bool = False) -> Hypothesis:
             continue
         if scan_history:
             run = openrlbenchmark.cache.CachedRun(run, cache_dir=os.path.join(openrlbenchmark.__path__[0], "dataset"))
+            assert runset.offline_db is not None
             with runset.offline_db.bind_ctx([OfflineRun, OfflineRunTag, Tag]):
                 tags = []
                 for tag_str in run.run.tags:
@@ -330,8 +348,9 @@ def compare(
                 smoothing_factor=0.8,
                 groupby_rangefunc="stderr",
                 legend_template="${runsetName}",
+                aggregate=True,
+                point_visualization_method="sampling",
             )
-            metric_over_step.config["aggregateMetrics"] = True
             metric_over_time = wb.LinePlot(
                 x="_runtime",
                 y=list({runsets[idx].metric for runsets in runsetss}),
@@ -341,8 +360,25 @@ def compare(
                 smoothing_factor=0.8,
                 groupby_rangefunc="stderr",
                 legend_template="${runsetName}",
+                aggregate=True,
+                point_visualization_method="sampling",
             )
-            metric_over_time.config["aggregateMetrics"] = True
+            custom_run_colors = {}
+            for runsets in runsetss:
+                custom_run_colors.update(
+                    {
+                        RunsetGroup(
+                            runset_name=runsets[idx].report_runset.name,
+                            keys=(
+                                RunsetGroupKey(
+                                    key=WBConfig(name=runsets[idx].custom_exp_name_key),
+                                    value=runsets[idx].runs[0].config[runsets[idx].custom_exp_name_key],
+                                ),
+                            ),
+                        ): runsets[idx].color
+                    }
+                )
+
             pg = wb.PanelGrid(
                 runsets=[runsets[idx].report_runset for runsets in runsetss],
                 panels=[
@@ -353,20 +389,8 @@ def compare(
                     #     media_keys="videos",
                     # ),
                 ],
+                custom_run_colors=custom_run_colors,
             )
-            custom_run_colors = {}
-            for runsets in runsetss:
-                custom_run_colors.update(
-                    {
-                        (
-                            runsets[idx].report_runset.name,
-                            runsets[idx].runs[0].config[runsets[idx].custom_exp_name_key],
-                        ): runsets[idx].color
-                    }
-                )
-            # IMPORTANT: custom_run_colors is implemented as a custom `setter`
-            # that needs to be overwritten unlike regular dictionaries
-            pg.custom_run_colors = custom_run_colors
             blocks += [pg]
 
     figsize = (pc.ncols * pc.cm, pc.nrows * pc.rm)
@@ -911,6 +935,7 @@ if __name__ == "__main__":
             title=f"Regression Report: {exp_name}",
             description=str(args.filters),
             blocks=blocks,
+            width="fixed",
         )
         report.save()
         print(f"view the generated report at {report.url}")
