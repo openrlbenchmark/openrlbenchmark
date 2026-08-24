@@ -3,8 +3,8 @@
 
 uv run python -m openrlbenchmark.rlops \
     --filters '?we=openrlbenchmark&wpn=sbx&ceik=env&cen=algo&metric=eval/mean_reward' \
-        'sample_dqn?wandb_group=sample-dqn-cem-triple-q&cl=SampleDQN (Triple Q)' \
-        'sample_dqn?tag=sample-dqn-cem-single-q&cl=SampleDQN (Single Q)' \
+        'sample_dqn?wandb_group=sample-dqn-cem-fixed-triple&cl=SampleDQN (Triple Q)' \
+        'sample_dqn?tag=sample-dqn-cem-fixed&cl=SampleDQN (Default)' \
         'ddpg?tag=ddpg-normalize&cl=DDPG' \
     --filters '?we=openrlbenchmark&wpn=sb3&ceik=env&cen=algo&metric=eval/mean_reward' \
         'sac?cl=SAC (SB3)' \
